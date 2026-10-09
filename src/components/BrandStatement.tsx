@@ -10,7 +10,7 @@ export const BrandStatement: React.FC<BrandStatementProps> = ({ onLearnApproach 
   return (
     <section
       id="about"
-      className="relative text-white py-12 sm:py-16 lg:py-20 overflow-hidden"
+      className="hidden lg:block relative text-white py-16 lg:py-20 overflow-hidden"
       style={{
         background:
           'linear-gradient(135deg, rgb(11, 34, 25) 0%, rgb(15, 46, 34) 55%, rgb(11, 30, 22) 100%)',

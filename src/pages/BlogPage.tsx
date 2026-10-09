@@ -35,7 +35,7 @@ export const BlogPage: React.FC = () => {
       : publishedPosts.filter((p) => p.category === activeCategory);
 
   return (
-    <div className="bg-[#F8F6F1] py-10 sm:py-16 lg:py-24">
+    <div className="bg-[#F8F6F1] py-8 sm:py-12 lg:py-16">
       <SEOHead
         title="Insights, Ideas & Editorial Playbooks"
         description="Thoughtful design engineering, content strategies, and performance frameworks for modern brands."
@@ -44,7 +44,7 @@ export const BlogPage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         {/* Page Header */}
-        <div className="max-w-3xl mb-10 sm:mb-14">
+        <div className="max-w-3xl mb-6 sm:mb-10">
           <p className="text-[11px] sm:text-xs font-semibold tracking-[0.22em] text-[#69746A] uppercase mb-2">
             — Studio Editorial
           </p>

@@ -22,12 +22,15 @@ import { BlogPage } from './pages/BlogPage';
 import { BlogDetailPage } from './pages/BlogDetailPage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
+import { FreeDemoPage } from './pages/FreeDemoPage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 // Admin Views (Step 3)
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
+import { ForgotPasswordPage } from './pages/admin/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/admin/ResetPasswordPage';
 import { OverviewDashboard } from './pages/admin/OverviewDashboard';
 import { DemoManager } from './pages/admin/demos/DemoManager';
 import { BlogManager } from './pages/admin/blog/BlogManager';
@@ -86,10 +89,13 @@ export default function App() {
           <Route path="/blog/:slug" element={<BlogDetailPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/free-demo" element={<FreeDemoPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
 
           {/* Secure Admin Portal (Step 3) */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route path="/admin/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/admin/reset-password" element={<ResetPasswordPage />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<OverviewDashboard />} />
             <Route path="demos" element={<DemoManager />} />

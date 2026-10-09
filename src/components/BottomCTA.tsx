@@ -12,7 +12,7 @@ export const BottomCTA: React.FC<BottomCTAProps> = ({
 }) => {
   return (
     <section
-      className="relative text-white py-10 sm:py-16 lg:py-20 overflow-hidden text-center sm:text-left"
+      className="relative text-white py-8 sm:py-12 lg:py-14 overflow-hidden text-center sm:text-left"
       style={{
         background:
           'linear-gradient(135deg, #112119 0%, #1a2e24 50%, #0f1c15 100%)',

@@ -37,10 +37,10 @@ export const WebsiteDemos: React.FC<WebsiteDemosProps> = ({
   }, [propDemos]);
 
   return (
-    <section className="py-7 sm:py-14 lg:py-20 bg-[#F8F6F1]" id="demos">
+    <section className="py-6 sm:py-10 lg:py-14 bg-[#F8F6F1]" id="demos">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         {/* Section Header: Left title with kicker, Right clean "View All Demos ->" link */}
-        <div className="flex items-end justify-between mb-4 sm:mb-8 pb-2 sm:pb-4 border-b border-[#E8E2D7]">
+        <div className="flex items-end justify-between mb-3 sm:mb-6 pb-2 sm:pb-3 border-b border-[#E8E2D7]">
           <div>
             <p className="text-[9px] sm:text-[11px] font-semibold tracking-[0.22em] text-[#69746A] uppercase mb-0.5 sm:mb-1">
               — Website Demos

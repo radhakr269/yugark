@@ -417,8 +417,9 @@ export async function trackBlogView(postSlug: string): Promise<void> {
 // ============================================================================
 export interface SubmitLeadPayload {
   name: string;
-  email: string;
+  email?: string;
   phone?: string;
+  business_name?: string;
   requirement: string;
   service?: string;
   timeline?: string;
@@ -440,9 +441,17 @@ export async function submitLead(payload: SubmitLeadPayload): Promise<{ success:
       // Record locally for CRM access
       recordLeadLocally({ ...payload, id: json.refId });
       return json;
+    } else {
+      const errorData = await res.json().catch(() => null);
+      if (errorData?.error) {
+        throw new Error(errorData.error);
+      }
     }
-  } catch {
-    // Server route unavailable, fallback
+  } catch (err: any) {
+    if (err?.message && !err.message.includes('fetch')) {
+      throw err;
+    }
+    // Server route unavailable or network issue, fallback
   }
 
   // 2. Direct Supabase insert if client configured
@@ -451,18 +460,21 @@ export async function submitLead(payload: SubmitLeadPayload): Promise<{ success:
       return { success: true, refId: 'YUG-SPAM-PREVENTED', message: 'Inquiry received.' };
     }
 
+    const effectiveEmail = payload.email?.trim() || (payload.phone ? `${payload.phone.replace(/\D/g, '')}@whatsapp.demo` : 'inquiry@yugark.in');
+
     const { data, error } = await supabase
       .from('leads')
       .insert({
         name: payload.name.trim(),
-        email: payload.email.trim(),
+        email: effectiveEmail,
         phone: payload.phone?.trim() || null,
+        business_name: payload.business_name?.trim() || null,
         requirement: payload.requirement.trim(),
         service: payload.service || 'General Inquiry',
         timeline: payload.timeline || 'Standard (2–4 weeks)',
         page_source: payload.page_source || 'website_contact',
         status: 'new',
-        priority: 'normal',
+        priority: payload.service === 'Free Website Demo' ? 'high' : 'normal',
       })
       .select('id')
       .single();
@@ -471,6 +483,9 @@ export async function submitLead(payload: SubmitLeadPayload): Promise<{ success:
       const refId = `YUG-${data.id.substring(0, 6).toUpperCase()}`;
       recordLeadLocally({ ...payload, id: refId });
       return { success: true, refId, message: 'Your project brief has been recorded in our studio system.' };
+    } else if (error) {
+      console.error('Supabase lead submit error:', error);
+      throw new Error(error.message || 'Failed to submit lead to database');
     }
   }
 
@@ -486,10 +501,11 @@ export async function submitLead(payload: SubmitLeadPayload): Promise<{ success:
 
 function recordLeadLocally(leadData: any) {
   const existingLeads = safeGetStorage<LeadRecord[]>(STORAGE_KEYS.LEADS, []);
+  const effectiveEmail = leadData.email || (leadData.phone ? `${leadData.phone.replace(/\D/g, '')}@whatsapp.demo` : 'inquiry@yugark.in');
   const newLead: LeadRecord = {
     id: leadData.id || `lead-${Date.now()}`,
     name: leadData.name,
-    email: leadData.email,
+    email: effectiveEmail,
     phone: leadData.phone || null,
     business_name: leadData.business_name || null,
     requirement: leadData.requirement,
@@ -497,7 +513,7 @@ function recordLeadLocally(leadData: any) {
     timeline: leadData.timeline || 'Standard (2–4 weeks)',
     page_source: leadData.page_source || 'website_contact',
     status: 'new',
-    priority: 'normal',
+    priority: leadData.service === 'Free Website Demo' ? 'high' : 'normal',
     remarks: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

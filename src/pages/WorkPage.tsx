@@ -35,7 +35,7 @@ export const WorkPage: React.FC = () => {
       : projects.filter((p) => p.category === activeFilter);
 
   return (
-    <div className="bg-[#F8F6F1] py-10 sm:py-16 lg:py-24">
+    <div className="bg-[#F8F6F1] py-8 sm:py-12 lg:py-16">
       <SEOHead
         title="Selected Work & Studio Portfolio"
         description="Explore Yugark Digital Studio's curated portfolio of websites, brand identities, and digital production showcases."

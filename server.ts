@@ -88,6 +88,7 @@ app.post('/api/leads', async (req: Request, res: Response) => {
       name,
       email,
       phone,
+      business_name,
       requirement,
       service,
       timeline,
@@ -108,17 +109,30 @@ app.post('/api/leads', async (req: Request, res: Response) => {
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return res.status(400).json({ error: 'Full name is required.' });
     }
-    if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+
+    // Email is optional for Free Website Demo as long as phone/WhatsApp is provided
+    const hasPhone = Boolean(phone && String(phone).trim().length >= 7);
+    const hasEmail = Boolean(email && typeof email === 'string' && email.trim().length > 0);
+
+    if (hasEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       return res.status(400).json({ error: 'A valid email address is required.' });
     }
+
+    if (!hasEmail && !hasPhone) {
+      return res.status(400).json({ error: 'Please provide either a WhatsApp number or email address.' });
+    }
+
     if (!requirement || typeof requirement !== 'string' || requirement.trim().length === 0) {
-      return res.status(400).json({ error: 'Project scope details are required.' });
+      return res.status(400).json({ error: 'Project scope details or requirements are required.' });
     }
 
     // 4. Input Length Sanitization
     const sanitizedName = name.trim().substring(0, 150);
-    const sanitizedEmail = email.trim().substring(0, 150);
     const sanitizedPhone = phone ? String(phone).trim().substring(0, 50) : null;
+    const sanitizedEmail = hasEmail
+      ? email.trim().substring(0, 150)
+      : (sanitizedPhone ? `${sanitizedPhone.replace(/\D/g, '') || 'client'}@whatsapp.demo` : 'inquiry@yugark.in');
+    const sanitizedBusinessName = business_name ? String(business_name).trim().substring(0, 150) : null;
     const sanitizedRequirement = requirement.trim().substring(0, 3000);
     const sanitizedService = service ? String(service).trim().substring(0, 100) : 'General Inquiry';
     const sanitizedTimeline = timeline ? String(timeline).trim().substring(0, 100) : 'Standard (2–4 weeks)';
@@ -134,12 +148,13 @@ app.post('/api/leads', async (req: Request, res: Response) => {
           name: sanitizedName,
           email: sanitizedEmail,
           phone: sanitizedPhone,
+          business_name: sanitizedBusinessName,
           requirement: sanitizedRequirement,
           service: sanitizedService,
           timeline: sanitizedTimeline,
           page_source: sanitizedSource,
           status: 'new',
-          priority: 'normal',
+          priority: sanitizedService === 'Free Website Demo' ? 'high' : 'normal',
         })
         .select('id')
         .single();

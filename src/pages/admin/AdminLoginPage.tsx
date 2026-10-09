@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, ArrowLeft, Key } from 'lucide-react';
+import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, ArrowLeft, Key, Eye, EyeOff } from 'lucide-react';
 import { signInAdmin, getAdminSession } from '../../lib/supabase/auth';
 import { isSupabaseConfigured } from '../../lib/supabase/client';
 import { SEOHead } from '../../components/SEOHead';
@@ -9,6 +9,7 @@ export const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -136,19 +137,35 @@ export const AdminLoginPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#A5C2B1] mb-2">
-              Secret Password
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#A5C2B1]">
+                Secret Password
+              </label>
+              <Link
+                to="/admin/forgot-password"
+                className="text-[11px] text-[#A5C2B1] hover:text-white transition-colors underline hover:no-underline"
+              >
+                Forgot Password?
+              </Link>
+            </div>
             <div className="relative">
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#121B16] border border-[#2D4536] text-xs sm:text-sm text-white placeholder-[#5A635C] focus:outline-none focus:ring-2 focus:ring-[#A5C2B1]"
+                className="w-full pl-10 pr-11 py-3 rounded-xl bg-[#121B16] border border-[#2D4536] text-xs sm:text-sm text-white placeholder-[#5A635C] focus:outline-none focus:ring-2 focus:ring-[#A5C2B1]"
               />
               <Key className="w-4 h-4 text-[#7C887E] absolute left-3.5 top-3.5" />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-3.5 text-[#7C887E] hover:text-white transition-colors cursor-pointer"
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 

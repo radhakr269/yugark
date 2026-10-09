@@ -22,7 +22,7 @@ export const ServicesPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="bg-[#F8F6F1] py-10 sm:py-16 lg:py-24">
+    <div className="bg-[#F8F6F1] py-8 sm:py-12 lg:py-16">
       <SEOHead
         title="Complete Digital Solutions & Services"
         description="Explore Yugark Digital Studio's 5 core disciplines: Website Development, Social Media, Ads, AI Creative, and Branding."
@@ -31,11 +31,11 @@ export const ServicesPage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         {/* Page Hero Header */}
-        <div className="max-w-3xl mb-12 sm:mb-20">
+        <div className="max-w-3xl mb-8 sm:mb-12">
           <p className="text-[11px] sm:text-xs font-semibold tracking-[0.22em] text-[#69746A] uppercase mb-2">
             — Studio Capabilities
           </p>
-          <h1 className="font-serif-title text-3xl sm:text-5xl lg:text-6xl font-medium text-[#121614] leading-tight mb-4 sm:mb-6">
+          <h1 className="font-serif-title text-3xl sm:text-5xl lg:text-6xl font-medium text-[#121614] leading-tight mb-3 sm:mb-4">
             Complete Digital Solutions for Modern Brands.
           </h1>
           <p className="text-sm sm:text-base lg:text-lg text-[#5A635C] leading-relaxed">
@@ -46,7 +46,7 @@ export const ServicesPage: React.FC = () => {
         </div>
 
         {/* Services List / Cards */}
-        <div className="space-y-8 sm:space-y-12 mb-16 sm:mb-24">
+        <div className="space-y-6 sm:space-y-8 mb-10 sm:mb-16">
           {services.map((service, index) => {
             let Icon = Code;
             if (service.iconType === 'chat') Icon = MessageSquare;

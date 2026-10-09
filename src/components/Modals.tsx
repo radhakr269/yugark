@@ -592,3 +592,310 @@ export const LegalModal: React.FC<LegalModalProps> = ({ title, content, onClose 
     </div>
   );
 };
+
+interface FreeDemoModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const FreeDemoModal: React.FC<FreeDemoModalProps> = ({ isOpen, onClose }) => {
+  useEscapeKey(onClose, isOpen);
+
+  const [fullName, setFullName] = useState('');
+  const [businessName, setBusinessName] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [email, setEmail] = useState('');
+  const [category, setCategory] = useState('Clinic & Healthcare');
+  const [requirements, setRequirements] = useState('');
+  const [honeypot, setHoneypot] = useState('');
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [refId, setRefId] = useState('');
+
+  if (!isOpen) return null;
+
+  const categories = [
+    'Clinic & Healthcare',
+    'Architecture & Interior',
+    'Beauty, Salon & Wellness',
+    'Fitness, Gym & Training',
+    'E-Commerce & Retail',
+    'Corporate & Professional Services',
+    'Restaurant, Cafe & Hospitality',
+    'Creative Studio & Agency',
+    'Other Business',
+  ];
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+
+    if (!fullName.trim()) {
+      setErrorMsg('Please provide your full name.');
+      return;
+    }
+    if (!businessName.trim()) {
+      setErrorMsg('Please provide your business or clinic name.');
+      return;
+    }
+    if (!whatsappNumber.trim() || whatsappNumber.replace(/\D/g, '').length < 8) {
+      setErrorMsg('Please provide a valid WhatsApp number (minimum 8 digits with country code).');
+      return;
+    }
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setErrorMsg('Please enter a valid email address, or leave it blank.');
+      return;
+    }
+    if (!requirements.trim() || requirements.trim().length < 5) {
+      setErrorMsg('Please describe your website requirements.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Dynamic import to avoid circular dependency
+      const { submitLead } = await import('../lib/cms');
+      const result = await submitLead({
+        name: fullName.trim(),
+        email: email.trim() || undefined,
+        phone: whatsappNumber.trim(),
+        business_name: businessName.trim(),
+        requirement: `[Business Category: ${category}]\n\nRequirements & Vision:\n${requirements.trim()}`,
+        service: 'Free Website Demo',
+        timeline: 'Immediate Free Demo Preview',
+        page_source: 'hero_free_demo_modal',
+        website_honeypot: honeypot,
+      });
+
+      if (result && result.success) {
+        setRefId(result.refId || `YUG-${Math.floor(100000 + Math.random() * 900000)}`);
+        setSubmitted(true);
+      } else {
+        throw new Error(result?.message || 'Server did not acknowledge demo submission.');
+      }
+    } catch (err: any) {
+      console.error('Demo registration error:', err);
+      setErrorMsg(
+        err.message ||
+          'Failed to record your demo request. Please check your network connection or message our studio directly via WhatsApp.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleWhatsAppDirect = () => {
+    const text = encodeURIComponent(
+      `Hello Yugark Studio, I would like to request a Free Website Demo for "${businessName || 'my business'}" (${category}). Name: ${fullName}, Phone: ${whatsappNumber}. Requirements: ${requirements}`
+    );
+    window.open(`https://wa.me/919125272460?text=${text}`, '_blank', 'noopener,noreferrer');
+  };
+
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-lg bg-[#F8F6F1] rounded-2xl shadow-2xl border border-[#E5DFD5] overflow-hidden max-h-[92vh] flex flex-col"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#E8E2D7]">
+          <div>
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold tracking-[0.2em] text-[#2D4536] uppercase">
+              <span className="w-2 h-2 rounded-full bg-[#2D4536]" />
+              <span>Complimentary Studio Preview</span>
+            </span>
+            <h3 className="font-serif-title text-xl sm:text-2xl font-medium text-[#121614]">
+              Get Your Free Website Demo
+            </h3>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close demo registration"
+            className="p-2 rounded-full hover:bg-[#EAE3D6] text-[#121614] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4536]"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-4 sm:p-6 overflow-y-auto">
+          {submitted ? (
+            <div className="py-6 sm:py-8 text-center space-y-4">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#E5ECE7] text-[#294B37] flex items-center justify-center mx-auto shadow-inner">
+                <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10" />
+              </div>
+              <div>
+                <span className="text-[10px] font-mono font-bold tracking-widest text-[#2D4536] uppercase bg-[#E2EBE4] px-2.5 py-1 rounded-md">
+                  Ref #{refId}
+                </span>
+              </div>
+              <h4 className="font-serif-title text-xl sm:text-2xl font-medium text-[#121614]">
+                Free Demo Request Received!
+              </h4>
+              <p className="text-xs sm:text-sm text-[#556358] max-w-sm mx-auto leading-relaxed">
+                Thank you, <span className="font-semibold text-[#121614]">{fullName}</span>! We have queued your demonstration for <span className="font-semibold text-[#121614]">{businessName}</span>. Our lead digital designer will review your specifications and contact your WhatsApp within 24–48 hours.
+              </p>
+
+              <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-2.5">
+                <button
+                  onClick={handleWhatsAppDirect}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-full bg-[#25D366] text-white text-xs font-semibold hover:bg-[#1EBE5D] transition-colors shadow-sm cursor-pointer"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Chat On WhatsApp</span>
+                </button>
+                <button
+                  onClick={onClose}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-full border border-[#D5CDC1] bg-white text-[#121614] text-xs font-semibold hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-3.5">
+              <input
+                type="text"
+                name="website_honeypot"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                className="hidden"
+                tabIndex={-1}
+                autoComplete="off"
+              />
+
+              {errorMsg && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">
+                  <p className="font-semibold">Submission Incomplete</p>
+                  <p>{errorMsg}</p>
+                </div>
+              )}
+
+              {/* 1. Name */}
+              <div>
+                <label className="block text-xs font-bold text-[#121614] uppercase tracking-wider mb-1">
+                  Your Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Dr. Rajesh Verma / Priya Sharma"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-[#D5CDC1] text-xs sm:text-sm text-[#121614] focus:outline-none focus:border-[#2D4536]"
+                />
+              </div>
+
+              {/* 2. Business / Clinic Name */}
+              <div>
+                <label className="block text-xs font-bold text-[#121614] uppercase tracking-wider mb-1">
+                  Business or Clinic Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Apex Dental Clinic / Solé Beauty"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-[#D5CDC1] text-xs sm:text-sm text-[#121614] focus:outline-none focus:border-[#2D4536]"
+                />
+              </div>
+
+              {/* 3. WhatsApp Number & Email */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#121614] uppercase tracking-wider mb-1">
+                    WhatsApp Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="e.g. +91 98765 43210"
+                    value={whatsappNumber}
+                    onChange={(e) => setWhatsappNumber(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl bg-white border border-[#D5CDC1] text-xs sm:text-sm text-[#121614] focus:outline-none focus:border-[#2D4536]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#121614] uppercase tracking-wider mb-1">
+                    Email <span className="text-[10px] text-[#7A857D] font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="e.g. contact@business.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl bg-white border border-[#D5CDC1] text-xs sm:text-sm text-[#121614] focus:outline-none focus:border-[#2D4536]"
+                  />
+                </div>
+              </div>
+
+              {/* 4. Business Category */}
+              <div>
+                <label className="block text-xs font-bold text-[#121614] uppercase tracking-wider mb-1">
+                  Business Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-[#D5CDC1] text-xs sm:text-sm text-[#121614] focus:outline-none focus:border-[#2D4536]"
+                >
+                  {categories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 5. Website Requirements */}
+              <div>
+                <label className="block text-xs font-bold text-[#121614] uppercase tracking-wider mb-1">
+                  Website Requirements <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={2.5}
+                  placeholder="Tell us what you want to showcase (e.g. online appointments, treatment menu, portfolio gallery)..."
+                  value={requirements}
+                  onChange={(e) => setRequirements(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-[#D5CDC1] text-xs sm:text-sm text-[#121614] focus:outline-none focus:border-[#2D4536] resize-none"
+                />
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full min-h-[44px] py-2.5 rounded-full bg-[#1A2621] text-white text-xs font-semibold tracking-wider hover:bg-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4536]"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Clock className="w-3.5 h-3.5 animate-spin text-[#9AC3A8]" />
+                      <span>Submitting Demo Request...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Submit Request</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </>
+                  )}
+                </button>
+                <p className="text-[10px] text-center text-[#7A857D] mt-2">
+                  100% Free Demo • No Obligation • Delivered Within 24–48 Hours
+                </p>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -89,6 +89,12 @@ export const BlogDetailPage: React.FC = () => {
         title={post.title}
         description={post.excerpt}
         canonicalPath={`/blog/${post.slug}`}
+        ogImage={post.image}
+        articleData={{
+          headline: post.title,
+          authorName: post.author,
+          image: post.image,
+        }}
       />
 
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

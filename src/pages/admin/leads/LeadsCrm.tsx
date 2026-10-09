@@ -24,6 +24,7 @@ export const LeadsCrm: React.FC = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
+  const [serviceFilter, setServiceFilter] = useState('all');
 
   // Selected Lead Drawer State
   const [selectedLead, setSelectedLead] = useState<LeadRecord | null>(null);
@@ -109,7 +110,8 @@ export const LeadsCrm: React.FC = () => {
       l.requirement.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'all' || l.status === statusFilter;
     const matchesPriority = priorityFilter === 'all' || l.priority === priorityFilter;
-    return matchesSearch && matchesStatus && matchesPriority;
+    const matchesService = serviceFilter === 'all' || l.service === serviceFilter;
+    return matchesSearch && matchesStatus && matchesPriority && matchesService;
   });
 
   return (
@@ -165,6 +167,20 @@ export const LeadsCrm: React.FC = () => {
           </select>
 
           <select
+            value={serviceFilter}
+            onChange={(e) => setServiceFilter(e.target.value)}
+            className="bg-[#FAF8F5] border border-[#DDD5C7] rounded-lg px-2.5 py-1.5 text-xs text-[#121614] focus:outline-none"
+          >
+            <option value="all">All Services</option>
+            <option value="Free Website Demo">Free Website Demo ✨</option>
+            <option value="Website Development">Website Development</option>
+            <option value="Social Media">Social Media</option>
+            <option value="Ads">Ads</option>
+            <option value="AI Creative">AI Creative</option>
+            <option value="Branding">Branding</option>
+          </select>
+
+          <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
             className="bg-[#FAF8F5] border border-[#DDD5C7] rounded-lg px-2.5 py-1.5 text-xs text-[#121614] focus:outline-none"
@@ -205,7 +221,14 @@ export const LeadsCrm: React.FC = () => {
                     className="hover:bg-[#FAF8F5] transition-colors cursor-pointer"
                   >
                     <td className="py-3 px-4">
-                      <div className="font-semibold text-xs text-[#121614]">{lead.name}</div>
+                      <div className="font-semibold text-xs text-[#121614] flex items-center gap-1.5">
+                        <span>{lead.name}</span>
+                        {lead.business_name && (
+                          <span className="text-[10px] font-normal text-[#606D63] bg-[#EBE4D8] px-1.5 py-0.2 rounded">
+                            {lead.business_name}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-[11px] text-[#637267] font-mono">{lead.email}</div>
                       {lead.phone && (
                         <div className="text-[10px] text-[#86968B] font-mono">{lead.phone}</div>
@@ -213,7 +236,14 @@ export const LeadsCrm: React.FC = () => {
                     </td>
 
                     <td className="py-3 px-4 text-[#556358] font-medium">
-                      {lead.service || 'General Inquiry'}
+                      {lead.service === 'Free Website Demo' ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-semibold bg-[#E4EEE7] text-[#1B4028] border border-[#BACFC1]">
+                          <span>Free Demo</span>
+                          <span className="text-amber-600">✨</span>
+                        </span>
+                      ) : (
+                        lead.service || 'General Inquiry'
+                      )}
                     </td>
 
                     <td className="py-3 px-4 text-[#75847A]">
@@ -277,6 +307,11 @@ export const LeadsCrm: React.FC = () => {
                   <h3 className="font-serif-title text-xl font-medium text-[#121614]">
                     {selectedLead.name}
                   </h3>
+                  {selectedLead.business_name && (
+                    <p className="text-xs text-[#2D4536] font-semibold mt-0.5">
+                      {selectedLead.business_name}
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={() => setSelectedLead(null)}

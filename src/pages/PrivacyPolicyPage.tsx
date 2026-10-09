@@ -129,7 +129,7 @@ export const PrivacyPolicyPage: React.FC = () => {
                 {siteConfig.contactEmail}
               </a>
               <p className="text-[11px] text-[#788479] mt-0.5">
-                Headquarters: Bengaluru, India • Global Remote Practice
+                Yugark Digital Studio • Global Digital Practice
               </p>
             </div>
           </section>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HeroSection } from '../components/HeroSection';
-import { BrandStatement } from '../components/BrandStatement';
 import { SelectedWork } from '../components/SelectedWork';
 import { ServicesSection } from '../components/ServicesSection';
 import { WebsiteDemos } from '../components/WebsiteDemos';
@@ -12,6 +11,7 @@ import {
   DemoModal,
   ArticleModal,
   ServiceModal,
+  FreeDemoModal,
 } from '../components/Modals';
 import { SEOHead } from '../components/SEOHead';
 import { ProjectItem, DemoItem, BlogPostItem, ServiceItem } from '../types/content';
@@ -23,6 +23,7 @@ export const HomePage: React.FC = () => {
   const [selectedDemo, setSelectedDemo] = useState<DemoItem | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<BlogPostItem | null>(null);
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
+  const [isFreeDemoOpen, setIsFreeDemoOpen] = useState(false);
 
   return (
     <>
@@ -33,44 +34,48 @@ export const HomePage: React.FC = () => {
       />
 
       <main>
-        {/* 2 & 3. Premium Hero & Value Highlights */}
+        {/* 1. Premium Hero & Value Highlights with Triple CTAs */}
         <HeroSection
           onStartProject={() => navigate('/contact')}
           onViewWork={() => navigate('/work')}
+          onFreeDemo={() => setIsFreeDemoOpen(true)}
         />
 
-        {/* 4. A Digital Studio for What's Next */}
-        <BrandStatement onLearnApproach={() => navigate('/about')} />
-
-        {/* 5. Selected Work */}
+        {/* 2. Selected Work (Natural transition from Hero without green statement section) */}
         <SelectedWork
           onSelectProject={(project) => setSelectedProject(project)}
           onViewAllWork={() => navigate('/work')}
         />
 
-        {/* 6. Complete Digital Solutions */}
+        {/* 3. Complete Digital Solutions */}
         <ServicesSection
           onSelectService={(service) => setSelectedService(service)}
         />
 
-        {/* 7. Ready-Made Website Demos */}
+        {/* 4. Ready-Made Website Demos */}
         <WebsiteDemos
           onSelectDemo={(demo) => setSelectedDemo(demo)}
           onViewAllDemos={() => navigate('/demos')}
         />
 
-        {/* 8. Insights & Ideas */}
+        {/* 5. Insights & Ideas */}
         <InsightsBlog
           onSelectArticle={(article) => setSelectedArticle(article)}
           onViewAllArticles={() => navigate('/blog')}
         />
 
-        {/* 9. Final Call to Action */}
+        {/* 6. Final Call to Action */}
         <BottomCTA
           onStartProject={() => navigate('/contact')}
           onContactUs={() => navigate('/contact')}
         />
       </main>
+
+      {/* Free Website Demo Registration Modal */}
+      <FreeDemoModal
+        isOpen={isFreeDemoOpen}
+        onClose={() => setIsFreeDemoOpen(false)}
+      />
 
       {/* Interactive Detail & Preview Modals with direct links to full detail pages */}
       <ProjectModal

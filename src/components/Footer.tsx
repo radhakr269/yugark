@@ -13,9 +13,9 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenSitemap,
 }) => {
   return (
-    <footer className="bg-[#121B16] text-[#A6B2AB] pt-10 sm:pt-16 pb-8 sm:pb-12 border-t border-[#232F28]" id="contact">
+    <footer className="bg-[#121B16] text-[#A6B2AB] pt-8 sm:pt-12 pb-6 sm:pb-8 border-t border-[#232F28]" id="contact">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
-        <div className="grid grid-cols-2 lg:grid-cols-12 gap-6 sm:gap-10 lg:gap-8 mb-8 sm:mb-16">
+        <div className="grid grid-cols-2 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-8 mb-6 sm:mb-10">
           {/* Column 1: Brand Info */}
           <div className="col-span-2 lg:col-span-4 space-y-2 sm:space-y-4">
             <Link to="/" className="flex flex-col group inline-block">

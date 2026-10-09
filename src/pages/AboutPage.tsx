@@ -72,7 +72,7 @@ export const AboutPage: React.FC = () => {
   ];
 
   return (
-    <div className="bg-[#F8F6F1] py-10 sm:py-16 lg:py-24">
+    <div className="bg-[#F8F6F1] py-8 sm:py-12 lg:py-16">
       <SEOHead
         title="About Our Studio & Architectural Philosophy"
         description="Learn about Yugark Digital Studio's mission, craftsmanship principles, technical standards, and disciplined collaboration workflow."
@@ -81,11 +81,11 @@ export const AboutPage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         {/* Page Hero */}
-        <div className="max-w-3xl mb-12 sm:mb-20">
+        <div className="max-w-3xl mb-8 sm:mb-12">
           <p className="text-[11px] sm:text-xs font-semibold tracking-[0.22em] text-[#69746A] uppercase mb-2">
             — Studio Introduction
           </p>
-          <h1 className="font-serif-title text-3xl sm:text-5xl lg:text-6xl font-medium text-[#121614] leading-tight mb-4 sm:mb-6">
+          <h1 className="font-serif-title text-3xl sm:text-5xl lg:text-6xl font-medium text-[#121614] leading-tight mb-3 sm:mb-4">
             A Digital Studio for What's Next.
           </h1>
           <p className="text-sm sm:text-base lg:text-lg text-[#5A635C] leading-relaxed">
@@ -96,7 +96,7 @@ export const AboutPage: React.FC = () => {
         </div>
 
         {/* Hero Visual Banner / Studio Statement Section */}
-        <div className="relative rounded-2xl sm:rounded-3xl bg-[#1B2E24] text-[#FAF8F5] p-8 sm:p-14 lg:p-16 mb-16 sm:mb-24 overflow-hidden shadow-xl border border-[#2D4536]">
+        <div className="relative rounded-2xl sm:rounded-3xl bg-[#1B2E24] text-[#FAF8F5] p-6 sm:p-10 lg:p-12 mb-10 sm:mb-16 overflow-hidden shadow-xl border border-[#2D4536]">
           <div className="max-w-2xl relative z-10">
             <span className="text-xs font-mono text-[#A5C2B1] uppercase tracking-widest block mb-3">
               CREATIVE. STRATEGIC. RESULT-DRIVEN.

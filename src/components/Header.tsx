@@ -46,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({ onStartProject }) => {
 
   return (
     <header className="sticky top-0 z-50 bg-[#F8F6F1]/95 backdrop-blur-md border-b border-[#ECE6DC] transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 h-16 sm:h-20 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 h-14 sm:h-18 flex items-center justify-between">
         {/* Studio Logo (aligned left) */}
         <Link
           to="/"

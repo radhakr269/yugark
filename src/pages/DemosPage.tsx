@@ -60,7 +60,7 @@ export const DemosPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#F8F6F1] py-10 sm:py-16 lg:py-24">
+    <div className="bg-[#F8F6F1] py-8 sm:py-12 lg:py-16">
       <SEOHead
         title="Ready-Made Website Demos & Turnkey Platforms"
         description="Explore Yugark Digital Studio's premium turnkey website demos designed for Architecture, Beauty & Wellness, Hospitality, and Fitness."
@@ -69,11 +69,11 @@ export const DemosPage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         {/* Page Header */}
-        <div className="max-w-3xl mb-10 sm:mb-14">
+        <div className="max-w-3xl mb-6 sm:mb-10">
           <p className="text-[11px] sm:text-xs font-semibold tracking-[0.22em] text-[#69746A] uppercase mb-2">
             — Turnkey Solutions
           </p>
-          <h1 className="font-serif-title text-3xl sm:text-5xl lg:text-6xl font-medium text-[#121614] leading-tight mb-4">
+          <h1 className="font-serif-title text-3xl sm:text-5xl lg:text-6xl font-medium text-[#121614] leading-tight mb-3">
             Ready-Made Website Demos.
           </h1>
           <p className="text-sm sm:text-base lg:text-lg text-[#5A635C] leading-relaxed">
@@ -83,7 +83,7 @@ export const DemosPage: React.FC = () => {
         </div>
 
         {/* Industry Filter Buttons */}
-        <div className="flex flex-wrap items-center gap-2 mb-10 sm:mb-14 pb-4 border-b border-[#E8E2D7]">
+        <div className="flex flex-wrap items-center gap-2 mb-6 sm:mb-10 pb-3 border-b border-[#E8E2D7]">
           <span className="text-xs font-semibold uppercase tracking-wider text-[#7C887E] mr-2 flex items-center gap-1.5">
             <Filter className="w-3.5 h-3.5" />
             <span>Category:</span>

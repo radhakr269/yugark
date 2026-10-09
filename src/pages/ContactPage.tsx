@@ -92,7 +92,7 @@ export const ContactPage: React.FC = () => {
   )}`;
 
   return (
-    <div className="bg-[#F8F6F1] py-10 sm:py-16 lg:py-24">
+    <div className="bg-[#F8F6F1] py-8 sm:py-12 lg:py-16">
       <SEOHead
         title="Start a Project & Studio Contact"
         description="Connect directly with Yugark Digital Studio. Submit a project brief, email our directors, or chat directly via verified WhatsApp."
@@ -101,7 +101,7 @@ export const ContactPage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         {/* Page Header */}
-        <div className="max-w-3xl mb-12 sm:mb-16">
+        <div className="max-w-3xl mb-8 sm:mb-12">
           <p className="text-[11px] sm:text-xs font-semibold tracking-[0.22em] text-[#69746A] uppercase mb-2">
             — Project Inquiries
           </p>

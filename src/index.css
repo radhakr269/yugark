@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --color-linen: #F9F7F2;
+  --color-cream: #F4EFE6;
+  --color-card-bg: #F3EFE8;
+  --color-brand-dark: #121614;
+  --color-forest: #1B2E24;
+  --color-forest-deep: #0F1A14;
+  --color-moss: #2D4536;
+  --color-accent-gold: #C5A880;
+  --color-subtle-border: #E5DFD5;
+}
+
+body {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  background-color: #F8F6F1;
+  color: #121614;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-serif-title {
+  font-family: "Playfair Display", Georgia, serif;
+  letter-spacing: -0.02em;
+}
+
+.font-sans-body {
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.editorial-card {
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.editorial-card:hover {
+  transform: translateY(-4px);
+}

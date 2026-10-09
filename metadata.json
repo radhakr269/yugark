@@ -1,0 +1,6 @@
+{
+  "name": "Yugark Digital Studio",
+  "description": "We Build. We Create. We Grow Brands. Modern digital studio offering websites, creative content, and digital marketing solutions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

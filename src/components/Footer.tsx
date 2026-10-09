@@ -165,6 +165,10 @@ export const Footer: React.FC<FooterProps> = ({
                 Sitemap
               </Link>
             )}
+            <span>•</span>
+            <Link to="/admin" className="hover:text-[#A5C2B1] transition-colors font-mono">
+              Admin Portal
+            </Link>
           </div>
         </div>
       </div>

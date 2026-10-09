@@ -31,6 +31,10 @@ export const DemosPage: React.FC = () => {
       setLoading(false);
     }
     loadDemos();
+
+    const handleUpdate = () => loadDemos();
+    window.addEventListener('yugark-cms-updated', handleUpdate);
+    return () => window.removeEventListener('yugark-cms-updated', handleUpdate);
   }, []);
 
   const industries = [

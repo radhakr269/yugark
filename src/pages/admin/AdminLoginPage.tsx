@@ -93,14 +93,26 @@ export const AdminLoginPage: React.FC = () => {
         )}
 
         {!isSupabaseConfigured && (
-          <div className="mb-6 p-4 rounded-xl bg-[#233B2E]/60 border border-[#314B3B] text-xs text-[#CAD6CE]">
-            <div className="flex items-center gap-2 font-semibold text-[#A5C2B1] mb-1">
-              <ShieldCheck className="w-4 h-4" />
-              <span>Step 2 Configuration Note</span>
+          <div className="mb-6 p-4 rounded-xl bg-[#233B2E]/60 border border-[#314B3B] text-xs text-[#CAD6CE] space-y-2">
+            <div className="flex items-center justify-between font-semibold text-[#A5C2B1]">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-[#25D366]" />
+                <span>Sandbox Admin Mode</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('admin@yugark.in');
+                  setPassword('admin123');
+                }}
+                className="text-[10px] font-mono text-[#FAF8F5] underline hover:text-[#A5C2B1] cursor-pointer"
+              >
+                Auto-fill credentials
+              </button>
             </div>
-            <p className="leading-relaxed text-[11px]">
-              Supabase schema & RLS migrations have been prepared in <code className="text-[#FAF8F5]">supabase/migrations/</code>.
-              Supply <code className="text-[#FAF8F5]">VITE_SUPABASE_URL</code> and <code className="text-[#FAF8F5]">VITE_SUPABASE_ANON_KEY</code> to enable live database authentication.
+            <p className="leading-relaxed text-[11px] text-[#A2B3A7]">
+              Supabase credentials pending in <code className="text-[#FAF8F5]">.env</code>. You can log in with{' '}
+              <strong className="text-white">admin@yugark.in</strong> to access and test the complete persistent admin dashboard.
             </p>
           </div>
         )}

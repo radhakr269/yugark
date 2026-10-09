@@ -15,6 +15,10 @@ export const ServicesPage: React.FC = () => {
       setServices(data);
     }
     loadServices();
+
+    const handleUpdate = () => loadServices();
+    window.addEventListener('yugark-cms-updated', handleUpdate);
+    return () => window.removeEventListener('yugark-cms-updated', handleUpdate);
   }, []);
 
   return (

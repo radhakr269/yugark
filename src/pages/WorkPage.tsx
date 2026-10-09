@@ -16,6 +16,10 @@ export const WorkPage: React.FC = () => {
       setProjects(data);
     }
     loadProjects();
+
+    const handleUpdate = () => loadProjects();
+    window.addEventListener('yugark-cms-updated', handleUpdate);
+    return () => window.removeEventListener('yugark-cms-updated', handleUpdate);
   }, []);
 
   const categories = [

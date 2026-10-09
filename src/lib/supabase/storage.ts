@@ -43,7 +43,37 @@ export async function uploadCmsMedia(
   folder: string = 'demos'
 ): Promise<UploadMediaResult> {
   if (!isSupabaseConfigured) {
-    throw new Error('Supabase Storage is not configured. Supply VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+    // Validate MIME type
+    if (!ALLOWED_IMAGE_MIME_TYPES.includes(file.type)) {
+      throw new Error(`Unsupported file type: ${file.type}. Allowed: JPG, PNG, WebP.`);
+    }
+    if (file.size > MAX_IMAGE_FILE_SIZE) {
+      throw new Error(`File size exceeds maximum limit of 10MB.`);
+    }
+
+    // Convert to Data URL for client-side persistence in sandbox
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error('Failed to read image file'));
+      reader.readAsDataURL(file);
+    });
+
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const cleanBaseName = file.name
+      .replace(/\.[^/.]+$/, '')
+      .replace(/[^a-zA-Z0-9-_]/g, '_')
+      .substring(0, 40);
+    const uniqueId = Math.random().toString(36).substring(2, 10);
+    const storagePath = `${folder}/${Date.now()}-${uniqueId}-${cleanBaseName}.${fileExt}`;
+
+    return {
+      publicUrl: dataUrl,
+      storagePath,
+      fileName: file.name,
+      fileSize: file.size,
+      mimeType: file.type,
+    };
   }
 
   // Validate MIME type

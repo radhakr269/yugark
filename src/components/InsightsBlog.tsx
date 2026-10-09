@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { blogPostsData } from '../data/studioData';
+import { blogPostsData as initialBlogPosts } from '../data/studioData';
 import { BlogPostItem } from '../types/content';
+import { getPublishedBlogPosts } from '../lib/cms';
 
 interface InsightsBlogProps {
   onSelectArticle: (article: BlogPostItem) => void;
@@ -12,6 +13,22 @@ export const InsightsBlog: React.FC<InsightsBlogProps> = ({
   onSelectArticle,
   onViewAllArticles,
 }) => {
+  const [posts, setPosts] = useState<BlogPostItem[]>(initialBlogPosts);
+
+  useEffect(() => {
+    async function load() {
+      const data = await getPublishedBlogPosts();
+      if (data && data.length > 0) {
+        setPosts(data);
+      }
+    }
+    load();
+
+    const handleUpdate = () => load();
+    window.addEventListener('yugark-cms-updated', handleUpdate);
+    return () => window.removeEventListener('yugark-cms-updated', handleUpdate);
+  }, []);
+
   return (
     <section className="py-7 sm:py-14 lg:py-20 bg-[#F8F6F1] border-t border-[#ECE5D9]" id="blog">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
@@ -36,13 +53,13 @@ export const InsightsBlog: React.FC<InsightsBlogProps> = ({
           </div>
         </div>
 
-        {/* 3 Editorial Blog Cards: Exact 3-column horizontal layout as shown in image.png */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 lg:gap-8">
-          {blogPostsData.map((post) => (
+        {/* 3 Editorial Blog Cards: Adaptable responsive grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 lg:gap-8">
+          {posts.slice(0, 3).map((post) => (
             <article
               key={post.id}
               onClick={() => onSelectArticle(post)}
-              className="editorial-card group bg-[#FAF7F2] rounded-lg sm:rounded-2xl overflow-hidden border border-[#E6DFD3] flex flex-col justify-between shadow-sm hover:shadow-md transition-all cursor-pointer"
+              className="editorial-card group bg-[#FAF7F2] rounded-xl sm:rounded-2xl overflow-hidden border border-[#E6DFD3] flex flex-col justify-between shadow-xs hover:shadow-md transition-all cursor-pointer"
             >
               <div>
                 {/* Card Media or Graphic Header */}
@@ -57,21 +74,24 @@ export const InsightsBlog: React.FC<InsightsBlogProps> = ({
                 </div>
 
                 {/* Card Body */}
-                <div className="p-2 sm:p-4 lg:p-6">
-                  <h3 className="font-serif-title text-[9.5px] sm:text-base lg:text-xl font-medium text-[#121614] group-hover:text-[#2D4536] transition-colors leading-tight mb-1 sm:mb-2 line-clamp-2">
+                <div className="p-3 sm:p-5">
+                  <span className="text-[9px] font-mono uppercase text-[#76857A] tracking-wider block mb-1">
+                    {post.category}
+                  </span>
+                  <h3 className="font-serif-title text-sm sm:text-base lg:text-lg font-medium text-[#121614] group-hover:text-[#2D4536] transition-colors leading-snug mb-2 line-clamp-2">
                     {post.title}
                   </h3>
-                  <p className="text-[7.5px] sm:text-xs text-[#6F766F] leading-snug sm:leading-relaxed hidden sm:line-clamp-2 mb-2">
+                  <p className="text-[11px] sm:text-xs text-[#6F766F] leading-relaxed line-clamp-2 mb-2">
                     {post.excerpt}
                   </p>
                 </div>
               </div>
 
               {/* Card Action Link */}
-              <div className="px-2 pb-2 sm:px-4 sm:pb-4 lg:px-6 lg:pb-6 pt-0">
-                <div className="inline-flex items-center text-[7.5px] sm:text-xs font-semibold tracking-wider text-[#121614] group-hover:text-[#2D4536]">
+              <div className="px-3 pb-3 sm:px-5 sm:pb-5 pt-0">
+                <div className="inline-flex items-center text-xs font-semibold tracking-wider text-[#121614] group-hover:text-[#2D4536]">
                   <span>Read Article</span>
-                  <ArrowRight className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 ml-0.5 sm:ml-1 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight className="w-3 h-3 ml-1 transition-transform group-hover:translate-x-1" />
                 </div>
               </div>
             </article>

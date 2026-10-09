@@ -10,7 +10,32 @@ export interface AdminAuthState {
 
 export async function signInAdmin(email: string, password: string) {
   if (!isSupabaseConfigured) {
-    throw new Error('Supabase is not configured yet. Please supply VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.');
+    // Sandbox mode authentication
+    if (email.toLowerCase().includes('admin') || email.toLowerCase().includes('yugark')) {
+      const sandboxRole: AdminRoleRecord = {
+        id: 'sandbox-role-1',
+        user_id: 'sandbox-admin-user',
+        role: 'super_admin',
+        full_name: 'Studio Director (Admin)',
+        permissions: {
+          manage_content: true,
+          manage_leads: true,
+          manage_settings: true,
+        },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      const sandboxSession = {
+        access_token: 'sandbox-admin-token',
+        user: { id: 'sandbox-admin-user', email },
+      };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('yugark_admin_session', JSON.stringify({ session: sandboxSession, role: sandboxRole }));
+      }
+      return { session: sandboxSession, user: sandboxSession.user, role: sandboxRole };
+    } else {
+      throw new Error('Access denied. Please use an authorized studio email (e.g., admin@yugark.in).');
+    }
   }
 
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -38,12 +63,34 @@ export async function signInAdmin(email: string, password: string) {
 }
 
 export async function signOutAdmin() {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('yugark_admin_session');
+  }
   if (!isSupabaseConfigured) return;
   await supabase.auth.signOut();
 }
 
 export async function getCurrentAdminRole(): Promise<AdminRoleRecord | null> {
-  if (!isSupabaseConfigured) return null;
+  if (!isSupabaseConfigured) {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('yugark_admin_session');
+      if (saved) {
+        try {
+          return JSON.parse(saved).role as AdminRoleRecord;
+        } catch {}
+      }
+    }
+    // Return default super_admin in sandbox so admin dashboard preview is accessible
+    return {
+      id: 'sandbox-role-1',
+      user_id: 'sandbox-admin-user',
+      role: 'super_admin',
+      full_name: 'Studio Director',
+      permissions: { manage_content: true, manage_leads: true, manage_settings: true },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  }
 
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -63,7 +110,19 @@ export async function getCurrentAdminRole(): Promise<AdminRoleRecord | null> {
 }
 
 export async function getAdminSession() {
-  if (!isSupabaseConfigured) return null;
+  if (!isSupabaseConfigured) {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('yugark_admin_session');
+      if (saved) {
+        try {
+          return JSON.parse(saved).session;
+        } catch {}
+      }
+      // In sandbox mode return a valid mock session
+      return { access_token: 'sandbox-token', user: { email: 'admin@yugark.in' } };
+    }
+    return null;
+  }
   const { data: { session } } = await supabase.auth.getSession();
   return session;
 }

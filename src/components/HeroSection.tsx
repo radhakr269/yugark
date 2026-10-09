@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, Monitor, Layers, Zap, TrendingUp } from 'lucide-react';
 import { siteConfig, valueHighlights } from '../data/studioData';
+import { adminCmsApi } from '../lib/cms';
 
 interface HeroSectionProps {
   onStartProject: () => void;
@@ -11,6 +12,31 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onStartProject,
   onViewWork,
 }) => {
+  const [heroContent, setHeroContent] = useState({
+    headlineLine1: siteConfig.headlineLine1,
+    headlineLine2: siteConfig.headlineLine2,
+    headlineLine3Accent: siteConfig.headlineLine3Accent,
+    heroDescription: siteConfig.heroDescription,
+  });
+
+  useEffect(() => {
+    async function load() {
+      const data = await adminCmsApi.getHomepageContent();
+      if (data) {
+        setHeroContent({
+          headlineLine1: data.headlineLine1 || siteConfig.headlineLine1,
+          headlineLine2: data.headlineLine2 || siteConfig.headlineLine2,
+          headlineLine3Accent: data.headlineLine3Accent || siteConfig.headlineLine3Accent,
+          heroDescription: data.heroDescription || siteConfig.heroDescription,
+        });
+      }
+    }
+    load();
+
+    const handleUpdate = () => load();
+    window.addEventListener('yugark-cms-updated', handleUpdate);
+    return () => window.removeEventListener('yugark-cms-updated', handleUpdate);
+  }, []);
   return (
     <section
       className="relative pt-4 pb-7 sm:pt-8 sm:pb-11 lg:pt-14 lg:pb-18 xl:pt-16 xl:pb-22 overflow-hidden bg-[#F8F6F1]"
@@ -61,18 +87,18 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
             {/* Main Headline */}
             <h1 className="font-serif-title text-[29px] sm:text-4xl md:text-5xl lg:text-[52px] xl:text-[56px] leading-[1.08] text-[#121614] font-medium tracking-tight">
-              {siteConfig.headlineLine1}
+              {heroContent.headlineLine1}
               <br />
-              {siteConfig.headlineLine2}
+              {heroContent.headlineLine2}
               <br />
               <span className="italic font-normal text-[#2D4536]">
-                {siteConfig.headlineLine3Accent}
+                {heroContent.headlineLine3Accent}
               </span>
             </h1>
 
-            {/* Lead Description (constrained width on mobile to give room to upper-right visual) */}
+            {/* Lead Description */}
             <p className="text-[#555C56] text-[12px] sm:text-[14px] lg:text-base leading-relaxed max-w-[220px] xs:max-w-[250px] sm:max-w-md lg:max-w-lg font-normal">
-              {siteConfig.heroDescription}
+              {heroContent.heroDescription}
             </p>
 
             {/* Dual Call to Actions (Side-by-side on mobile and desktop as in reference) */}

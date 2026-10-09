@@ -25,6 +25,10 @@ export const PricingPage: React.FC = () => {
       setPackages(data);
     }
     loadPricing();
+
+    const handleUpdate = () => loadPricing();
+    window.addEventListener('yugark-cms-updated', handleUpdate);
+    return () => window.removeEventListener('yugark-cms-updated', handleUpdate);
   }, []);
 
   const pricingFaqs = [

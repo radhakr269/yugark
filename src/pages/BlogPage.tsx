@@ -15,6 +15,10 @@ export const BlogPage: React.FC = () => {
       setPosts(data);
     }
     loadPosts();
+
+    const handleUpdate = () => loadPosts();
+    window.addEventListener('yugark-cms-updated', handleUpdate);
+    return () => window.removeEventListener('yugark-cms-updated', handleUpdate);
   }, []);
 
   const categories = [

@@ -1,17 +1,41 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { websiteDemosData } from '../data/studioData';
+import { websiteDemosData as initialDemos } from '../data/studioData';
 import { DemoItem } from '../types/content';
+import { getFeaturedDemos } from '../lib/cms';
 
 interface WebsiteDemosProps {
   onSelectDemo: (demo: DemoItem) => void;
   onViewAllDemos: () => void;
+  demos?: DemoItem[];
 }
 
 export const WebsiteDemos: React.FC<WebsiteDemosProps> = ({
   onSelectDemo,
   onViewAllDemos,
+  demos: propDemos,
 }) => {
+  const [demos, setDemos] = useState<DemoItem[]>(propDemos || initialDemos);
+
+  useEffect(() => {
+    if (propDemos) {
+      setDemos(propDemos);
+      return;
+    }
+
+    async function load() {
+      const data = await getFeaturedDemos();
+      if (data && data.length > 0) {
+        setDemos(data);
+      }
+    }
+    load();
+
+    const handleUpdate = () => load();
+    window.addEventListener('yugark-cms-updated', handleUpdate);
+    return () => window.removeEventListener('yugark-cms-updated', handleUpdate);
+  }, [propDemos]);
+
   return (
     <section className="py-7 sm:py-14 lg:py-20 bg-[#F8F6F1]" id="demos">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
@@ -36,9 +60,9 @@ export const WebsiteDemos: React.FC<WebsiteDemosProps> = ({
           </div>
         </div>
 
-        {/* 4 Demos Grid: Exact 4-column horizontal layout as shown in image.png */}
-        <div className="grid grid-cols-4 gap-1.5 sm:gap-4 lg:gap-6">
-          {websiteDemosData.map((demo) => (
+        {/* Demos Grid: Adaptable responsive grid (up to 4 cols) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 lg:gap-6">
+          {demos.slice(0, 4).map((demo) => (
             <div
               key={demo.id}
               onClick={() => onSelectDemo(demo)}
@@ -57,13 +81,13 @@ export const WebsiteDemos: React.FC<WebsiteDemosProps> = ({
                 </div>
                 <div className="px-0.5">
                   <div className="flex items-center justify-between gap-0.5">
-                    <h3 className="font-serif-title text-[9px] sm:text-sm lg:text-base font-semibold text-[#121614] truncate">
+                    <h3 className="font-serif-title text-[11px] sm:text-sm lg:text-base font-semibold text-[#121614] truncate">
                       {demo.title}
                     </h3>
                     <ArrowRight className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 text-[#121614] shrink-0" />
                   </div>
-                  <p className="text-[7px] sm:text-[10px] text-[#717871] truncate mt-0.5">
-                    {demo.industry}
+                  <p className="text-[9px] sm:text-[10px] text-[#717871] truncate mt-0.5">
+                    {demo.industry || demo.category}
                   </p>
                 </div>
               </div>

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
-import { selectedWorkProjects } from '../data/studioData';
+import { selectedWorkProjects as initialProjects } from '../data/studioData';
 import { ProjectItem } from '../types/content';
+import { getPortfolioProjects } from '../lib/cms';
 
 interface SelectedWorkProps {
   onSelectProject: (project: ProjectItem) => void;
@@ -12,10 +13,26 @@ export const SelectedWork: React.FC<SelectedWorkProps> = ({
   onSelectProject,
   onViewAllWork,
 }) => {
+  const [projects, setProjects] = useState<ProjectItem[]>(initialProjects);
+
+  useEffect(() => {
+    async function load() {
+      const data = await getPortfolioProjects();
+      if (data && data.length > 0) {
+        setProjects(data);
+      }
+    }
+    load();
+
+    const handleUpdate = () => load();
+    window.addEventListener('yugark-cms-updated', handleUpdate);
+    return () => window.removeEventListener('yugark-cms-updated', handleUpdate);
+  }, []);
+
   return (
     <section className="py-7 sm:py-14 lg:py-20 bg-[#F8F6F1]" id="work">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
-        {/* Section Header: Left title with kicker, Right clean "View All ->" link */}
+        {/* Section Header */}
         <div className="flex items-end justify-between mb-4 sm:mb-8 pb-2 sm:pb-4 border-b border-[#E8E2D7]">
           <div>
             <p className="text-[9px] sm:text-[11px] font-semibold tracking-[0.22em] text-[#69746A] uppercase mb-0.5 sm:mb-1">
@@ -36,43 +53,43 @@ export const SelectedWork: React.FC<SelectedWorkProps> = ({
           </div>
         </div>
 
-        {/* 3 Selected Work Cards (3-column layout matching mobile reference in image.png) */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 lg:gap-8">
-          {selectedWorkProjects.map((project) => (
+        {/* Selected Work Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 lg:gap-8">
+          {projects.slice(0, 3).map((project) => (
             <article
               key={project.id}
               onClick={() => onSelectProject(project)}
               className="editorial-card group cursor-pointer flex flex-col justify-between"
             >
               <div>
-                <div className="relative overflow-hidden rounded-lg sm:rounded-2xl bg-[#EBE4D8] aspect-[4/3] mb-1.5 sm:mb-3 shadow-sm transition-all duration-500 group-hover:shadow-md">
+                <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-[#EBE4D8] aspect-[4/3] mb-2 sm:mb-3 shadow-xs transition-all duration-500 group-hover:shadow-md">
                   <img
-                    alt={project.alt}
+                    alt={project.alt || project.title}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     src={project.image}
                     loading="lazy"
                     decoding="async"
                   />
-                  <div className="absolute inset-0 pointer-events-none rounded-lg sm:rounded-2xl ring-1 ring-inset ring-black/5" />
+                  <div className="absolute inset-0 pointer-events-none rounded-xl sm:rounded-2xl ring-1 ring-inset ring-black/5" />
                 </div>
                 <div className="flex items-start justify-between px-0.5">
                   <div className="min-w-0 pr-1">
-                    <p className="text-[7px] sm:text-[9px] font-bold tracking-[0.16em] text-[#7E887E] uppercase truncate mb-0.5">
+                    <p className="text-[8px] sm:text-[9px] font-bold tracking-[0.16em] text-[#7E887E] uppercase truncate mb-0.5">
                       {project.category}
                     </p>
-                    <h3 className="font-serif-title text-[10px] sm:text-base lg:text-xl font-medium text-[#121614] group-hover:text-[#2D4536] transition-colors truncate leading-tight">
+                    <h3 className="font-serif-title text-sm sm:text-base lg:text-xl font-medium text-[#121614] group-hover:text-[#2D4536] transition-colors truncate leading-tight">
                       {project.title}
                     </h3>
-                    <p className="text-[7.5px] sm:text-[11px] text-[#737C73] mt-0.5 truncate hidden xs:block">
+                    <p className="text-[10px] sm:text-[11px] text-[#737C73] mt-0.5 truncate">
                       {project.tagline}
                     </p>
                   </div>
                   <button
                     type="button"
                     aria-label={`View ${project.title} details`}
-                    className="w-5 h-5 sm:w-8 sm:h-8 rounded-full bg-[#EAE3D6] flex items-center justify-center text-[#121614] group-hover:bg-[#1A2621] group-hover:text-white transition-all shrink-0 cursor-pointer mt-0.5"
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#EAE3D6] flex items-center justify-center text-[#121614] group-hover:bg-[#1A2621] group-hover:text-white transition-all shrink-0 cursor-pointer mt-0.5"
                   >
-                    <ArrowUpRight className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" />
+                    <ArrowUpRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>

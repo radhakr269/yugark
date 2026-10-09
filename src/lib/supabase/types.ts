@@ -1,0 +1,201 @@
+/**
+ * Supabase Database Schema Type Definitions
+ * Yugark Digital Studio V2
+ */
+
+export interface WebsiteSettingsRecord {
+  id: string;
+  site_name: string;
+  tagline: string;
+  business_email: string;
+  whatsapp_number: string;
+  whatsapp_message: string;
+  logo_url?: string | null;
+  favicon_url?: string | null;
+  social_links: {
+    instagram?: string;
+    linkedin?: string;
+    youtube?: string;
+  };
+  footer_text: string;
+  seo_defaults: {
+    title: string;
+    description: string;
+  };
+  updated_at: string;
+}
+
+export interface ServiceRecord {
+  id: string;
+  title: string;
+  slug: string;
+  short_description: string;
+  full_description: string;
+  icon: 'code' | 'chat' | 'target' | 'sparkles' | 'palette' | string;
+  image_url?: string | null;
+  features: string[];
+  benefits: string[];
+  process: Array<{
+    step: string;
+    title: string;
+    description: string;
+  }>;
+  faqs: Array<{
+    question: string;
+    answer: string;
+  }>;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  sort_order: number;
+  is_featured: boolean;
+  status: 'draft' | 'published' | 'archived';
+  published_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DemoCategoryRecord {
+  id: string;
+  name: string;
+  slug: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface WebsiteDemoRecord {
+  id: string;
+  title: string;
+  slug: string;
+  category_id?: string | null;
+  category_name?: string;
+  short_description: string;
+  full_description?: string | null;
+  thumbnail_url: string;
+  additional_images?: string[];
+  demo_url: string;
+  technology_tags: string[];
+  is_featured: boolean;
+  sort_order: number;
+  status: 'draft' | 'published' | 'archived';
+  published_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PortfolioProjectRecord {
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  description: string;
+  thumbnail_url: string;
+  gallery_images?: string[];
+  project_url?: string | null;
+  project_type: string;
+  is_verified_client_work: boolean;
+  is_featured: boolean;
+  year: string;
+  deliverables: string[];
+  challenge?: string | null;
+  solution?: string | null;
+  key_features: string[];
+  tech_stack: string[];
+  sort_order: number;
+  status: 'draft' | 'published' | 'archived';
+  published_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PricingPackageRecord {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  price: string;
+  currency: string;
+  billing_type: string;
+  turnaround: string;
+  features: string[];
+  deliverables: string[];
+  cta_label: string;
+  cta_url: string;
+  is_featured: boolean;
+  sort_order: number;
+  status: 'draft' | 'published' | 'archived';
+  published_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BlogCategoryRecord {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  created_at: string;
+}
+
+export interface BlogPostRecord {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  rich_paragraphs?: string[];
+  cover_image_url?: string | null;
+  is_graphic_card?: boolean;
+  graphic_data?: {
+    framework: string;
+    precision: string;
+    architectureBadge: string;
+    headline: string;
+    playbookLabel: string;
+  };
+  category_id?: string | null;
+  category_name?: string;
+  author_id?: string | null;
+  author_name: string;
+  author_role: string;
+  read_time: string;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  status: 'draft' | 'published' | 'scheduled' | 'archived';
+  is_featured: boolean;
+  published_at?: string | null;
+  scheduled_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeadRecord {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  business_name?: string | null;
+  requirement: string;
+  service?: string | null;
+  timeline?: string | null;
+  page_source?: string;
+  status: 'new' | 'contacted' | 'in_discussion' | 'proposal_sent' | 'closed_won' | 'closed_lost';
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  assigned_to?: string | null;
+  remarks?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminRoleRecord {
+  id: string;
+  user_id: string;
+  role: 'super_admin' | 'admin' | 'editor';
+  full_name?: string | null;
+  permissions: {
+    manage_content: boolean;
+    manage_leads: boolean;
+    manage_settings: boolean;
+  };
+  created_at: string;
+  updated_at: string;
+}

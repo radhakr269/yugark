@@ -1,17 +1,14 @@
 import React from 'react';
-import { Mail, Phone, MapPin, Instagram, Linkedin, Youtube } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Mail, Phone, MapPin, Instagram, Linkedin, Youtube, MessageSquare } from 'lucide-react';
 import { siteConfig, navigationLinks, servicesData } from '../data/studioData';
 
 interface FooterProps {
-  onNavClick: (href: string) => void;
-  onOpenPrivacy: () => void;
-  onOpenTerms: () => void;
-  onOpenSitemap: () => void;
+  onOpenTerms?: () => void;
+  onOpenSitemap?: () => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({
-  onNavClick,
-  onOpenPrivacy,
   onOpenTerms,
   onOpenSitemap,
 }) => {
@@ -21,18 +18,18 @@ export const Footer: React.FC<FooterProps> = ({
         <div className="grid grid-cols-2 lg:grid-cols-12 gap-6 sm:gap-10 lg:gap-8 mb-8 sm:mb-16">
           {/* Column 1: Brand Info */}
           <div className="col-span-2 lg:col-span-4 space-y-2 sm:space-y-4">
-            <div className="flex flex-col">
-              <span className="font-serif-title text-xl sm:text-2xl font-bold tracking-[0.18em] text-[#FAF8F5] uppercase">
+            <Link to="/" className="flex flex-col group inline-block">
+              <span className="font-serif-title text-xl sm:text-2xl font-bold tracking-[0.18em] text-[#FAF8F5] uppercase group-hover:text-white transition-colors">
                 {siteConfig.studioName}
               </span>
               <span className="text-[8px] sm:text-[9px] tracking-[0.35em] text-[#7B8B81] uppercase -mt-0.5 sm:-mt-1 font-medium">
                 {siteConfig.tagline}
               </span>
-            </div>
+            </Link>
             <p className="text-[11px] sm:text-xs text-[#89978F] leading-relaxed max-w-xs pt-1">
               Websites. Creative Content. Digital Marketing. We help modern brands build, create and grow in the digital world.
             </p>
-            {/* Social Icons */}
+            {/* Social Icons & WhatsApp */}
             <div className="flex items-center space-x-2.5 pt-1">
               <a
                 href={siteConfig.socials.instagram}
@@ -61,6 +58,15 @@ export const Footer: React.FC<FooterProps> = ({
               >
                 <Youtube className="w-3.5 h-3.5" />
               </a>
+              <a
+                href={siteConfig.whatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="WhatsApp"
+                className="w-7 h-7 rounded-full bg-[#1C2922] flex items-center justify-center hover:bg-[#25D366] hover:text-white transition-colors text-xs"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+              </a>
             </div>
           </div>
 
@@ -72,12 +78,12 @@ export const Footer: React.FC<FooterProps> = ({
             <ul className="space-y-1.5 sm:space-y-2 text-[10px] sm:text-xs">
               {navigationLinks.map((link) => (
                 <li key={link.label}>
-                  <button
-                    onClick={() => onNavClick(link.href)}
-                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  <Link
+                    to={link.href}
+                    className="hover:text-white transition-colors text-left block"
                   >
                     {link.label}
-                  </button>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -91,12 +97,12 @@ export const Footer: React.FC<FooterProps> = ({
             <ul className="space-y-1.5 sm:space-y-2 text-[10px] sm:text-xs">
               {servicesData.map((service) => (
                 <li key={service.id}>
-                  <button
-                    onClick={() => onNavClick('#services')}
-                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  <Link
+                    to={`/services/${service.slug}`}
+                    className="hover:text-white transition-colors text-left block"
                   >
                     {service.title}
-                  </button>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -118,12 +124,15 @@ export const Footer: React.FC<FooterProps> = ({
                 </a>
               </div>
               <div className="flex items-center space-x-2">
-                <Phone className="w-3.5 h-3.5 text-[#7C8F83] shrink-0" />
-                <span className="text-[#89978F]">+91 98765 43210</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <MapPin className="w-3.5 h-3.5 text-[#7C8F83] shrink-0" />
-                <span className="text-[#89978F]">Bengaluru, India</span>
+                <MessageSquare className="w-3.5 h-3.5 text-[#7C8F83] shrink-0" />
+                <a
+                  href={siteConfig.whatsappUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-white transition-colors text-[#89978F]"
+                >
+                  WhatsApp: {siteConfig.whatsappNumber}
+                </a>
               </div>
             </div>
           </div>
@@ -131,19 +140,31 @@ export const Footer: React.FC<FooterProps> = ({
 
         {/* Legal / Copyright Footer Row */}
         <div className="pt-4 sm:pt-8 border-t border-[#1F2C24] flex flex-col sm:flex-row items-center justify-between text-[10px] sm:text-[11px] text-[#6E7C73] gap-2 sm:gap-0">
-          <p>© 2025 Yugark Digital Studio. All rights reserved.</p>
+          <p>© 2026 Yugark Digital Studio. All rights reserved.</p>
           <div className="flex items-center space-x-4 sm:space-x-6">
-            <button onClick={onOpenPrivacy} className="hover:text-white transition-colors cursor-pointer">
+            <Link to="/privacy-policy" className="hover:text-white transition-colors">
               Privacy Policy
-            </button>
+            </Link>
             <span>•</span>
-            <button onClick={onOpenTerms} className="hover:text-white transition-colors cursor-pointer">
-              Terms
-            </button>
+            {onOpenTerms ? (
+              <button onClick={onOpenTerms} className="hover:text-white transition-colors cursor-pointer">
+                Terms
+              </button>
+            ) : (
+              <Link to="/privacy-policy" className="hover:text-white transition-colors">
+                Terms
+              </Link>
+            )}
             <span>•</span>
-            <button onClick={onOpenSitemap} className="hover:text-white transition-colors cursor-pointer">
-              Sitemap
-            </button>
+            {onOpenSitemap ? (
+              <button onClick={onOpenSitemap} className="hover:text-white transition-colors cursor-pointer">
+                Sitemap
+              </button>
+            ) : (
+              <Link to="/services" className="hover:text-white transition-colors">
+                Sitemap
+              </Link>
+            )}
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 /**
  * CMS Content Type Definitions for Yugark Digital Studio
- * Designed for future headless CMS / Supabase / Admin Dashboard integration.
+ * Designed for public routing and future Supabase / Admin Dashboard integration (Step 2).
  */
 
 export interface NavLink {
@@ -16,8 +16,36 @@ export interface ValueHighlight {
   iconName: 'monitor' | 'layers' | 'zap' | 'bar-chart';
 }
 
+export interface ServiceProcessStep {
+  step: string;
+  title: string;
+  description: string;
+}
+
+export interface ServiceFAQ {
+  question: string;
+  answer: string;
+}
+
+export interface ServiceItem {
+  id: string;
+  slug: string;
+  title: string;
+  lines: string[];
+  tagline: string;
+  description: string;
+  longDescription: string;
+  iconType: 'code' | 'chat' | 'target' | 'sparkles' | 'palette';
+  features: string[];
+  deliverables: string[];
+  process: ServiceProcessStep[];
+  faqs: ServiceFAQ[];
+  metaDescription?: string;
+}
+
 export interface ProjectItem {
   id: string;
+  slug: string;
   title: string;
   category: string;
   tagline: string;
@@ -25,41 +53,47 @@ export interface ProjectItem {
   image: string;
   alt: string;
   client?: string;
-  deliverables?: string[];
+  isConcept: boolean; // clearly distinguishing concept/demo projects from confirmed client work
+  year: string;
+  deliverables: string[];
+  challenge: string;
+  solution: string;
+  keyFeatures: string[];
+  techStack: string[];
   externalUrl?: string;
   featured?: boolean;
 }
 
-export interface ServiceItem {
-  id: string;
-  title: string;
-  lines: string[];
-  description: string;
-  iconType: 'code' | 'chat' | 'target' | 'sparkles' | 'palette';
-  features?: string[];
-  deliverables?: string[];
-}
-
 export interface DemoItem {
   id: string;
+  slug: string;
   title: string;
+  category: string;
   industry: string;
   image: string;
   alt: string;
-  previewUrl?: string;
+  liveDemoUrl: string; // configured external live demo website or preview
   description: string;
-  features?: string[];
-  techStack?: string[];
+  features: string[];
+  techStack: string[];
+  featured: boolean;
+  displayOrder: number;
+  status: 'published' | 'draft';
 }
 
 export interface BlogPostItem {
   id: string;
+  slug: string;
   title: string;
   category: string;
   excerpt: string;
   content: string;
+  richParagraphs?: string[];
+  author: string;
+  authorRole: string;
   readTime: string;
   publishedDate: string;
+  status: 'published' | 'draft';
   image?: string;
   alt?: string;
   isGraphicCard?: boolean;
@@ -70,6 +104,21 @@ export interface BlogPostItem {
     headline: string;
     playbookLabel: string;
   };
+  metaDescription?: string;
+}
+
+export interface PricingPackage {
+  id: string;
+  name: string;
+  slug: string;
+  tagline: string;
+  investment: string;
+  turnaround: string;
+  popular?: boolean;
+  bestFor: string;
+  features: string[];
+  deliverables: string[];
+  inquiryMessage: string;
 }
 
 export interface SiteConfig {
@@ -81,7 +130,8 @@ export interface SiteConfig {
   heroDescription: string;
   heroImage: string;
   contactEmail: string;
-  contactPhone: string;
+  whatsappNumber: string;
+  whatsappUrl: string;
   location: string;
   socials: {
     instagram: string;

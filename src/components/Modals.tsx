@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { X, ArrowRight, CheckCircle, Clock, Send } from 'lucide-react';
 import { ProjectItem, DemoItem, BlogPostItem, ServiceItem } from '../types/content';
 
@@ -89,8 +90,14 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose, on
         </div>
 
         {/* Footer */}
-        <div className="p-4 sm:p-6 border-t border-[#E8E2D7] bg-[#FAF7F2] flex items-center justify-between">
-          <span className="text-xs text-[#7E887E] hidden sm:inline">Ready for a similar project?</span>
+        <div className="p-4 sm:p-6 border-t border-[#E8E2D7] bg-[#FAF7F2] flex flex-wrap items-center justify-between gap-3">
+          <Link
+            to={`/work/${project.slug}`}
+            onClick={onClose}
+            className="text-xs font-semibold text-[#121614] hover:text-[#2D4536] underline"
+          >
+            View Full Case Study →
+          </Link>
           <button
             onClick={() => {
               onClose();
@@ -272,12 +279,16 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({ article, onClose }) 
         {/* Footer */}
         <div className="p-4 sm:p-6 border-t border-[#E8E2D7] bg-[#FAF7F2] flex items-center justify-between">
           <span className="text-xs text-[#7E887E]">Published {article.publishedDate}</span>
-          <button
-            onClick={onClose}
-            className="min-h-[40px] px-5 py-2 rounded-full border border-[#CDC4B6] text-xs font-semibold text-[#121614] hover:bg-black hover:text-white transition-all"
-          >
-            Done Reading
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              to={`/blog/${article.slug}`}
+              onClick={onClose}
+              className="min-h-[40px] px-4 py-2 rounded-full bg-[#1A2621] text-white text-xs font-semibold hover:bg-black transition-all flex items-center gap-1.5"
+            >
+              <span>Read Full Article</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -346,13 +357,14 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({ service, onClose, on
         </div>
 
         {/* Footer */}
-        <div className="p-4 sm:p-6 border-t border-[#E8E2D7] bg-[#FAF7F2] flex items-center justify-between gap-3">
-          <button
+        <div className="p-4 sm:p-6 border-t border-[#E8E2D7] bg-[#FAF7F2] flex flex-wrap items-center justify-between gap-3">
+          <Link
+            to={`/services/${service.slug}`}
             onClick={onClose}
-            className="text-xs font-semibold text-[#555C56] hover:text-black transition-colors min-h-[44px] px-3 flex items-center"
+            className="text-xs font-semibold text-[#121614] hover:text-[#2D4536] underline"
           >
-            Close
-          </button>
+            Explore Full Discipline →
+          </Link>
           <button
             onClick={() => {
               onClose();

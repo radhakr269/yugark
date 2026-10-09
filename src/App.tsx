@@ -4,149 +4,80 @@
  */
 
 import React, { useState } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Header } from './components/Header';
-import { HeroSection } from './components/HeroSection';
-import { BrandStatement } from './components/BrandStatement';
-import { SelectedWork } from './components/SelectedWork';
-import { ServicesSection } from './components/ServicesSection';
-import { WebsiteDemos } from './components/WebsiteDemos';
-import { InsightsBlog } from './components/InsightsBlog';
-import { BottomCTA } from './components/BottomCTA';
 import { Footer } from './components/Footer';
-import {
-  ProjectModal,
-  DemoModal,
-  ArticleModal,
-  ServiceModal,
-  ContactModal,
-  LegalModal,
-} from './components/Modals';
-import { ProjectItem, DemoItem, BlogPostItem, ServiceItem } from './types/content';
-import { selectedWorkProjects, websiteDemosData, blogPostsData } from './data/studioData';
+import { ScrollToTop } from './components/ScrollToTop';
+import { LegalModal } from './components/Modals';
+
+// Public Page Views
+import { HomePage } from './pages/HomePage';
+import { ServicesPage } from './pages/ServicesPage';
+import { ServiceDetailPage } from './pages/ServiceDetailPage';
+import { WorkPage } from './pages/WorkPage';
+import { WorkDetailPage } from './pages/WorkDetailPage';
+import { DemosPage } from './pages/DemosPage';
+import { PricingPage } from './pages/PricingPage';
+import { BlogPage } from './pages/BlogPage';
+import { BlogDetailPage } from './pages/BlogDetailPage';
+import { AboutPage } from './pages/AboutPage';
+import { ContactPage } from './pages/ContactPage';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 
 export default function App() {
-  const [selectedProject, setSelectedProject] = useState<ProjectItem | null>(null);
-  const [selectedDemo, setSelectedDemo] = useState<DemoItem | null>(null);
-  const [selectedArticle, setSelectedArticle] = useState<BlogPostItem | null>(null);
-  const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
-  const [contactOpen, setContactOpen] = useState(false);
-
+  const navigate = useNavigate();
   const [legalModal, setLegalModal] = useState<{ title: string; content: string } | null>(null);
-
-  const handleNavClick = (href: string) => {
-    const targetId = href.replace('#', '');
-    const element = document.getElementById(targetId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
-  const handleOpenPrivacy = () => {
-    setLegalModal({
-      title: 'Privacy Policy',
-      content:
-        'Yugark Digital Studio respects your privacy. We strictly safeguard all client information, correspondence, and technical architectures. No proprietary materials or visitor analytics are distributed or sold to third-party ad networks.',
-    });
-  };
 
   const handleOpenTerms = () => {
     setLegalModal({
       title: 'Terms of Engagement',
       content:
-        'Standard digital studio engagement terms apply. All design deliverables, source codes, and digital assets transfer completely to client ownership upon milestone completion and final settlement.',
+        'Standard digital studio engagement terms apply. All custom design deliverables, source codes, and digital assets transfer completely to client ownership upon milestone completion and final settlement.',
     });
   };
 
   const handleOpenSitemap = () => {
     setLegalModal({
-      title: 'Site Architecture',
+      title: 'Studio Site Architecture',
       content:
-        'Homepage sections: 01. Studio Header & Navigation, 02. Premium Hero & Value Badges, 03. Green Studio Statement, 04. Selected Work Projects, 05. Complete Digital Solutions, 06. Ready-Made Website Demos, 07. Insights & Ideas, 08. Closing CTA, 09. Studio Footer & Contacts.',
+        'Studio Public Routes:\n\n• / — Studio Homepage & Hero\n• /services — Complete Solutions Overview\n• /services/:slug — Individual Discipline Detail Pages\n• /work — Selected Work Portfolio Listing\n• /work/:slug — Project Case Study Breakdowns\n• /demos — Turnkey Website Demos Gallery\n• /pricing — Studio Engagement Packages & Scopes\n• /blog — Editorial Insights & Technical Playbooks\n• /blog/:slug — Full Editorial Article Views\n• /about — Studio Mission & Craftsmanship Philosophy\n• /contact — Direct Inquiries & Verified WhatsApp\n• /privacy-policy — Data Governance & Confidentiality',
     });
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] text-[#121614] font-sans antialiased selection:bg-[#2D4536] selection:text-white">
-      {/* 1. Header & Navigation */}
-      <Header onStartProject={() => setContactOpen(true)} />
+    <div className="min-h-screen bg-[#F8F6F1] text-[#121614] font-sans antialiased selection:bg-[#2D4536] selection:text-white flex flex-col justify-between">
+      <ScrollToTop />
 
-      <main>
-        {/* 2 & 3. Premium Hero & Value Highlights */}
-        <HeroSection
-          onStartProject={() => setContactOpen(true)}
-          onViewWork={() => handleNavClick('#work')}
-        />
+      {/* 1. Global Navigation Header */}
+      <Header onStartProject={() => navigate('/contact')} />
 
-        {/* 4. A Digital Studio for What's Next */}
-        <BrandStatement onLearnApproach={() => handleNavClick('#services')} />
+      {/* Main Content Router */}
+      <div className="flex-1">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/services/:slug" element={<ServiceDetailPage />} />
+          <Route path="/work" element={<WorkPage />} />
+          <Route path="/work/:slug" element={<WorkDetailPage />} />
+          <Route path="/demos" element={<DemosPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/:slug" element={<BlogDetailPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </div>
 
-        {/* 5. Selected Work */}
-        <SelectedWork
-          onSelectProject={(project) => setSelectedProject(project)}
-          onViewAllWork={() => handleNavClick('#demos')}
-        />
-
-        {/* 6. Complete Digital Solutions */}
-        <ServicesSection
-          onSelectService={(service) => setSelectedService(service)}
-        />
-
-        {/* 7. Ready-Made Website Demos */}
-        <WebsiteDemos
-          onSelectDemo={(demo) => setSelectedDemo(demo)}
-          onViewAllDemos={() => setContactOpen(true)}
-        />
-
-        {/* 8. Insights & Ideas */}
-        <InsightsBlog
-          onSelectArticle={(article) => setSelectedArticle(article)}
-          onViewAllArticles={() => setSelectedArticle(blogPostsData[0])}
-        />
-
-        {/* 9. Final Call to Action */}
-        <BottomCTA
-          onStartProject={() => setContactOpen(true)}
-          onContactUs={() => setContactOpen(true)}
-        />
-      </main>
-
-      {/* 10. Studio Footer */}
+      {/* Global Studio Footer */}
       <Footer
-        onNavClick={handleNavClick}
-        onOpenPrivacy={handleOpenPrivacy}
         onOpenTerms={handleOpenTerms}
         onOpenSitemap={handleOpenSitemap}
       />
 
-      {/* Interactive Detail & Inquiry Modals */}
-      <ProjectModal
-        project={selectedProject}
-        onClose={() => setSelectedProject(null)}
-        onInquire={() => setContactOpen(true)}
-      />
-
-      <DemoModal
-        demo={selectedDemo}
-        onClose={() => setSelectedDemo(null)}
-        onInquire={() => setContactOpen(true)}
-      />
-
-      <ArticleModal
-        article={selectedArticle}
-        onClose={() => setSelectedArticle(null)}
-      />
-
-      <ServiceModal
-        service={selectedService}
-        onClose={() => setSelectedService(null)}
-        onInquire={() => setContactOpen(true)}
-      />
-
-      <ContactModal
-        isOpen={contactOpen}
-        onClose={() => setContactOpen(false)}
-      />
-
+      {/* Terms & Sitemap Modal */}
       <LegalModal
         title={legalModal?.title || null}
         content={legalModal?.content || null}

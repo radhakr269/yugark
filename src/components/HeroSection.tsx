@@ -201,28 +201,28 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               </div>
             </div>
 
-            {/* Upper Right: Significantly Enlarged Workspace Image (1.8–2.2x) with Four-Sided Feather Mask */}
-            <div className="w-[46%] xs:w-[49%] sm:w-[50%] max-w-[240px] shrink-0 pt-0.5">
+            {/* Upper Right: Workspace Image with Seamless Four-Sided Feather Mask & No Frame Lines */}
+            <div className="w-[48%] xs:w-[50%] sm:w-[52%] max-w-[245px] shrink-0 pt-0.5">
               <div
-                className="relative w-full aspect-[4/3] xs:aspect-[15/11] overflow-hidden flex items-center justify-center pointer-events-none select-none"
+                className="relative w-full aspect-[4/3] xs:aspect-[15/11] flex items-center justify-center pointer-events-none select-none"
                 style={{
                   maskImage: `
-                    radial-gradient(ellipse 90% 86% at 50% 50%, black 58%, rgba(0,0,0,0.85) 76%, rgba(0,0,0,0.2) 92%, transparent 100%),
-                    linear-gradient(to right, transparent 0%, rgba(0,0,0,0.7) 4%, black 14%, black 86%, rgba(0,0,0,0.7) 96%, transparent 100%),
-                    linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.7) 4%, black 14%, black 86%, rgba(0,0,0,0.7) 96%, transparent 100%)
+                    linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%),
+                    linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%),
+                    radial-gradient(ellipse 90% 86% at 52% 50%, black 40%, rgba(0,0,0,0.85) 60%, rgba(0,0,0,0.4) 78%, rgba(0,0,0,0.08) 92%, transparent 100%)
                   `,
                   WebkitMaskImage: `
-                    radial-gradient(ellipse 90% 86% at 50% 50%, black 58%, rgba(0,0,0,0.85) 76%, rgba(0,0,0,0.2) 92%, transparent 100%),
-                    linear-gradient(to right, transparent 0%, rgba(0,0,0,0.7) 4%, black 14%, black 86%, rgba(0,0,0,0.7) 96%, transparent 100%),
-                    linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.7) 4%, black 14%, black 86%, rgba(0,0,0,0.7) 96%, transparent 100%)
+                    linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%),
+                    linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%),
+                    radial-gradient(ellipse 90% 86% at 52% 50%, black 40%, rgba(0,0,0,0.85) 60%, rgba(0,0,0,0.4) 78%, rgba(0,0,0,0.08) 92%, transparent 100%)
                   `,
                   maskComposite: 'intersect',
-                  WebkitMaskComposite: 'source-in',
+                  WebkitMaskComposite: 'destination-in',
                 }}
               >
                 <img
                   alt="Yugark Digital Studio workspace showcase"
-                  className="w-full h-full object-cover object-center transform scale-115"
+                  className="w-full h-full object-cover object-center transform scale-[1.17]"
                   src={heroImage}
                   loading="eager"
                   decoding="async"
@@ -491,29 +491,29 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </div>
           </div>
 
-          {/* Desktop & Tablet Showcase Visual: Dominant right workspace image with seamless mask */}
+          {/* Desktop & Tablet Showcase Visual: Dominant right workspace image with seamless feather mask */}
           <div className="hidden md:block md:col-span-6 lg:col-span-7 relative">
             <div className="relative flex items-center justify-center lg:-mr-6 xl:-mr-10">
               <div
-                className="relative w-full overflow-hidden"
+                className="relative w-full"
                 style={{
                   maskImage: `
-                    radial-gradient(ellipse 88% 84% at 50% 50%, black 58%, rgba(0,0,0,0.9) 74%, rgba(0,0,0,0.25) 90%, transparent 100%),
-                    linear-gradient(to right, transparent 0%, rgba(0,0,0,0.6) 6%, black 16%, black 88%, rgba(0,0,0,0.7) 96%, transparent 100%),
-                    linear-gradient(to bottom, transparent 0%, black 6%, black 90%, transparent 100%)
+                    linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%),
+                    linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%),
+                    radial-gradient(ellipse 90% 86% at 52% 50%, black 42%, rgba(0,0,0,0.85) 62%, rgba(0,0,0,0.42) 80%, rgba(0,0,0,0.08) 92%, transparent 100%)
                   `,
                   WebkitMaskImage: `
-                    radial-gradient(ellipse 88% 84% at 50% 50%, black 58%, rgba(0,0,0,0.9) 74%, rgba(0,0,0,0.25) 90%, transparent 100%),
-                    linear-gradient(to right, transparent 0%, rgba(0,0,0,0.6) 6%, black 16%, black 88%, rgba(0,0,0,0.7) 96%, transparent 100%),
-                    linear-gradient(to bottom, transparent 0%, black 6%, black 90%, transparent 100%)
+                    linear-gradient(to right, transparent 0%, black 14%, black 86%, transparent 100%),
+                    linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%),
+                    radial-gradient(ellipse 90% 86% at 52% 50%, black 42%, rgba(0,0,0,0.85) 62%, rgba(0,0,0,0.42) 80%, rgba(0,0,0,0.08) 92%, transparent 100%)
                   `,
                   maskComposite: 'intersect',
-                  WebkitMaskComposite: 'source-in',
+                  WebkitMaskComposite: 'destination-in',
                 }}
               >
                 <img
                   alt="Yugark Digital Studio multi-device mockup showcase: monitor, laptop and smartphone"
-                  className="w-full h-auto object-cover transform scale-110 lg:scale-120 transition-transform duration-700 hover:scale-[1.22]"
+                  className="w-full h-auto object-cover transform scale-[1.12] lg:scale-[1.22] transition-transform duration-700 hover:scale-[1.24]"
                   src={heroImage}
                   loading="eager"
                   decoding="async"

@@ -23,6 +23,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+section[id] {
+  scroll-margin-top: 5rem;
+}
+
 .font-serif-title {
   font-family: "Playfair Display", Georgia, serif;
   letter-spacing: -0.02em;

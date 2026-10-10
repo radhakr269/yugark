@@ -4,8 +4,9 @@ import { HeroSection } from '../components/HeroSection';
 import { SelectedWork } from '../components/SelectedWork';
 import { ServicesSection } from '../components/ServicesSection';
 import { WebsiteDemos } from '../components/WebsiteDemos';
+import { PricingPreview } from '../components/PricingPreview';
 import { InsightsBlog } from '../components/InsightsBlog';
-import { BottomCTA } from '../components/BottomCTA';
+import { AboutProcessPreview } from '../components/AboutProcessPreview';
 import {
   ProjectModal,
   DemoModal,
@@ -15,7 +16,6 @@ import {
 } from '../components/Modals';
 import { SEOHead } from '../components/SEOHead';
 import { ProjectItem, DemoItem, BlogPostItem, ServiceItem } from '../types/content';
-import { blogPostsData } from '../data/studioData';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -34,41 +34,42 @@ export const HomePage: React.FC = () => {
       />
 
       <main>
-        {/* 1. Premium Hero & Value Highlights with Triple CTAs */}
+        {/* 1. Hero (#home) */}
         <HeroSection
           onStartProject={() => navigate('/contact')}
           onViewWork={() => navigate('/work')}
           onFreeDemo={() => setIsFreeDemoOpen(true)}
         />
 
-        {/* 2. Selected Work (Natural transition from Hero without green statement section) */}
+        {/* 2. Selected Work (#work) */}
         <SelectedWork
           onSelectProject={(project) => setSelectedProject(project)}
           onViewAllWork={() => navigate('/work')}
         />
 
-        {/* 3. Complete Digital Solutions */}
+        {/* 3. Our Services (#services) */}
         <ServicesSection
           onSelectService={(service) => setSelectedService(service)}
+          onViewAllServices={() => navigate('/services')}
         />
 
-        {/* 4. Ready-Made Website Demos */}
+        {/* 4. Website Demos (#demos) */}
         <WebsiteDemos
           onSelectDemo={(demo) => setSelectedDemo(demo)}
           onViewAllDemos={() => navigate('/demos')}
         />
 
-        {/* 5. Insights & Ideas */}
+        {/* 5. Pricing Preview (#pricing) */}
+        <PricingPreview />
+
+        {/* 6. Insights & Ideas / Blog (#blog) */}
         <InsightsBlog
           onSelectArticle={(article) => setSelectedArticle(article)}
           onViewAllArticles={() => navigate('/blog')}
         />
 
-        {/* 6. Final Call to Action */}
-        <BottomCTA
-          onStartProject={() => navigate('/contact')}
-          onContactUs={() => navigate('/contact')}
-        />
+        {/* 7. About Yugark / Our Process (#about) */}
+        <AboutProcessPreview />
       </main>
 
       {/* Free Website Demo Registration Modal */}

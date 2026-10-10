@@ -36,7 +36,14 @@ export const ServicesManager: React.FC = () => {
     slug: '',
     short_description: '',
     full_description: '',
+    image_url: '/assets/images/website devlopment.jpg',
     icon: 'code',
+    price_display: 'Launch Offer: ₹9,999 (Reg. ₹15,999)',
+    regular_price: 15999,
+    launch_price: 9999,
+    badge: 'LAUNCH OFFER',
+    billing_type: 'one-time',
+    delivery_time: '~7–14 Days',
     features: '',
     benefits: '',
     status: 'published' as 'published' | 'draft',
@@ -68,9 +75,16 @@ export const ServicesManager: React.FC = () => {
       slug: '',
       short_description: '',
       full_description: '',
+      image_url: '/assets/images/website devlopment.jpg',
       icon: 'code',
-      features: 'High Conversion Design\nPerformance Engineering\nDirect Lead Capture',
-      benefits: 'Full Source Code Ownership\nResponsive Cross-Device Layouts',
+      price_display: 'Launch Offer: ₹9,999 (Reg. ₹15,999)',
+      regular_price: 15999,
+      launch_price: 9999,
+      badge: 'LAUNCH OFFER',
+      billing_type: 'one-time',
+      delivery_time: '~7–14 Days',
+      features: 'High-Converting Responsive Design\nDirect WhatsApp & Lead Capture\nFast Loading Speed & Zero Bloat',
+      benefits: 'Complete Code Ownership\nZero Monthly Platform Subscriptions',
       status: 'published',
     });
     setFormError(null);
@@ -83,11 +97,18 @@ export const ServicesManager: React.FC = () => {
       title: srv.title,
       slug: srv.slug,
       short_description: srv.short_description,
-      full_description: srv.full_description,
+      full_description: srv.full_description || srv.short_description,
+      image_url: srv.image_url || '/assets/images/website devlopment.jpg',
       icon: srv.icon || 'code',
+      price_display: srv.price_display || '',
+      regular_price: srv.regular_price || 0,
+      launch_price: srv.launch_price || 0,
+      badge: srv.badge || '',
+      billing_type: srv.billing_type || 'one-time',
+      delivery_time: srv.delivery_time || '',
       features: Array.isArray(srv.features) ? srv.features.join('\n') : '',
       benefits: Array.isArray(srv.benefits) ? srv.benefits.join('\n') : '',
-      status: srv.status as any,
+      status: (srv.status === 'published' ? 'published' : 'draft') as any,
     });
     setFormError(null);
     setModalOpen(true);
@@ -124,7 +145,14 @@ export const ServicesManager: React.FC = () => {
       slug: formData.slug.trim(),
       short_description: formData.short_description.trim() || formData.title,
       full_description: formData.full_description.trim() || formData.short_description.trim(),
+      image_url: formData.image_url.trim() || undefined,
       icon: formData.icon,
+      price_display: formData.price_display.trim() || undefined,
+      regular_price: Number(formData.regular_price) || undefined,
+      launch_price: Number(formData.launch_price) || undefined,
+      badge: formData.badge.trim() || undefined,
+      billing_type: formData.billing_type,
+      delivery_time: formData.delivery_time.trim() || undefined,
       features: featureList,
       benefits: benefitList,
       status: formData.status,
@@ -204,9 +232,10 @@ export const ServicesManager: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-[#F8F6F1] border-b border-[#E5DFD5] text-[11px] font-mono uppercase text-[#6C7B71]">
               <tr>
+                <th className="py-3 px-4">Thumbnail</th>
                 <th className="py-3 px-4">Service</th>
-                <th className="py-3 px-4">Icon</th>
-                <th className="py-3 px-4">Description</th>
+                <th className="py-3 px-4">Pricing &amp; Offer</th>
+                <th className="py-3 px-4">Billing &amp; Delivery</th>
                 <th className="py-3 px-4 text-center">Status</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
@@ -215,18 +244,50 @@ export const ServicesManager: React.FC = () => {
               {services.map((srv) => (
                 <tr key={srv.id} className="hover:bg-[#FAF8F5] transition-colors">
                   <td className="py-3 px-4">
-                    <span className="font-semibold text-xs text-[#121614] block">{srv.title}</span>
-                    <span className="text-[10px] font-mono text-[#76857A]">/{srv.slug}</span>
-                  </td>
-
-                  <td className="py-3 px-4">
-                    <div className="w-8 h-8 rounded-lg bg-[#F2EDE4] flex items-center justify-center">
-                      {renderIcon(srv.icon)}
+                    <div className="w-12 h-10 rounded-lg bg-[#F2EDE4] border border-[#E3DACB] overflow-hidden flex items-center justify-center shrink-0">
+                      {srv.image_url ? (
+                        <img
+                          src={srv.image_url}
+                          alt={srv.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        renderIcon(srv.icon)
+                      )}
                     </div>
                   </td>
 
-                  <td className="py-3 px-4 text-[#556358] max-w-xs truncate">
-                    {srv.short_description}
+                  <td className="py-3 px-4">
+                    <span className="font-semibold text-xs text-[#121614] block">{srv.title}</span>
+                    <span className="text-[10px] font-mono text-[#76857A]">/{srv.slug}</span>
+                    {srv.badge && (
+                      <span className="inline-block mt-1 text-[9px] font-bold px-1.5 py-0.2 rounded uppercase tracking-wider bg-[#E5ECE7] text-[#294B37]">
+                        {srv.badge}
+                      </span>
+                    )}
+                  </td>
+
+                  <td className="py-3 px-4">
+                    <div className="font-medium text-xs text-[#1B2E24]">
+                      {srv.launch_price ? `₹${srv.launch_price.toLocaleString('en-IN')}` : srv.price_display || 'Custom Quote'}
+                    </div>
+                    {srv.regular_price && srv.launch_price && srv.regular_price > srv.launch_price && (
+                      <div className="text-[10px] text-[#7A877E] line-through">
+                        ₹{srv.regular_price.toLocaleString('en-IN')}
+                      </div>
+                    )}
+                  </td>
+
+                  <td className="py-3 px-4 text-[#556358]">
+                    <div className="capitalize font-mono text-[11px] font-medium text-[#2D4536]">
+                      {srv.billing_type || 'one-time'}
+                    </div>
+                    <div className="text-[10px] text-[#7C887F]">
+                      {srv.delivery_time || '~7–14 Days'}
+                    </div>
                   </td>
 
                   <td className="py-3 px-4 text-center">
@@ -291,8 +352,8 @@ export const ServicesManager: React.FC = () => {
       {/* Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-[#FAF8F5] rounded-3xl border border-[#DFD7CA] shadow-2xl max-w-xl w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-[#E8E1D5] pb-3">
+          <div className="bg-[#FAF8F5] rounded-3xl border border-[#DFD7CA] shadow-2xl max-w-xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#E8E1D5] pb-3 sticky top-0 bg-[#FAF8F5] z-10">
               <h3 className="font-serif-title text-xl font-medium text-[#121614]">
                 {editingService ? `Edit: ${editingService.title}` : 'Add Service'}
               </h3>
@@ -333,21 +394,194 @@ export const ServicesManager: React.FC = () => {
                 </div>
               </div>
 
+              {/* Thumbnail URL & Preview */}
               <div>
                 <label className="block font-semibold uppercase tracking-wider text-[10px] text-[#637267] mb-1">
-                  Icon Design
+                  Service Thumbnail URL
                 </label>
-                <select
-                  value={formData.icon}
-                  onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
-                >
-                  <option value="code">Code (Engineering &amp; Websites)</option>
-                  <option value="chat">Chat (Social Media &amp; Content)</option>
-                  <option value="target">Target (Paid Ads &amp; Performance)</option>
-                  <option value="sparkles">Sparkles (AI Creative &amp; Vision)</option>
-                  <option value="palette">Palette (Branding &amp; Identity)</option>
-                </select>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="text"
+                    value={formData.image_url}
+                    placeholder="/assets/images/website devlopment.jpg"
+                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                    className="flex-1 px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs font-mono"
+                  />
+                  <div className="w-10 h-10 rounded-lg border border-[#DDD5C7] overflow-hidden bg-stone-100 shrink-0">
+                    <img
+                      src={formData.image_url}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-1.5 flex-wrap text-[10px] text-[#6A786E]">
+                  <span>Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, image_url: '/assets/images/website devlopment.jpg' })}
+                    className="hover:underline text-[#2D4536]"
+                  >
+                    Website Dev
+                  </button>
+                  <span>•</span>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, image_url: '/assets/images/content-and-social-media.jpg' })}
+                    className="hover:underline text-[#2D4536]"
+                  >
+                    Social Media
+                  </button>
+                  <span>•</span>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, image_url: '/assets/images/business-pro.jpg' })}
+                    className="hover:underline text-[#2D4536]"
+                  >
+                    Business Pro
+                  </button>
+                  <span>•</span>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, image_url: '/assets/images/pixelplay.jpg' })}
+                    className="hover:underline text-[#2D4536]"
+                  >
+                    Pixelplay
+                  </button>
+                </div>
+              </div>
+
+              {/* Pricing & Discount Fields */}
+              <div className="grid grid-cols-3 gap-3 p-3 bg-[#F4EFE6] rounded-2xl border border-[#ECE5D9]">
+                <div>
+                  <label className="block font-semibold uppercase tracking-wider text-[10px] text-[#637267] mb-1">
+                    Launch Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.launch_price || ''}
+                    placeholder="9999"
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setFormData({
+                        ...formData,
+                        launch_price: val,
+                        price_display: formData.regular_price
+                          ? `Launch Offer: ₹${val.toLocaleString('en-IN')} (Reg. ₹${formData.regular_price.toLocaleString('en-IN')})`
+                          : `₹${val.toLocaleString('en-IN')}`,
+                      });
+                    }}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold uppercase tracking-wider text-[10px] text-[#637267] mb-1">
+                    Regular Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.regular_price || ''}
+                    placeholder="15999"
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setFormData({
+                        ...formData,
+                        regular_price: val,
+                        price_display: formData.launch_price
+                          ? `Launch Offer: ₹${formData.launch_price.toLocaleString('en-IN')} (Reg. ₹${val.toLocaleString('en-IN')})`
+                          : `₹${val.toLocaleString('en-IN')}`,
+                      });
+                    }}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold uppercase tracking-wider text-[10px] text-[#637267] mb-1">
+                    Badge
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.badge}
+                    placeholder="LAUNCH OFFER"
+                    onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-semibold uppercase tracking-wider text-[10px] text-[#637267] mb-1">
+                    Price Display String
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.price_display}
+                    placeholder="Launch Offer: ₹9,999 (Reg. ₹15,999)"
+                    onChange={(e) => setFormData({ ...formData, price_display: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold uppercase tracking-wider text-[10px] text-[#637267] mb-1">
+                    Billing Type
+                  </label>
+                  <select
+                    value={formData.billing_type}
+                    onChange={(e) => setFormData({ ...formData, billing_type: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
+                  >
+                    <option value="one-time">One-Time Delivery</option>
+                    <option value="monthly">Monthly Retainer</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold uppercase tracking-wider text-[10px] text-[#637267] mb-1">
+                    Delivery Time
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.delivery_time}
+                    placeholder="~7 Days Delivery"
+                    onChange={(e) => setFormData({ ...formData, delivery_time: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold uppercase tracking-wider text-[10px] text-[#637267] mb-1">
+                    Icon Design
+                  </label>
+                  <select
+                    value={formData.icon}
+                    onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
+                  >
+                    <option value="code">Code (Engineering &amp; Websites)</option>
+                    <option value="chat">Chat (Social Media &amp; Content)</option>
+                    <option value="target">Target (Paid Ads &amp; Performance)</option>
+                    <option value="sparkles">Sparkles (AI Creative &amp; Vision)</option>
+                    <option value="palette">Palette (Branding &amp; Identity)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold uppercase tracking-wider text-[10px] text-[#637267] mb-1">
+                    Publish Status
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
+                  >
+                    <option value="published">Published</option>
+                    <option value="draft">Draft / Archived</option>
+                  </select>
+                </div>
               </div>
 
               <div>
@@ -365,14 +599,39 @@ export const ServicesManager: React.FC = () => {
 
               <div>
                 <label className="block font-semibold uppercase tracking-wider text-[10px] text-[#637267] mb-1">
-                  Key Features (One per line)
+                  Full Service Description
                 </label>
                 <textarea
                   rows={3}
-                  value={formData.features}
-                  onChange={(e) => setFormData({ ...formData, features: e.target.value })}
+                  value={formData.full_description}
+                  onChange={(e) => setFormData({ ...formData, full_description: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold uppercase tracking-wider text-[10px] text-[#637267] mb-1">
+                    Key Features (One per line)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={formData.features}
+                    onChange={(e) => setFormData({ ...formData, features: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold uppercase tracking-wider text-[10px] text-[#637267] mb-1">
+                    Included Deliverables / Benefits
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={formData.benefits}
+                    onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E8E1D5]">

@@ -6,6 +6,7 @@ import { getPublishedServices } from '../lib/cms';
 
 interface ServicesSectionProps {
   onSelectService: (service: ServiceItem) => void;
+  onViewAllServices?: () => void;
 }
 
 const serviceMeta: Record<
@@ -13,6 +14,7 @@ const serviceMeta: Record<
   {
     step: string;
     badge: string;
+    ctaText: string;
     highlights: string[];
     visualType: 'image' | 'ads_ui' | 'ai_ui' | 'branding_ui';
     imageSrc?: string;
@@ -22,40 +24,75 @@ const serviceMeta: Record<
   'website-development': {
     step: '01',
     badge: 'Digital Flagships',
+    ctaText: 'Explore Websites',
     highlights: ['Custom React & Vite Architecture', 'Sub-Second Core Web Vitals'],
     visualType: 'image',
     imageSrc: '/assets/images/website devlopment.jpg',
     imageAlt: 'Modern multi-device website interface on desktop and mobile',
   },
+  'social-media-management': {
+    step: '02',
+    badge: 'Authority & Reach',
+    ctaText: 'Explore Social Media',
+    highlights: ['Monthly Content Roadmaps', 'High-Retention Video Reels'],
+    visualType: 'image',
+    imageSrc: '/assets/images/content-and-social-media.jpg',
+    imageAlt: 'Editorial social media content and brand visuals showcase',
+  },
   'social-media': {
     step: '02',
     badge: 'Authority & Reach',
+    ctaText: 'Explore Social Media',
     highlights: ['Monthly Editorial Roadmaps', 'High-Fidelity Visual Assets'],
     visualType: 'image',
     imageSrc: '/assets/images/content-and-social-media.jpg',
     imageAlt: 'Editorial social media content and brand visuals showcase',
   },
+  'social-media-advertising': {
+    step: '03',
+    badge: 'Conversion Engine',
+    ctaText: 'Explore Advertising',
+    highlights: ['Meta & Google Campaign Testing', 'Attribution & ROAS Auditing'],
+    visualType: 'ads_ui',
+  },
   'ads': {
     step: '03',
     badge: 'Conversion Engine',
+    ctaText: 'Explore Advertising',
     highlights: ['Meta & Google Campaign Testing', 'Attribution & ROAS Auditing'],
     visualType: 'ads_ui',
+  },
+  'ai-content-video': {
+    step: '04',
+    badge: 'Speed Advantage',
+    ctaText: 'Explore Videos',
+    highlights: ['15–30s Video Ads & Hooks', '3–5m Explainer Brand Videos'],
+    visualType: 'ai_ui',
   },
   'ai-creative': {
     step: '04',
     badge: 'Speed Advantage',
+    ctaText: 'Explore Videos',
     highlights: ['Brand-Trained Prompt Pipelines', 'Rapid Concept Visualization'],
     visualType: 'ai_ui',
+  },
+  'digital-growth-strategy': {
+    step: '05',
+    badge: 'Growth Engine',
+    ctaText: 'Explore Strategy',
+    highlights: ['360° Digital Footprint Audit', 'Multi-Channel Acquisition Roadmaps'],
+    visualType: 'branding_ui',
   },
   'branding': {
     step: '05',
     badge: 'Identity System',
+    ctaText: 'Explore Strategy',
     highlights: ['Refined Typography & Color Tokens', 'Cohesive Digital Guidelines'],
     visualType: 'branding_ui',
   },
 };
 
-export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectService }) => {
+export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectService, onViewAllServices }) => {
   const [services, setServices] = useState<ServiceItem[]>(initialServices);
 
   useEffect(() => {
@@ -76,18 +113,29 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
     <section className="py-6 sm:py-10 lg:py-14 bg-[#F4EFE6] border-y border-[#ECE5D9]" id="services">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-4 sm:mb-7 pb-2 border-b border-[#E4DDD1]">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-4 sm:mb-7 pb-2 border-b border-[#E4DDD1] gap-2">
           <div>
             <p className="text-[9px] sm:text-[11px] font-semibold tracking-[0.22em] text-[#69746A] uppercase mb-0.5 sm:mb-1">
               — Our Disciplines
             </p>
             <h2 className="font-serif-title text-xl sm:text-3xl lg:text-[40px] font-medium text-[#121614] leading-tight">
-              Complete Digital Solutions
+              Our Services
             </h2>
+            <p className="text-xs sm:text-sm text-[#677067] max-w-xl mt-1 leading-relaxed">
+              From websites and creative content to online advertising, discover solutions for your business.
+            </p>
           </div>
-          <p className="text-xs sm:text-sm text-[#677067] max-w-md mt-1.5 sm:mt-0 leading-relaxed">
-            Five tailored creative and technical disciplines engineered to elevate brand reputation and convert visitors.
-          </p>
+          {onViewAllServices && (
+            <div className="shrink-0">
+              <button
+                onClick={onViewAllServices}
+                className="inline-flex items-center text-[10px] sm:text-xs font-semibold text-[#121614] hover:text-[#2D4536] transition-colors cursor-pointer group pb-0.5"
+              >
+                <span>Explore All Services</span>
+                <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 ml-1 transition-transform group-hover:translate-x-0.5" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Dynamic Services Grid with Premium Visuals & 3D Micro-Interactions */}
@@ -102,6 +150,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
             const meta = serviceMeta[service.slug] || {
               step: '01',
               badge: 'Specialized Discipline',
+              ctaText: 'Learn More',
               highlights: service.features?.slice(0, 2) || ['Bespoke Execution', 'Performance Optimization'],
               visualType: 'image' as const,
               imageSrc: '/assets/images/website devlopment.jpg',
@@ -284,9 +333,9 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
                       </ul>
                     </div>
 
-                    {/* Learn More Action Button */}
+                    {/* Action Button */}
                     <div className="pt-2.5 mt-2 border-t border-[#ECE5D9] flex items-center justify-between text-[11px] font-semibold tracking-wider text-[#2D4536] group-hover:text-black uppercase">
-                      <span>Learn More</span>
+                      <span>{meta.ctaText || 'Learn More'}</span>
                       <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
                     </div>
                   </div>

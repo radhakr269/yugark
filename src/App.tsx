@@ -8,6 +8,7 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { ScrollToTop } from './components/ScrollToTop';
+import { BackToTop } from './components/BackToTop';
 import { LegalModal } from './components/Modals';
 
 // Public Page Views
@@ -90,6 +91,7 @@ export default function App() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/free-demo" element={<FreeDemoPage />} />
+          <Route path="/free-website-demo" element={<FreeDemoPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
 
           {/* Secure Admin Portal (Step 3) */}
@@ -117,10 +119,13 @@ export default function App() {
 
       {/* Global Studio Footer (Hidden on Admin Routes) */}
       {!isAdminRoute && (
-        <Footer
-          onOpenTerms={handleOpenTerms}
-          onOpenSitemap={handleOpenSitemap}
-        />
+        <>
+          <Footer
+            onOpenTerms={handleOpenTerms}
+            onOpenSitemap={handleOpenSitemap}
+          />
+          <BackToTop />
+        </>
       )}
 
       {/* Terms & Sitemap Modal */}

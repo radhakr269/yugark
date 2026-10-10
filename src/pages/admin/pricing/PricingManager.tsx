@@ -13,9 +13,13 @@ export const PricingManager: React.FC = () => {
     title: '',
     slug: '',
     description: '',
-    price: '$2,400',
-    turnaround: '2–3 Weeks',
-    features: 'Custom High-Speed Website Architecture\nDirect WhatsApp Routing\nSEO Meta Grounding',
+    price: 'Launch Offer: ₹9,999 (Reg. ₹15,999)',
+    regular_price: 15999,
+    launch_price: 9999,
+    badge: 'LAUNCH OFFER',
+    billing_type: 'one-time',
+    turnaround: '~7 Days Delivery',
+    features: 'Modern, High-Converting Design\n100% Mobile, Tablet & Desktop Responsive\nContact Form & Direct Lead Capture\nWhatsApp Inquiry Integration\nBasic Google SEO Setup',
     is_featured: false,
     status: 'published' as 'published' | 'draft',
   });
@@ -43,10 +47,14 @@ export const PricingManager: React.FC = () => {
     setFormData({
       title: '',
       slug: '',
-      description: 'Ideal for emerging boutique brands needing high-converting web architecture.',
-      price: '$2,400',
-      turnaround: '2–3 Weeks',
-      features: 'Full Responsive Design\nDirect WhatsApp Lead Routing\nTurnkey CMS Integration',
+      description: 'A fast, premium and mobile-friendly website that clearly presents your business and makes it easy for customers to contact you.',
+      price: 'Launch Offer: ₹9,999 (Reg. ₹15,999)',
+      regular_price: 15999,
+      launch_price: 9999,
+      badge: 'LAUNCH OFFER',
+      billing_type: 'one-time',
+      turnaround: '~7 Days Delivery',
+      features: 'Modern, High-Converting Design\n100% Mobile, Tablet & Desktop Responsive\nContact Form & Direct Lead Capture\nWhatsApp Inquiry Integration\nBasic Google SEO Setup',
       is_featured: false,
       status: 'published',
     });
@@ -60,6 +68,10 @@ export const PricingManager: React.FC = () => {
       slug: pkg.slug,
       description: pkg.description,
       price: pkg.price,
+      regular_price: pkg.regular_price || 0,
+      launch_price: pkg.launch_price || 0,
+      badge: pkg.badge || '',
+      billing_type: pkg.billing_type || 'one-time',
       turnaround: pkg.turnaround,
       features: Array.isArray(pkg.features) ? pkg.features.join('\n') : '',
       is_featured: pkg.is_featured,
@@ -77,6 +89,10 @@ export const PricingManager: React.FC = () => {
       slug: formData.slug.trim() || formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       description: formData.description.trim(),
       price: formData.price.trim(),
+      regular_price: Number(formData.regular_price) || undefined,
+      launch_price: Number(formData.launch_price) || undefined,
+      badge: formData.badge.trim() || undefined,
+      billing_type: formData.billing_type,
       turnaround: formData.turnaround.trim(),
       features: featureList,
       is_featured: formData.is_featured,
@@ -236,7 +252,68 @@ export const PricingManager: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold uppercase text-[10px] text-[#637267] mb-1">Investment / Price</label>
+                  <label className="block font-semibold uppercase text-[10px] text-[#637267] mb-1">Badge (e.g. LAUNCH OFFER)</label>
+                  <input
+                    type="text"
+                    value={formData.badge}
+                    placeholder="LAUNCH OFFER"
+                    onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-semibold uppercase text-[10px] text-[#637267] mb-1">Launch Price (₹)</label>
+                  <input
+                    type="number"
+                    value={formData.launch_price || ''}
+                    placeholder="9999"
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setFormData({
+                        ...formData,
+                        launch_price: val,
+                        price: formData.regular_price ? `Launch Offer: ₹${val.toLocaleString('en-IN')} (Reg. ₹${formData.regular_price.toLocaleString('en-IN')})` : `₹${val.toLocaleString('en-IN')}`
+                      });
+                    }}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold uppercase text-[10px] text-[#637267] mb-1">Regular Price (₹)</label>
+                  <input
+                    type="number"
+                    value={formData.regular_price || ''}
+                    placeholder="15999"
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setFormData({
+                        ...formData,
+                        regular_price: val,
+                        price: formData.launch_price ? `Launch Offer: ₹${formData.launch_price.toLocaleString('en-IN')} (Reg. ₹${val.toLocaleString('en-IN')})` : `₹${val.toLocaleString('en-IN')}`
+                      });
+                    }}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold uppercase text-[10px] text-[#637267] mb-1">Billing Type</label>
+                  <select
+                    value={formData.billing_type}
+                    onChange={(e) => setFormData({ ...formData, billing_type: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
+                  >
+                    <option value="one-time">One-Time Delivery</option>
+                    <option value="monthly">Monthly Retainer</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold uppercase text-[10px] text-[#637267] mb-1">Price Display String</label>
                   <input
                     type="text"
                     required
@@ -245,16 +322,16 @@ export const PricingManager: React.FC = () => {
                     className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold uppercase text-[10px] text-[#637267] mb-1">Turnaround</label>
-                <input
-                  type="text"
-                  value={formData.turnaround}
-                  onChange={(e) => setFormData({ ...formData, turnaround: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
-                />
+                <div>
+                  <label className="block font-semibold uppercase text-[10px] text-[#637267] mb-1">Turnaround</label>
+                  <input
+                    type="text"
+                    value={formData.turnaround}
+                    placeholder="~7 Days Delivery"
+                    onChange={(e) => setFormData({ ...formData, turnaround: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
+                  />
+                </div>
               </div>
 
               <div>

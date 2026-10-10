@@ -6,7 +6,8 @@ import {
   ServiceItem,
   DemoItem,
   BlogPostItem,
-  PricingPackage
+  PricingPackage,
+  PricingCalculatorItem,
 } from '../types/content';
 
 export const siteConfig: SiteConfig = {
@@ -17,7 +18,7 @@ export const siteConfig: SiteConfig = {
   headlineLine3Accent: 'We Grow Brands.',
   heroDescription:
     'Websites, creative content and digital marketing solutions designed to help your brand look better, connect deeper and grow further.',
-  heroImage: '/assets/images/Hero.jpg',
+  heroImage: '/assets/images/hero.jpg',
   contactEmail: 'business@yugark.in',
   whatsappNumber: '+91 9125272460',
   whatsappUrl: 'https://wa.me/919125272460',
@@ -181,290 +182,337 @@ export const servicesData: ServiceItem[] = [
     slug: 'website-development',
     title: 'Website Development',
     lines: ['Website', 'Development'],
-    tagline: 'Bespoke, high-performing websites engineered to convert visitors into loyal clients.',
-    description: 'Custom, high-performing websites that look premium and deliver results.',
+    tagline: 'Premium, mobile-friendly websites that help customers discover your business and send enquiries.',
+    description: 'Premium, mobile-friendly websites that help customers discover your business and send enquiries.',
     longDescription:
-      'We architect bespoke websites tailored for ambitious businesses, premium consultancies, and innovative brands. Every interface is built with responsive precision, sub-second loading speeds, accessible UX, and headless CMS readiness.',
+      'We build high-performance, custom digital platforms engineered for speed, conversion, and brand credibility. From modern business websites to high-converting lead management dashboards, every line of code is written with surgical precision.',
     iconType: 'code',
+    priceDisplay: 'Launch Offer: ₹9,999 (Reg. ₹15,999)',
+    regularPrice: 15999,
+    launchPrice: 9999,
+    billingType: 'one-time',
+    deliveryTime: '~7–14 Days',
+    badge: 'LAUNCH OFFER',
+    category: 'web',
+    imageUrl: '/assets/images/website devlopment.jpg',
     features: [
-      'Custom React / TypeScript Architecture',
-      'Sub-Second Core Web Vitals Optimization',
-      'Headless CMS & Database Readiness (Supabase)',
-      '100% Mobile & Tablet Responsive Engineering',
-      'Clean Semantic Code & Built-In SEO Structure',
-      'Interactive Demos & Client Portal Foundations'
+      'Business Website: Launch Offer ₹9,999 (Reg. ₹15,999)',
+      'Website + Lead Management Dashboard: Launch Offer ₹14,999 (Reg. ₹19,999)',
+      'Modern, High-Converting Design (100% Mobile, Tablet & Desktop)',
+      'Contact Form, WhatsApp & Direct Lead Capture Integration',
+      'Basic Google SEO Setup & Meta Title/Description Tuning',
+      'Fast Loading Speed, Clean Semantic Code & Zero Plugin Bloat'
     ],
     deliverables: [
-      'Production-Ready Source Code',
-      'Design System & Component Token Library',
-      'Validated Contact & Lead Form Routing',
-      'Deployment & Hosting Configuration Support'
+      'Modern, High-Converting Design & Responsive Layouts',
+      'Lead Capture Form & Instant WhatsApp Integration',
+      'Secure Admin Dashboard & Excel/CSV Lead Export',
+      'Automated Email & WhatsApp Lead Notifications',
+      'Basic Google Search SEO Setup & Meta Tags',
+      'Zero Monthly Platform Subscriptions & Full Code Ownership'
     ],
     process: [
       {
         step: '01',
-        title: 'Discovery & Wireframing',
-        description: 'We audit your brand objectives, competitor landscape, and information architecture before establishing structural wireframes.'
+        title: 'Connect & Requirements',
+        description: 'You connect with us via WhatsApp, phone, or website inquiry form and share your business background, timeline, and goals.'
       },
       {
         step: '02',
-        title: 'Design System & Prototyping',
-        description: 'Crafting responsive layouts, refined typography pairings, and tactile components in alignment with your luxury brand tone.'
+        title: 'Architecture & Design System',
+        description: 'We audit your target buyers and craft responsive layout wireframes, high-contrast typography, and conversion flows.'
       },
       {
         step: '03',
         title: 'Full-Stack Development',
-        description: 'Writing clean, typed React/TypeScript code with zero bloat, modular styling, and rigorous cross-device testing.'
+        description: 'Writing clean React/TypeScript code with zero bloat, mobile optimization, lead databases, and sub-second load speeds.'
       },
       {
         step: '04',
-        title: 'Launch & Handoff',
-        description: 'Comprehensive QA, performance audits, domain routing, and seamless handoff with documentation.'
+        title: 'Launch & Google Indexing',
+        description: 'Your website is deployed to production with Google Search indexing, WhatsApp routing, and admin access.'
       }
     ],
     faqs: [
       {
-        question: 'What technologies do you build websites with?',
-        answer: 'We specialize in modern frontend stacks including React, Next.js, TypeScript, Vite, and Tailwind CSS, backed by headless databases such as Supabase.'
+        question: 'What is the difference between Business Website and Website + Dashboard?',
+        answer: 'The Business Website (₹9,999 Launch Offer) is a fast, premium website delivering leads to WhatsApp and email in ~7 days. The Website + Dashboard (₹14,999 Launch Offer) adds a custom database backend, secure admin dashboard, and 1-click Excel/CSV export in ~10–14 days.'
       },
       {
-        question: 'Will our team be able to update content without a developer?',
-        answer: 'Yes. In Step 2 of our studio rollout, websites integrate with an intuitive Admin Dashboard and Supabase backend for effortless content editing.'
+        question: 'Are there any recurring monthly platform subscriptions?',
+        answer: 'No. Unlike proprietary website builders that charge recurring monthly fees, our custom platforms have zero monthly platform subscriptions. You own 100% of your code and business data.'
       },
       {
-        question: 'How long does a custom studio website build take?',
-        answer: 'Typical engagements range from 2 to 4 weeks depending on the number of bespoke templates, case-studies, and custom interactions.'
+        question: 'How fast can our business website go live?',
+        answer: 'Typical delivery is ~7 days for the Business Website and ~10–14 days for the Website + Lead Management Dashboard.'
       }
     ]
   },
   {
-    id: 'social-media',
-    slug: 'social-media',
-    title: 'Social Media',
-    lines: ['Social Media'],
-    tagline: 'Strategic content and creative narratives designed to build genuine brand authority.',
-    description: "Engaging content and strategies to grow your brand's presence.",
+    id: 'social-media-management',
+    slug: 'social-media-management',
+    title: 'Social Media Management',
+    lines: ['Social Media', 'Management'],
+    tagline: 'Creative reels, branded posts and consistent content that keep your business active and engaging.',
+    description: 'Creative reels, branded posts and consistent content that keep your business active and engaging.',
     longDescription:
-      'We craft elevated social media assets and disciplined publishing frameworks that cut through algorithm noise. Our focus is on high-retention storytelling, visual consistency, and converting casual scrollers into engaged brand advocates.',
+      'Transform social channels into automated organic acquisition systems. We craft high-retention short-form video reels, branded visual carousels, and strategic copy that positions your brand as the undisputed authority in your niche.',
     iconType: 'chat',
+    priceDisplay: 'From ₹9,999/month (Starter, Growth & Pro Plans)',
+    regularPrice: 19999,
+    launchPrice: 14999,
+    billingType: 'monthly',
+    deliveryTime: 'Ongoing Monthly Service',
+    badge: 'MONTHLY RETAINER',
+    category: 'social',
+    imageUrl: '/assets/images/content-and-social-media.jpg',
     features: [
-      'Strategic Monthly Content Roadmaps',
-      'High-Fidelity Visual Asset Production',
-      'Platform-Native Copywriting & Hooks',
-      'Brand Cohesion Across Instagram, LinkedIn & X',
-      'Engagement Strategy & Community Frameworks',
-      'Creative Performance Reviews'
+      'STARTER Social Media Plan: 4 Reels + 8 Graphic Posts (₹9,999/mo)',
+      'GROWTH Social Media Plan: 8 Reels (2/wk) + 12 Graphic Posts (₹14,999/mo)',
+      'PRO Social Media Plan: 12 Reels (3/wk) + 16 Posts + 1 YouTube Video (₹19,999/mo)',
+      'Individual Custom Branded Posts from ₹500/post (24–48h turnaround)',
+      'Monthly Content Strategy & Editorial Publishing Calendar',
+      'Strategic Captions, High-Retention Hooks & Targeted Hashtags'
     ],
     deliverables: [
-      'Monthly High-Resolution Asset Packs',
-      'Ready-to-Publish Captions & Tagging Sets',
-      'Custom Brand Template Files (Figma / Vector)',
-      'Quarterly Creative Trajectory Reports'
+      'Ready-to-Publish Vertical Reels (15–30s) with Dynamic Subtitles',
+      'High-Resolution Branded Feed Graphics & Multi-Slide Carousels',
+      'Editorial Calendar & Competitor Trend Ideation',
+      'Social Profile Optimization & Monthly Growth Review',
+      'Direct WhatsApp Studio Support & Creative Direction'
     ],
     process: [
       {
         step: '01',
-        title: 'Brand Voice Audit',
-        description: 'Analyzing existing engagement touchpoints and formalizing your distinctive brand tone and editorial pillars.'
+        title: 'Pillars & Hook Research',
+        description: 'Analyzing your industry, customer objections, and competitor virality to structure monthly content themes.'
       },
       {
         step: '02',
-        title: 'Calendar Architecture',
-        description: 'Structuring weekly rhythms balancing educational insight, proof points, and high-impact visual showpieces.'
+        title: 'Editorial Calendar & Scripting',
+        description: 'Planning weekly rhythms balancing high-retention reels, carousel graphics, and conversion offers.'
       },
       {
         step: '03',
-        title: 'Asset Design & Packaging',
-        description: 'Producing custom carousels, typography boards, and story assets aligned with your brand guidelines.'
+        title: 'Batch Production & Polish',
+        description: 'Editing vertical videos with dynamic subtitles, designing on-brand carousels, and writing persuasive copy.'
       },
       {
         step: '04',
-        title: 'Iteration & Optimization',
-        description: 'Refining hook structures and visual treatments based on real engagement data and audience response.'
+        title: 'Publishing & Growth Reviews',
+        description: 'Managing publishing schedules, monitoring engagement metrics, and adjusting creative hooks for higher reach.'
       }
     ],
     faqs: [
       {
-        question: 'Which platforms do you support?',
-        answer: 'We focus primarily on Instagram, LinkedIn, and YouTube/X, tailoring asset dimensions and editorial tone for each platform.'
+        question: 'What is included in the monthly social plans?',
+        answer: 'Every plan includes vertical video reels edited with dynamic captions, branded graphic feed posts, strategic captions with hashtags, an editorial publishing calendar, and monthly growth reviews.'
       },
       {
-        question: 'Do you provide photography and design assets?',
-        answer: 'Yes, we provide full digital asset creation including typographic carousels, mockups, product graphics, and story templates.'
+        question: 'Can I order a single graphic post or reel without a monthly retainer?',
+        answer: 'Yes! We offer individual social media graphic posts at ₹500 per post (24–48 hours turnaround) and short ad videos at ₹3,000 per video.'
+      },
+      {
+        question: 'Do you offer commitment discounts on monthly plans?',
+        answer: 'Yes. We provide 10% OFF for 1-month commitment, 15% OFF for 6 months commitment, and 25% OFF for 1 year commitment across our monthly retainer plans.'
       }
     ]
   },
   {
-    id: 'ads',
-    slug: 'ads',
-    title: 'Ads',
-    lines: ['Ads'],
-    tagline: 'Precision advertising campaigns engineered for measurable return and scalable acquisition.',
-    description: 'Data-driven ad campaigns across platforms to reach the right audience.',
+    id: 'social-media-advertising',
+    slug: 'social-media-advertising',
+    title: 'Paid Advertising — Meta & Google',
+    lines: ['Paid Advertising', 'Meta & Google'],
+    tagline: 'Reach the right customers with targeted Facebook, Instagram and Google Ads.',
+    description: 'Reach the right customers with targeted Facebook, Instagram and Google Ads.',
     longDescription:
-      'We design and deploy performance-driven ad campaigns across Meta and Google ecosystems. By uniting persuasive visual design with disciplined audience targeting and high-converting landing pages, we scale client acquisition systematically.',
+      'Targeted advertising campaigns built to acquire qualified leads and drive high-margin revenue with positive ROAS across Meta (Facebook & Instagram) and Google Search & Performance Max networks.',
     iconType: 'target',
+    priceDisplay: 'Launch Offer: ₹15,000/month (Reg. ₹20,000)',
+    regularPrice: 20000,
+    launchPrice: 15000,
+    billingType: 'monthly',
+    deliveryTime: 'Setup in 3–5 Days',
+    badge: 'HIGH ROAS',
+    category: 'ads',
+    imageUrl: '/assets/images/business-pro.jpg',
     features: [
-      'Multi-Format Creative Asset Testing (Static & Carousel)',
-      'Meta & Google Ads Campaign Architecture',
-      'Conversion-Optimized Landing Page Alignment',
-      'Audience Segmentation & Retargeting Funnels',
-      'Rigorous Attribution & Pixel Configuration',
-      'Weekly Spend & ROAS Efficiency Audits'
+      'Meta Ads Management: Facebook & Instagram (₹15,000/mo)',
+      'Google Ads Management: Search & Performance Max (₹15,000/mo)',
+      'Targeted ad campaign architecture & custom audience segmentation',
+      'High-converting ad creatives (9:16 vertical reels & carousel graphics)',
+      'Meta Pixel, Conversion API, Google Tag Manager & lead tracking setup',
+      'Weekly performance monitoring, search term audits & budget optimization'
     ],
     deliverables: [
-      'Tested Campaign Ad Creatives',
-      'High-Intent Copy Variations & Angles',
-      'Campaign Architecture Documentation',
-      'Performance Dashboard & Spend Tracking'
+      'High-Converting Ad Copywriting & Hook Variations',
+      'Vertical 9:16 Video Ad Creatives & Static Graphics',
+      'Conversion API & Pixel Tracking Setup',
+      'Retargeting & Lookalike Audience Building',
+      'Weekly Spend & ROAS Reports'
     ],
     process: [
       {
         step: '01',
-        title: 'Customer Angle Analysis',
-        description: 'Deconstructing your target demographic pain points, objections, and aspirational triggers.'
+        title: 'Audience & Offer Audit',
+        description: 'Analyzing high-intent search terms, customer demographics, and crafting irresistible lead offers.'
       },
       {
         step: '02',
-        title: 'Creative Production',
-        description: 'Designing bespoke ad creatives that match the visual sophistication of your primary brand presence.'
+        title: 'Creative Production & Tracking',
+        description: 'Producing vertical video hooks, high-contrast graphics, Meta Pixel, and Google Tag Manager conversion events.'
       },
       {
         step: '03',
-        title: 'Structured Testing Launch',
-        description: 'Deploying controlled budget experiments to identify high-performing creative and copy combinations.'
+        title: 'Campaign Launch & Split Testing',
+        description: 'Deploying targeted campaigns across Meta and Google to pinpoint top-performing creative and copy angles.'
       },
       {
         step: '04',
-        title: 'Scaling & Optimization',
-        description: 'Reallocating spend toward proven winning variations while maintaining healthy acquisition costs.'
+        title: 'Scaling & Budget Optimization',
+        description: 'Pruning underperforming keywords and reallocating spend toward winning audiences to maximize lead volume.'
       }
     ],
     faqs: [
       {
-        question: 'Do you manage both the ad creative and the campaign settings?',
-        answer: 'Yes, we provide end-to-end support covering visual ad production, copywriting, platform configuration, and optimization.'
+        question: 'What is included in the ₹15,000/month ad management fee?',
+        answer: 'The ₹15,000/month fee covers campaign architecture, ad creative production (video reels and graphics), persuasive copy angles, Meta Pixel/Conversion API tracking, and ongoing weekly budget optimization.'
       },
       {
-        question: 'What ad spend budget is required to start?',
-        answer: 'We typically recommend minimum testing budgets that allow statistically valid iteration across target audience segments.'
+        question: 'Is advertising budget included in the management fee?',
+        answer: 'No. The ad spend budget is paid directly to Meta or Google through your own ad account, ensuring complete transparency and ownership of all campaign data.'
       }
     ]
   },
   {
-    id: 'ai-creative',
-    slug: 'ai-creative',
-    title: 'AI Creative',
-    lines: ['AI Creative'],
-    tagline: 'Modern, AI-assisted creative workflows that accelerate asset delivery without sacrificing taste.',
-    description: 'Modern, AI-powered creative content for faster, smarter growth.',
+    id: 'ai-content-video',
+    slug: 'ai-content-video',
+    title: 'AI Content & Video Production',
+    lines: ['AI Content &', 'Video Production'],
+    tagline: 'Eye-catching promotional videos and creative content that help your brand get noticed.',
+    description: 'Eye-catching promotional videos and creative content that help your brand get noticed.',
     longDescription:
-      'We combine human design taste with modern AI workflows to accelerate brand production. From rapid visual conceptualization and personalized imagery to automated copy variation systems, we give modern studios an unfair speed advantage.',
-    iconType: 'sparkles',
+      'Stop the scroll with high-converting short promotional videos tailored for your business. Whether using AI visual generation, product animations, or crisp video editing, we produce ads designed to get inquiries.',
+    iconType: 'video',
+    priceDisplay: '₹3,000 (Short Video) • ₹5,000 (Long-Form Video)',
+    regularPrice: 5000,
+    launchPrice: 3000,
+    billingType: 'one-time',
+    deliveryTime: '~7–15 Days',
+    badge: 'A LA CARTE & BUNDLES',
+    category: 'video',
+    imageUrl: '/assets/images/pixelplay.jpg',
     features: [
-      'Brand-Trained Prompt Architectures',
-      'High-Fidelity Concept Visualization',
-      'Dynamic Copy & Angle Generation',
-      'Automated Multi-Channel Asset Variations',
-      'Custom Generative Image Styling Pipelines',
-      'Ethical & IP-Protected Workflow Standards'
+      'Short Advertisement Video: ₹3,000 per video (~7 Days turnaround)',
+      'Long-Form Brand / Explainer Video: ₹5,000 per video (~15 Days turnaround)',
+      '15–30 second high-retention format for Instagram Reels, Shorts & Meta Ads',
+      '3–5 minute comprehensive brand walkthrough for YouTube & Website Hero',
+      'Compelling hook scripting, dynamic subtitle typography & calls-to-action',
+      'AI-assisted visual enhancements, motion graphics & licensed audio'
     ],
     deliverables: [
-      'Custom Studio Prompt Libraries',
-      'Generated Visual Asset Libraries',
-      'Copy Generation Template Workflows',
-      'Automated Workflow Documentation'
+      'Strategic 3-Second Hook & Script Breakdown',
+      'Professional Motion Graphics & Typography Subtitles',
+      'Voiceover & Background Music Licensing',
+      'Vertical 9:16 Format for Reels & TikTok',
+      'Horizontal 16:9 Format for YouTube & Web'
     ],
     process: [
       {
         step: '01',
-        title: 'Workflow Mapping',
-        description: 'Identifying creative bottlenecks in your current production pipeline suitable for intelligent acceleration.'
+        title: 'Story & Hook Scripting',
+        description: 'Writing tight 3-second opening hooks, visual cues, and compelling calls-to-action tailored to your buyers.'
       },
       {
         step: '02',
-        title: 'Prompt & Style Engineering',
-        description: 'Calibrating AI models to adhere strictly to your typography, lighting, and palette rules.'
+        title: 'Visual Assets & AI Synthesis',
+        description: 'Generating or editing high-resolution visual footage, motion typography, and product demonstration sequences.'
       },
       {
         step: '03',
-        title: 'Human Curation & Polish',
-        description: 'Reviewing and elevating every generated asset through expert designer hands before deployment.'
+        title: 'Sound Design & Subtitles',
+        description: 'Adding dynamic karaoke subtitles, licensed background music, sound effects, and voiceover audio mastering.'
       },
       {
         step: '04',
-        title: 'System Integration',
-        description: 'Embedding automated creative workflows directly into your operational stack.'
+        title: 'Review & Final Delivery',
+        description: 'Delivering ready-to-run 9:16 vertical and 16:9 horizontal master video files with full commercial rights.'
       }
     ],
     faqs: [
       {
-        question: 'Does AI creative replace human design?',
-        answer: 'No. AI acts as a high-powered production engine, while human creative direction dictates taste, brand coherence, and quality.'
+        question: 'What kind of videos do you produce for ₹3,000?',
+        answer: 'High-impact 15–30 second promotional ad reels for Instagram, Facebook, and YouTube Shorts with hook scripting, motion graphics, audio mastering, and clear calls-to-action.'
       },
       {
-        question: 'Are all generated assets commercially safe?',
-        answer: 'Yes, our workflows utilize commercially licensed enterprise models and bespoke style guidelines.'
+        question: 'What is included in the Long-Form Brand Video for ₹5,000?',
+        answer: 'A comprehensive 3–5 minute brand or product overview video featuring full storyboard scripting, motion graphics, voiceover mastering, and YouTube SEO guidance.'
       }
     ]
   },
   {
-    id: 'branding',
-    slug: 'branding',
-    title: 'Branding',
-    lines: ['Branding'],
-    tagline: 'Distinctive brand identities crafted to command respect and stand out in competitive markets.',
-    description: 'Distinctive brand identities that make a lasting impression.',
+    id: 'digital-growth-strategy',
+    slug: 'digital-growth-strategy',
+    title: 'Digital Growth & Content Strategy',
+    lines: ['Digital Growth &', 'Content Strategy'],
+    tagline: 'Plan your content, improve your online presence and turn more visitors into paying customers.',
+    description: 'Plan your content, improve your online presence and turn more visitors into paying customers.',
     longDescription:
-      'We design timeless brand identities for modern founders, creative studios, and premium enterprises. From typographic hierarchy and balanced color tokens to stationery and digital style systems, we build identities that resonate deeply.',
-    iconType: 'palette',
+      'End-to-end digital architecture for scaling businesses. We analyze your digital footprint, spot leverage points, and unite website, content, ads, and automation into a compounding growth engine.',
+    iconType: 'compass',
+    priceDisplay: 'Strategic Retainer & Consultation',
+    billingType: 'monthly',
+    deliveryTime: 'Monthly / Quarterly Cycles',
+    badge: 'STRATEGIC ADVISORY',
+    category: 'growth',
+    imageUrl: '/assets/images/aurora-living.jpg',
     features: [
-      'Comprehensive Visual Identity Design',
-      'Editorial Serif & Structural Sans Typography Pairings',
-      'Color Token Architecture (Canvas, Accents, Substrates)',
-      'Vector Logo & Studio Mark System',
-      'Brand Guidelines Specification Document',
-      'Digital Collateral & Social Media Master Files'
+      '360-Degree Digital Presence & Conversion Audit',
+      'Positioning, Pricing & Offer Optimization Matrix',
+      'Multi-Channel Customer Acquisition Roadmap',
+      'Content Strategy & Industry-Specific Editorial Calendars',
+      'Cross-Platform Distribution & Repurposing Workflows',
+      'Direct Strategic Direction by Mr. Radha Krishna'
     ],
     deliverables: [
-      'Comprehensive Brand Guidelines (PDF & Digital)',
-      'Vector Master Assets (SVG, PNG, EPS)',
-      'Typography System & Licensing Guidance',
-      'Design Tokens for Web Implementation'
+      '360-Degree Digital Audit & Opportunity Matrix',
+      'Brand Positioning & Messaging Blueprint',
+      'Monthly Editorial Content Calendars',
+      'Conversion Rate Optimization Reviews'
     ],
     process: [
       {
         step: '01',
-        title: 'Brand Archetype Discovery',
-        description: 'Uncovering the underlying values, competitive positioning, and emotional resonance of your organization.'
+        title: '360° Digital Footprint Audit',
+        description: 'Benchmarking your website speed, conversion points, competitor positioning, and customer acquisition costs.'
       },
       {
         step: '02',
-        title: 'Visual Direction Exploration',
-        description: 'Presenting distinct editorial moodboards and identity concepts for collaborative review.'
+        title: 'Offer & Positioning Architecture',
+        description: 'Refining your messaging, pricing tiers, and trust signals to convert premium buyers faster.'
       },
       {
         step: '03',
-        title: 'Identity Refinement',
-        description: 'Polishing letterforms, color ratios, spatial margins, and application mockups.'
+        title: 'Multi-Channel Growth Roadmap',
+        description: 'Aligning your custom website, short-form reels, and paid ad funnels into a predictable lead pipeline.'
       },
       {
         step: '04',
-        title: 'System Handoff',
-        description: 'Delivering complete asset packages and digital tokens ready for immediate implementation.'
+        title: 'Quarterly Optimization Reviews',
+        description: 'Auditing funnel conversion data, lead quality, and expanding profitable growth channels.'
       }
     ],
     faqs: [
       {
-        question: 'What is included in the final brand package?',
-        answer: 'You receive primary wordmarks, secondary badges, color token palettes, typography rules, and usage guidelines in vector and web formats.'
+        question: 'Who leads the digital growth strategy engagements?',
+        answer: 'Strategic advisory engagements are directed by YUGARK Founder & Managing Director Mr. Radha Krishna, delivering tailored growth architecture for your business.'
       },
       {
-        question: 'Can you implement our new brand into a website directly?',
-        answer: 'Yes, our studio integrates identity design seamlessly with full website engineering for a unified rollout.'
+        question: 'Can strategy be combined with full execution?',
+        answer: 'Yes. Most clients combine strategic roadmaps with our website development and monthly social media execution for complete synchronization.'
       }
     ]
-  },
+  }
 ];
 
 export const websiteDemosData: DemoItem[] = [
@@ -560,80 +608,262 @@ export const websiteDemosData: DemoItem[] = [
 
 export const pricingPackagesData: PricingPackage[] = [
   {
-    id: 'starter-launch',
-    slug: 'starter-launch',
-    name: 'Starter Launch',
-    tagline: 'Ideal for emerging brands, boutique firms, and focused product launches.',
-    investment: 'Custom Studio Quote',
-    turnaround: '2 – 3 Weeks',
-    bestFor: 'Founders and independent studios seeking an authoritative, luxury digital footprint.',
+    id: 'frontend-website',
+    slug: 'business-website',
+    name: 'Business Website',
+    badge: 'LAUNCH OFFER',
+    regularPrice: 15999,
+    launchPrice: 9999,
+    investment: 'Launch Offer: ₹9,999 (Reg. ₹15,999)',
+    turnaround: '~7 Days Delivery',
+    deliveryTime: 'Typical Delivery: ~7 Days',
+    type: 'one-time',
+    billingType: 'one-time',
+    popular: false,
+    ctaText: 'Choose Business Website — ₹9,999',
+    tagline: 'A fast, premium and mobile-friendly website that clearly presents your business and makes it easy for customers to contact you.',
+    bestFor: 'Startups, restaurants, clinics, consultants, and local businesses needing a fast, aesthetic digital presence.',
     features: [
-      'Up to 5 Custom Responsive Templates',
-      'Mobile-First Feathered Visual Architecture',
-      'Clean Contact & WhatsApp Lead Flow',
-      'Core Web Vitals Speed Tuning',
-      'Basic On-Page SEO Foundations',
-      'Supabase CMS Ready Architecture'
+      'Modern, High-Converting Design',
+      '100% Mobile, Tablet & Desktop Responsive',
+      'Contact Form & Direct Lead Capture',
+      'WhatsApp Inquiry Integration',
+      'Basic Google SEO Setup',
+      'Fast Loading Speed',
+      'Meta Title & Description Setup'
     ],
     deliverables: [
-      'Complete React/TypeScript Source Code',
-      'Production Deployment Setup',
-      'Design Token Documentation',
-      '2 Weeks Post-Launch Support'
+      'Production-Ready Clean React/TypeScript Codebase',
+      'Responsive Across Mobile, Tablet & Desktop',
+      '1-Click WhatsApp Lead Routing Integration',
+      'Google Search Engine Indexing Setup',
+      'Typical Delivery in ~7 Days with Zero Bloat'
     ],
-    inquiryMessage: 'Hello Yugark Studio, I would like to inquire about the Starter Launch package.'
+    inquiryMessage: 'Hi Radha Krishna Sir, I would like to inquire about the Business Website package (₹9,999 Launch Offer).'
   },
   {
-    id: 'growth-studio',
-    slug: 'growth-studio',
-    name: 'Growth Studio',
-    tagline: 'Our flagship studio tier for scaling companies and established service practices.',
-    investment: 'Custom Studio Quote',
-    turnaround: '3 – 5 Weeks',
+    id: 'fullstack-website',
+    slug: 'website-dashboard',
+    name: 'Website + Lead Management Dashboard',
+    badge: 'COMPREHENSIVE',
     popular: true,
-    bestFor: 'Brands requiring complete design systems, extensive case-studies, and dynamic CMS capabilities.',
+    regularPrice: 19999,
+    launchPrice: 14999,
+    investment: 'Launch Offer: ₹14,999 (Reg. ₹19,999)',
+    turnaround: '~10–14 Days Delivery',
+    deliveryTime: 'Typical Delivery: ~10–14 Days',
+    type: 'one-time',
+    billingType: 'one-time',
+    ctaText: 'Choose Website + Dashboard — ₹14,999',
+    tagline: 'A complete business website with a backend system where customer enquiries can be securely saved, managed and downloaded.',
+    bestFor: 'Growing businesses requiring automated lead capture, backend data control, and lead export without monthly subscriptions.',
     features: [
-      'Up to 12 Bespoke Templates & Case Studies',
-      'Comprehensive Brand Token Alignment',
-      'Dynamic Blog & Project Showcase Systems',
-      'Interactive Template Demos & Previews',
-      'Advanced Meta/Google Attribution Setup',
-      'Direct WhatsApp & Secure Form Inquiries',
-      'Priority Turnaround & Revision Cycles'
+      'Custom Website with Backend Infrastructure',
+      'Lead Capture Form & Database',
+      'Database & Lead Management Portal',
+      'Secure Admin Dashboard Preview',
+      'Excel / CSV Lead Export',
+      'Automated Email Lead Notifications',
+      'WhatsApp Lead Notifications'
     ],
     deliverables: [
-      'Full-Stack Source Repository',
-      'Supabase Database Schema & Setup',
-      'Custom Component Design System',
-      '4 Weeks Dedicated Studio Support'
+      'Custom Website with Connected Supabase Database',
+      'Secure Admin Dashboard with Role-Based Access',
+      '1-Click Excel / CSV Lead Export Capability',
+      'Automated Email & WhatsApp Inquiry Alerts',
+      'Zero Monthly Third-Party Subscription Fees'
     ],
-    inquiryMessage: 'Hello Yugark Studio, I would like to inquire about the Growth Studio package.'
+    inquiryMessage: 'Hi Radha Krishna Sir, I would like to inquire about the Website + Lead Management Dashboard package (₹14,999 Launch Offer).'
   },
   {
-    id: 'bespoke-enterprise',
-    slug: 'bespoke-enterprise',
-    name: 'Bespoke Enterprise',
-    tagline: 'Comprehensive digital transformation, custom architectures, and ongoing studio partnership.',
-    investment: 'Custom Studio Quote',
-    turnaround: 'Bespoke Milestones',
-    bestFor: 'Enterprise organizations, multi-brand portfolios, and agencies demanding tailored platforms.',
+    id: 'growth-social-plan',
+    slug: 'growth-social-plan',
+    name: 'GROWTH Social Media & Content Plan',
+    badge: 'MOST POPULAR PLAN',
+    popular: true,
+    regularPrice: 19999,
+    launchPrice: 14999,
+    investment: 'Launch Offer: ₹14,999/month (Reg. ₹19,999)',
+    turnaround: 'Ongoing Monthly Service',
+    deliveryTime: 'Ongoing Monthly Service',
+    type: 'monthly',
+    billingType: 'monthly',
+    ctaText: 'Choose Growth Plan — ₹14,999/mo',
+    tagline: '8 High-Retention Reels + 12 Branded Graphic Posts per month + Strategic Content Calendar.',
+    bestFor: 'Ambitious brands seeking compounding algorithm reach, weekly short-form video, and category authority.',
     features: [
-      'Unlimited Bespoke Templates & Pages',
-      'Custom Database & API Architecture',
-      'End-to-End Brand Identity & Guidelines',
-      'Multi-Role Admin Dashboard Prep',
-      'Automated Lead Notification Pipelines',
-      'Enterprise Performance & Security Audits',
-      'Direct Studio Director Collaboration'
+      '8 Custom High-Impact Reels / Shorts (2 per week)',
+      '12 Branded Social Graphic Posts & Carousels',
+      'Monthly Content Strategy & Editorial Calendar',
+      'Strategic Captions & Viral Hook Variations',
+      'Social Profile Optimization & Monthly Growth Review',
+      'WhatsApp Direct Studio Support'
     ],
     deliverables: [
-      'Enterprise Source Repository & IP Transfer',
-      'Complete Master Asset Vector Packages',
-      'Architectural Documentation & Walkthroughs',
-      'Ongoing Retainer & Support Options'
+      '8 Short-Form Videos with Dynamic Subtitles & Audio',
+      '12 High-Converting Feed Posts & Multi-Slide Carousels',
+      'Editorial Calendar & Competitor Trend Research',
+      'Bi-Weekly Content Delivery Batches',
+      'Monthly Analytics & Strategy Review Session'
     ],
-    inquiryMessage: 'Hello Yugark Studio, I would like to inquire about the Bespoke Enterprise package.'
+    inquiryMessage: 'Hi Radha Krishna Sir, I would like to inquire about the GROWTH Social Media & Content Plan (₹14,999/month).'
+  },
+  {
+    id: 'paid-ads-management',
+    slug: 'paid-ads-management',
+    name: 'Meta / Google Paid Ads Management',
+    badge: 'HIGH ROAS',
+    popular: false,
+    regularPrice: 20000,
+    launchPrice: 15000,
+    investment: 'Launch Offer: ₹15,000/month (Reg. ₹20,000)',
+    turnaround: 'Setup in 3–5 Days',
+    deliveryTime: 'Setup in 3–5 Days',
+    type: 'monthly',
+    billingType: 'monthly',
+    ctaText: 'Choose Ads Management — ₹15,000/mo',
+    tagline: 'Targeted performance campaigns built for qualified leads, direct sales, and high ROAS.',
+    bestFor: 'Businesses with established offerings looking to drive direct inquiries and predictably scale customer acquisition.',
+    features: [
+      'Targeted campaign architecture & custom audience building',
+      'Ad creatives, hook variations & high-converting copy',
+      'Pixel, Conversion API & tracking setup',
+      'Weekly performance monitoring & budget optimization'
+    ],
+    deliverables: [
+      'Tested Ad Copywriting & Persuasive Hooks',
+      'Vertical 9:16 Video Creatives & Graphic Carousels',
+      'Meta Pixel & Google Tag Manager Tracking Setup',
+      'Weekly Spend, Conversion & ROAS Reporting'
+    ],
+    inquiryMessage: 'Hi Radha Krishna Sir, I would like to inquire about the Meta / Google Paid Ads Management (₹15,000/month).'
   }
+];
+
+export const pricingCalculatorItemsData: PricingCalculatorItem[] = [
+  {
+    id: 'calc-frontend-web',
+    title: 'Business Website',
+    price: 9999,
+    originalPrice: 15999,
+    unit: 'per website',
+    category: 'website',
+    billingType: 'one-time',
+    deliveryTime: '~7 Days Delivery',
+    badge: 'LAUNCH OFFER',
+    description: 'A fast, premium and mobile-friendly website that clearly presents your business and makes it easy for customers to contact you.',
+    features: ['Modern, High-Converting', '100% Responsive', 'WhatsApp & Lead Capture', 'Fast Speed & SEO']
+  },
+  {
+    id: 'calc-fullstack-web',
+    title: 'Website + Lead Management Dashboard',
+    price: 14999,
+    originalPrice: 19999,
+    unit: 'per website',
+    category: 'website',
+    billingType: 'one-time',
+    deliveryTime: '~10–14 Days Delivery',
+    badge: 'COMPREHENSIVE',
+    isPopular: true,
+    description: 'A complete business website with a backend system where customer enquiries can be securely saved, managed and downloaded.',
+    features: ['Custom Backend', 'Database & Admin Dashboard', 'Excel / CSV Lead Export', 'WhatsApp & Email Alerts']
+  },
+  {
+    id: 'calc-starter-plan',
+    title: 'STARTER Social Media Plan',
+    price: 9999,
+    unit: 'per month',
+    category: 'social',
+    billingType: 'monthly',
+    deliveryTime: 'Ongoing Monthly Service',
+    description: '4 Reels + 8 Graphic Posts per month with strategic captions & scheduling.',
+    features: ['4 Reels/Shorts', '8 Graphic Posts', 'Content Calendar', 'Captions & Hashtags']
+  },
+  {
+    id: 'calc-growth-plan',
+    title: 'GROWTH Social Media Plan',
+    price: 14999,
+    originalPrice: 19999,
+    unit: 'per month',
+    category: 'social',
+    billingType: 'monthly',
+    deliveryTime: 'Ongoing Monthly Service',
+    badge: 'MOST POPULAR',
+    isPopular: true,
+    description: '8 Reels + 12 Graphic Posts per month + Strategy Calendar & Growth Review.',
+    features: ['8 Reels (2/week)', '12 Graphic Posts', 'Strategy Calendar', 'Profile Optimization']
+  },
+  {
+    id: 'calc-pro-plan',
+    title: 'PRO Social Media Plan',
+    price: 19999,
+    unit: 'per month',
+    category: 'social',
+    billingType: 'monthly',
+    deliveryTime: 'Ongoing Monthly Service',
+    description: '12 Reels + 16 Posts + 1 Long-Form YouTube Video per month.',
+    features: ['12 Reels (3/week)', '16 Posts/Carousels', '1 YouTube Video (~3–5 min)', 'Dedicated Strategy']
+  },
+  {
+    id: 'calc-meta-ads',
+    title: 'Meta Ads Management',
+    price: 15000,
+    unit: 'per month',
+    category: 'ads',
+    billingType: 'monthly',
+    deliveryTime: 'Setup in 3–5 Days',
+    description: 'Targeted Meta/Facebook/Instagram campaign architecture, creatives & optimization.',
+    features: ['Targeted structure', 'Ad creatives', 'Pixel & CAPI', 'Weekly optimization']
+  },
+  {
+    id: 'calc-google-ads',
+    title: 'Google Ads Management',
+    price: 15000,
+    unit: 'per month',
+    category: 'ads',
+    billingType: 'monthly',
+    deliveryTime: 'Setup in 3–5 Days',
+    description: 'High-intent Google Search, Performance Max & YouTube Ads management.',
+    features: ['Keyword research', 'Negative keywords', 'Search & PMax', 'Conversion tracking']
+  },
+  {
+    id: 'calc-short-video',
+    title: 'Short Advertisement Video',
+    price: 3000,
+    unit: 'per video',
+    category: 'video',
+    billingType: 'one-time',
+    deliveryTime: '~7 Days Delivery',
+    description: '15–30s high-retention promotional reel or paid social ad.',
+    features: ['Hook script', 'Motion text', 'Voiceover', '9:16 format']
+  },
+  {
+    id: 'calc-long-video',
+    title: 'Long Brand / Explainer Video',
+    price: 5000,
+    unit: 'per video',
+    category: 'video',
+    billingType: 'one-time',
+    deliveryTime: '~15 Days Delivery',
+    description: '3–5 minute detailed brand overview or service walkthrough.',
+    features: ['Storyboard', 'Deep narrative', 'YouTube SEO', '16:9 master']
+  },
+  {
+    id: 'calc-single-post',
+    title: 'Social Media Graphic Post',
+    price: 500,
+    unit: 'per post',
+    category: 'content',
+    billingType: 'one-time',
+    deliveryTime: '24–48 Hours',
+    description: 'Custom designed graphic or carousel slide with caption.',
+    features: ['On-brand design', 'Written caption', 'Targeted hashtags']
+  }
+];
+
+export const allVerifiedOfferingsData = [
+  ...pricingPackagesData,
+  ...pricingCalculatorItemsData
 ];
 
 export const blogPostsData: BlogPostItem[] = [
@@ -677,7 +907,7 @@ export const blogPostsData: BlogPostItem[] = [
     readTime: '5 min read',
     publishedDate: 'February 2026',
     status: 'published',
-    image: '/assets/images/Content & Social Media.jpg',
+    image: '/assets/images/content-and-social-media.jpg',
     alt: 'Content Creates Connection book on table',
     metaDescription: 'Explore actionable content strategies that cultivate authentic audience loyalty and long-term retention.'
   },
@@ -699,6 +929,8 @@ export const blogPostsData: BlogPostItem[] = [
     readTime: '6 min read',
     publishedDate: 'March 2026',
     status: 'published',
+    image: '',
+    alt: 'High-ROAS Ad Precision Performance Architecture',
     isGraphicCard: true,
     graphicData: {
       framework: 'Framework 03',

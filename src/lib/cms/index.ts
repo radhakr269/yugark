@@ -13,6 +13,7 @@ import {
   websiteDemosData as initialDemos,
   selectedWorkProjects as initialProjects,
   pricingPackagesData as initialPricing,
+  pricingCalculatorItemsData as initialCalculatorItems,
   blogPostsData as initialBlogPosts,
   siteConfig as initialSiteConfig,
 } from '../../data/studioData';
@@ -21,6 +22,7 @@ import {
   DemoItem,
   ProjectItem,
   PricingPackage,
+  PricingCalculatorItem,
   BlogPostItem,
   SiteConfig,
 } from '../../types/content';
@@ -43,6 +45,7 @@ const STORAGE_KEYS = {
   DEMOS: 'yugark_cms_demos',
   PROJECTS: 'yugark_cms_projects',
   PRICING: 'yugark_cms_pricing',
+  CALCULATOR: 'yugark_cms_calculator',
   BLOGS: 'yugark_cms_blogs',
   LEADS: 'yugark_cms_leads',
   MEDIA: 'yugark_cms_media',
@@ -71,13 +74,20 @@ function safeSetStorage<T>(key: string, data: T): void {
   }
 }
 
-// Initialize seed data into localStorage if empty
+// Initialize seed data into localStorage if empty or outdated
 function initializeLocalStorageSeed() {
   if (typeof window === 'undefined') return;
+
+  const SEED_VERSION_KEY = 'yugark_pricing_sync_v3';
+  const CURRENT_SEED_VERSION = 'verified_yugark_in_2026_source_of_truth_v3';
+  const hasOutdatedSeed = localStorage.getItem(SEED_VERSION_KEY) !== CURRENT_SEED_VERSION;
+  const storedPricing = localStorage.getItem(STORAGE_KEYS.PRICING);
+  const isOldInventedPricing = storedPricing && (storedPricing.includes('starter-launch') || storedPricing.includes('Growth Studio'));
+
   if (!localStorage.getItem(STORAGE_KEYS.DEMOS)) {
     safeSetStorage(STORAGE_KEYS.DEMOS, initialDemos);
   }
-  if (!localStorage.getItem(STORAGE_KEYS.SERVICES)) {
+  if (!localStorage.getItem(STORAGE_KEYS.SERVICES) || isOldInventedPricing || hasOutdatedSeed) {
     safeSetStorage(STORAGE_KEYS.SERVICES, initialServices);
   }
   if (!localStorage.getItem(STORAGE_KEYS.BLOGS)) {
@@ -86,8 +96,10 @@ function initializeLocalStorageSeed() {
   if (!localStorage.getItem(STORAGE_KEYS.PROJECTS)) {
     safeSetStorage(STORAGE_KEYS.PROJECTS, initialProjects);
   }
-  if (!localStorage.getItem(STORAGE_KEYS.PRICING)) {
+  if (!storedPricing || isOldInventedPricing || hasOutdatedSeed) {
     safeSetStorage(STORAGE_KEYS.PRICING, initialPricing);
+    safeSetStorage(STORAGE_KEYS.CALCULATOR, initialCalculatorItems);
+    localStorage.setItem(SEED_VERSION_KEY, CURRENT_SEED_VERSION);
   }
   if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
     safeSetStorage(STORAGE_KEYS.SETTINGS, initialSiteConfig);
@@ -169,6 +181,14 @@ export async function getPublishedServices(): Promise<ServiceItem[]> {
       description: rec.short_description,
       longDescription: rec.full_description,
       iconType: (rec.icon as any) || 'code',
+      priceDisplay: rec.price_display || (rec.launch_price ? `Launch Offer: ₹${rec.launch_price.toLocaleString('en-IN')}` : undefined),
+      regularPrice: rec.regular_price,
+      launchPrice: rec.launch_price,
+      billingType: (rec.billing_type as any) || 'one-time',
+      deliveryTime: rec.delivery_time,
+      badge: rec.badge,
+      category: rec.category,
+      imageUrl: rec.image_url || undefined,
       features: rec.features || [],
       deliverables: rec.benefits || [],
       process: rec.process || [],
@@ -183,7 +203,31 @@ export async function getPublishedServices(): Promise<ServiceItem[]> {
 
 export async function getServiceBySlug(slug: string): Promise<ServiceItem | null> {
   const allServices = await getPublishedServices();
-  return allServices.find((s) => s.slug === slug) || null;
+  
+  // Exact match
+  const directMatch = allServices.find((s) => s.slug === slug || s.id === slug);
+  if (directMatch) return directMatch;
+
+  // Recognized slug aliases for legacy & deep links
+  const aliasMap: Record<string, string> = {
+    'social-media': 'social-media-management',
+    'ads': 'social-media-advertising',
+    'ai-creative': 'ai-content-video',
+    'branding': 'digital-growth-strategy',
+    'content-strategy': 'digital-growth-strategy',
+  };
+
+  const targetSlug = aliasMap[slug];
+  if (targetSlug) {
+    const aliasFound = allServices.find((s) => s.slug === targetSlug || s.id === targetSlug);
+    if (aliasFound) return aliasFound;
+  }
+
+  return null;
+}
+
+export async function getPricingCalculatorItems(): Promise<PricingCalculatorItem[]> {
+  return safeGetStorage<PricingCalculatorItem[]>(STORAGE_KEYS.CALCULATOR, initialCalculatorItems);
 }
 
 // ============================================================================
@@ -319,14 +363,21 @@ export async function getPublishedPricing(): Promise<PricingPackage[]> {
       id: rec.id,
       slug: rec.slug,
       name: rec.title,
+      badge: rec.badge,
+      regularPrice: rec.regular_price,
+      launchPrice: rec.launch_price,
       tagline: rec.description,
-      investment: rec.price || 'Custom Studio Quote',
-      turnaround: rec.turnaround || '2 – 4 Weeks',
+      investment: rec.price || (rec.launch_price ? `Launch Offer: ₹${rec.launch_price.toLocaleString('en-IN')}` : 'Custom Studio Quote'),
+      turnaround: rec.turnaround || '~7–14 Days',
+      deliveryTime: rec.turnaround,
       popular: rec.is_featured,
       bestFor: rec.description,
+      type: (rec.billing_type as any) || 'one-time',
+      billingType: (rec.billing_type as any) || 'one-time',
       features: rec.features || [],
       deliverables: rec.deliverables || [],
-      inquiryMessage: `Hello Yugark Studio, I would like to inquire about the ${rec.title} package.`,
+      ctaText: rec.cta_label || `Choose ${rec.title}`,
+      inquiryMessage: `Hi Radha Krishna Sir, I would like to inquire about the ${rec.title} package.`,
     }));
   } catch (err) {
     console.warn('Fallback to local pricing packages:', err);
@@ -889,6 +940,13 @@ export const adminCmsApi = {
       short_description: s.description,
       full_description: s.longDescription,
       icon: s.iconType,
+      price_display: s.priceDisplay,
+      regular_price: s.regularPrice,
+      launch_price: s.launchPrice,
+      billing_type: s.billingType || 'one-time',
+      delivery_time: s.deliveryTime,
+      badge: s.badge,
+      category: s.category,
       features: s.features,
       benefits: s.deliverables,
       process: s.process,
@@ -1017,13 +1075,16 @@ export const adminCmsApi = {
       slug: p.slug,
       description: p.bestFor || p.tagline,
       price: p.investment,
-      currency: 'USD',
-      billing_type: 'Milestone-Based',
-      turnaround: p.turnaround,
+      regular_price: p.regularPrice,
+      launch_price: p.launchPrice,
+      badge: p.badge,
+      currency: 'INR',
+      billing_type: p.billingType || p.type || 'one-time',
+      turnaround: p.turnaround || p.deliveryTime || '~7–14 Days',
       features: p.features,
       deliverables: p.deliverables,
-      cta_label: 'Request Scope',
-      cta_url: '/contact',
+      cta_label: p.ctaText || `Choose ${p.name}`,
+      cta_url: `/contact?package=${encodeURIComponent(p.name)}`,
       is_featured: Boolean(p.popular),
       sort_order: idx + 1,
       status: 'published',
@@ -1039,13 +1100,16 @@ export const adminCmsApi = {
       title: pkg.title || 'New Package',
       slug: pkg.slug || `package-${Date.now()}`,
       description: pkg.description || '',
-      price: pkg.price || '$2,400',
-      currency: pkg.currency || 'USD',
-      billing_type: pkg.billing_type || 'Milestone-Based',
-      turnaround: pkg.turnaround || '2–3 Weeks',
+      price: pkg.price || (pkg.launch_price ? `₹${pkg.launch_price.toLocaleString('en-IN')}` : '₹9,999'),
+      regular_price: pkg.regular_price,
+      launch_price: pkg.launch_price,
+      badge: pkg.badge,
+      currency: pkg.currency || 'INR',
+      billing_type: pkg.billing_type || 'one-time',
+      turnaround: pkg.turnaround || '~7 Days Delivery',
       features: pkg.features || [],
       deliverables: pkg.deliverables || [],
-      cta_label: pkg.cta_label || 'Request Scope',
+      cta_label: pkg.cta_label || `Choose ${pkg.title || 'Package'}`,
       cta_url: pkg.cta_url || '/contact',
       is_featured: pkg.is_featured ?? false,
       sort_order: pkg.sort_order ?? 10,
@@ -1070,12 +1134,19 @@ export const adminCmsApi = {
       slug: newRecord.slug,
       tagline: newRecord.description,
       investment: newRecord.price,
+      regularPrice: newRecord.regular_price,
+      launchPrice: newRecord.launch_price,
+      badge: newRecord.badge,
+      billingType: newRecord.billing_type as any,
+      type: newRecord.billing_type as any,
       turnaround: newRecord.turnaround,
+      deliveryTime: newRecord.turnaround,
       popular: newRecord.is_featured,
       bestFor: newRecord.description,
       features: newRecord.features,
       deliverables: newRecord.deliverables,
-      inquiryMessage: `Inquiry for ${newRecord.title}`,
+      ctaText: newRecord.cta_label,
+      inquiryMessage: `Hi Radha Krishna Sir, I would like to inquire about the ${newRecord.title} package.`,
     };
     safeSetStorage(STORAGE_KEYS.PRICING, [...existing, newPkgItem]);
     return newRecord;
@@ -1104,11 +1175,19 @@ export const adminCmsApi = {
           name: updates.title ?? p.name,
           slug: updates.slug ?? p.slug,
           investment: updates.price ?? p.investment,
+          regularPrice: updates.regular_price ?? p.regularPrice,
+          launchPrice: updates.launch_price ?? p.launchPrice,
+          badge: updates.badge ?? p.badge,
+          billingType: (updates.billing_type as any) ?? p.billingType,
+          type: (updates.billing_type as any) ?? p.type,
           turnaround: updates.turnaround ?? p.turnaround,
+          deliveryTime: updates.turnaround ?? p.deliveryTime,
           popular: updates.is_featured ?? p.popular,
           bestFor: updates.description ?? p.bestFor,
+          tagline: updates.description ?? p.tagline,
           features: updates.features ?? p.features,
           deliverables: updates.deliverables ?? p.deliverables,
+          ctaText: updates.cta_label ?? p.ctaText,
         };
       }
       return p;
@@ -1366,12 +1445,12 @@ export const adminCmsApi = {
   // --------------------------------------------------------------------------
   async listMediaAssets(): Promise<Array<{ id: string; name: string; url: string; size: string; type: string; date: string }>> {
     const bundledImages = [
-      { id: 'img-1', name: 'Hero.jpg', url: '/assets/images/Hero.jpg', size: '1.2 MB', type: 'image/jpeg', date: '2026-10-01' },
+      { id: 'img-1', name: 'hero.jpg', url: '/assets/images/hero.jpg', size: '445 KB', type: 'image/jpeg', date: '2026-10-01' },
       { id: 'img-2', name: 'Business pro.jpg', url: '/assets/images/Business pro.jpg', size: '840 KB', type: 'image/jpeg', date: '2026-10-02' },
       { id: 'img-3', name: 'Aurora living.jpg', url: '/assets/images/Aurora living.jpg', size: '920 KB', type: 'image/jpeg', date: '2026-10-03' },
       { id: 'img-4', name: 'Fit Life.jpg', url: '/assets/images/Fit Life.jpg', size: '780 KB', type: 'image/jpeg', date: '2026-10-04' },
       { id: 'img-5', name: 'Sole beauty.jpg', url: '/assets/images/Sole beauty.jpg', size: '1.1 MB', type: 'image/jpeg', date: '2026-10-05' },
-      { id: 'img-6', name: 'content-and-social-media.jpg', url: '/assets/images/content-and-social-media.jpg', size: '650 KB', type: 'image/jpeg', date: '2026-10-06' },
+      { id: 'img-6', name: 'content-and-social-media.jpg', url: '/assets/images/content-and-social-media.jpg', size: '336 KB', type: 'image/jpeg', date: '2026-10-06' },
     ];
 
     const userUploaded = safeGetStorage<any[]>(STORAGE_KEYS.MEDIA, []);

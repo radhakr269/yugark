@@ -161,7 +161,7 @@ export const SeoManager: React.FC = () => {
             </span>
             <div className="rounded-xl border border-[#E0D7C9] overflow-hidden bg-[#FAF8F5]">
               <img
-                src="/assets/images/Hero.jpg"
+                src="/assets/images/hero.jpg"
                 alt="Social Card Banner"
                 className="w-full h-32 object-cover"
               />

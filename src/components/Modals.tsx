@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { X, ArrowRight, CheckCircle, Clock, Send } from 'lucide-react';
 import { ProjectItem, DemoItem, BlogPostItem, ServiceItem } from '../types/content';
+import { WhatsAppIcon } from './WhatsAppIcon';
 
 // Reusable hook to handle Escape key dismissal
 function useEscapeKey(handler: () => void, isActive: boolean) {
@@ -255,7 +256,27 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({ article, onClose }) 
 
         {/* Content */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-5 sm:space-y-6">
-          {article.image && (
+          {article.isGraphicCard && article.graphicData ? (
+            <div className="relative rounded-xl overflow-hidden aspect-[16/9] bg-[#1B2E24] p-6 flex flex-col justify-between text-[#FAF8F5]">
+              <div className="flex items-center justify-between z-10">
+                <span className="text-[10px] font-mono text-[#A5C2B1] uppercase tracking-wider">
+                  {article.graphicData.framework}
+                </span>
+                <span className="bg-[#2D4536] text-[#E5ECE7] text-[10px] px-2.5 py-0.5 rounded-full font-medium">
+                  {article.graphicData.architectureBadge}
+                </span>
+              </div>
+              <div className="z-10">
+                <p className="text-[11px] font-medium text-[#A5C2B1] uppercase tracking-wider mb-1">
+                  {article.graphicData.playbookLabel}
+                </p>
+                <h4 className="font-serif-title text-xl text-white leading-tight">
+                  {article.graphicData.headline}
+                </h4>
+              </div>
+              <div className="absolute -bottom-10 -right-10 w-44 h-44 bg-[#2D4536]/50 rounded-full blur-2xl pointer-events-none" />
+            </div>
+          ) : article.image ? (
             <div className="relative rounded-xl overflow-hidden aspect-[16/9] bg-[#EBE4D8]">
               <img
                 src={article.image}
@@ -263,7 +284,7 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({ article, onClose }) 
                 className="w-full h-full object-cover"
               />
             </div>
-          )}
+          ) : null}
 
           <div className="prose text-xs sm:text-sm text-[#3C423E] leading-relaxed space-y-3 sm:space-y-4">
             <p className="font-medium text-sm sm:text-base text-[#121614]">
@@ -747,8 +768,8 @@ export const FreeDemoModal: React.FC<FreeDemoModalProps> = ({ isOpen, onClose })
                   onClick={handleWhatsAppDirect}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-full bg-[#25D366] text-white text-xs font-semibold hover:bg-[#1EBE5D] transition-colors shadow-sm cursor-pointer"
                 >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Chat On WhatsApp</span>
+                  <WhatsAppIcon className="w-3.5 h-3.5" />
+                  <span>WhatsApp Query</span>
                 </button>
                 <button
                   onClick={onClose}

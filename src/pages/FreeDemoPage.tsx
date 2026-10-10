@@ -13,8 +13,10 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { SEOHead } from '../components/SEOHead';
-import { submitLead } from '../lib/cms';
+import { submitLead, getWebsiteSettings } from '../lib/cms';
 import { siteConfig } from '../data/studioData';
+import { WhatsAppIcon } from '../components/WhatsAppIcon';
+import { InnerPageNav } from '../components/InnerPageNav';
 
 export const FreeDemoPage: React.FC = () => {
   const navigate = useNavigate();
@@ -167,8 +169,8 @@ export const FreeDemoPage: React.FC = () => {
                       onClick={handleWhatsAppDirect}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#25D366] text-white text-xs font-semibold hover:bg-[#1EBE5D] transition-colors shadow-sm cursor-pointer"
                     >
-                      <MessageSquare className="w-4 h-4" />
-                      <span>Ping On WhatsApp Now</span>
+                      <WhatsAppIcon className="w-4 h-4" />
+                      <span>WhatsApp Query</span>
                     </button>
                     <button
                       onClick={() => navigate('/')}

@@ -17,7 +17,10 @@ import {
 } from 'lucide-react';
 import { ServiceItem } from '../types/content';
 import { SEOHead } from '../components/SEOHead';
-import { getServiceBySlug } from '../lib/cms';
+import { getServiceBySlug, getWebsiteSettings } from '../lib/cms';
+import { WhatsAppIcon } from '../components/WhatsAppIcon';
+import { InnerPageNav } from '../components/InnerPageNav';
+import { siteConfig } from '../data/studioData';
 
 export const ServiceDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -85,6 +88,8 @@ export const ServiceDetailPage: React.FC = () => {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
+        <InnerPageNav currentPageTitle={service.title} />
+
         {/* Breadcrumb Navigation */}
         <nav className="flex items-center space-x-2 text-xs font-medium text-[#7C887E] mb-8">
           <Link to="/" className="hover:text-[#121614] transition-colors">
@@ -117,6 +122,17 @@ export const ServiceDetailPage: React.FC = () => {
             <p className="text-sm sm:text-base text-[#5A635C] leading-relaxed mb-8">
               {service.longDescription}
             </p>
+
+            {service.priceDisplay && (
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#E5ECE7] text-[#1B3828] text-xs font-bold mb-6">
+                <span>{service.priceDisplay}</span>
+                {service.badge && (
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-[#1B2E24] text-white">
+                    {service.badge}
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Quick Actions */}
             <div className="flex flex-wrap items-center gap-3">
@@ -160,7 +176,7 @@ export const ServiceDetailPage: React.FC = () => {
                   <Clock className="w-3.5 h-3.5 text-[#2D4536]" />
                   <span>Turnaround Time:</span>
                 </span>
-                <span className="font-semibold text-[#121614]">Typically 2 – 4 Weeks</span>
+                <span className="font-semibold text-[#121614]">{service.deliveryTime || 'Typically ~7–14 Days'}</span>
               </div>
               <div className="flex items-center justify-between text-xs text-[#5D6B60]">
                 <span className="flex items-center gap-1.5">
@@ -293,12 +309,13 @@ export const ServiceDetailPage: React.FC = () => {
               <ArrowRight className="w-4 h-4" />
             </button>
             <a
-              href="https://wa.me/919125272460?text=Hello%20Yugark%20Studio%2C%20I%20have%20an%20inquiry%20regarding%20your%20services."
+              href={`https://wa.me/919125272460?text=${encodeURIComponent(`Hello Yugark Studio, I have an inquiry regarding ${service.title}.`)}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-6 py-3.5 rounded-full border border-[#D5CDC0] text-[#121614] text-xs font-semibold hover:bg-[#EAE3D6] transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#25D366] text-white text-xs font-semibold hover:bg-[#20ba5a] transition-colors shadow-sm"
             >
-              <span>Direct WhatsApp Inquiry</span>
+              <WhatsAppIcon className="w-3.5 h-3.5" />
+              <span>WhatsApp Query</span>
             </a>
           </div>
         </div>

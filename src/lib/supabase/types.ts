@@ -44,6 +44,13 @@ export interface ServiceRecord {
     question: string;
     answer: string;
   }>;
+  price_display?: string;
+  regular_price?: number;
+  launch_price?: number;
+  billing_type?: string;
+  delivery_time?: string;
+  badge?: string;
+  category?: string;
   seo_title?: string | null;
   seo_description?: string | null;
   sort_order: number;
@@ -113,6 +120,9 @@ export interface PricingPackageRecord {
   slug: string;
   description: string;
   price: string;
+  regular_price?: number;
+  launch_price?: number;
+  badge?: string;
   currency: string;
   billing_type: string;
   turnaround: string;

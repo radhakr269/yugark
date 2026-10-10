@@ -35,12 +35,20 @@ export interface ServiceItem {
   tagline: string;
   description: string;
   longDescription: string;
-  iconType: 'code' | 'chat' | 'target' | 'sparkles' | 'palette';
+  iconType: 'code' | 'chat' | 'target' | 'sparkles' | 'palette' | 'video' | 'compass' | string;
   features: string[];
   deliverables: string[];
   process: ServiceProcessStep[];
   faqs: ServiceFAQ[];
   metaDescription?: string;
+  priceDisplay?: string;
+  regularPrice?: number;
+  launchPrice?: number;
+  billingType?: 'one-time' | 'monthly';
+  deliveryTime?: string;
+  badge?: string;
+  category?: string;
+  imageUrl?: string;
 }
 
 export interface ProjectItem {
@@ -119,6 +127,28 @@ export interface PricingPackage {
   features: string[];
   deliverables: string[];
   inquiryMessage: string;
+  badge?: string;
+  regularPrice?: number;
+  launchPrice?: number;
+  type?: 'one-time' | 'monthly';
+  billingType?: 'one-time' | 'monthly';
+  deliveryTime?: string;
+  ctaText?: string;
+}
+
+export interface PricingCalculatorItem {
+  id: string;
+  title: string;
+  price: number;
+  unit: string;
+  category: 'website' | 'social' | 'ads' | 'video' | 'content' | string;
+  billingType: 'one-time' | 'monthly';
+  deliveryTime: string;
+  description: string;
+  features: string[];
+  originalPrice?: number;
+  badge?: string;
+  isPopular?: boolean;
 }
 
 export interface SiteConfig {

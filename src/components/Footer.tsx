@@ -1,7 +1,9 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, Instagram, Linkedin, Youtube, MessageSquare } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Mail } from 'lucide-react';
 import { siteConfig, navigationLinks, servicesData } from '../data/studioData';
+import { getWebsiteSettings } from '../lib/cms';
+import { WhatsAppIcon } from './WhatsAppIcon';
 
 interface FooterProps {
   onOpenTerms?: () => void;
@@ -12,136 +14,174 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenTerms,
   onOpenSitemap,
 }) => {
+  const navigate = useNavigate();
+  const currentYear = new Date().getFullYear();
+  const [whatsappUrl, setWhatsappUrl] = useState(siteConfig.whatsappUrl);
+  const [contactEmail, setContactEmail] = useState(siteConfig.contactEmail);
+
+  useEffect(() => {
+    async function loadSettings() {
+      const settings = await getWebsiteSettings();
+      if (settings?.whatsappUrl) {
+        setWhatsappUrl(settings.whatsappUrl);
+      }
+      if (settings?.contactEmail) {
+        setContactEmail(settings.contactEmail);
+      }
+    }
+    loadSettings();
+
+    const handleUpdate = () => loadSettings();
+    window.addEventListener('yugark-cms-updated', handleUpdate);
+    return () => window.removeEventListener('yugark-cms-updated', handleUpdate);
+  }, []);
+
   return (
-    <footer className="bg-[#121B16] text-[#A6B2AB] pt-8 sm:pt-12 pb-6 sm:pb-8 border-t border-[#232F28]" id="contact">
+    <footer
+      className="bg-[#18261F] text-[#B0C0B7] border-t border-[#253A2F]"
+      id="contact"
+    >
+      {/* Integrated Unified Forest-Green CTA & Footer Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
-        <div className="grid grid-cols-2 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-8 mb-6 sm:mb-10">
-          {/* Column 1: Brand Info */}
-          <div className="col-span-2 lg:col-span-4 space-y-2 sm:space-y-4">
-            <Link to="/" className="flex flex-col group inline-block">
-              <span className="font-serif-title text-xl sm:text-2xl font-bold tracking-[0.18em] text-[#FAF8F5] uppercase group-hover:text-white transition-colors">
+        {/* ROW 1: Compact Integrated CTA Bar */}
+        <div className="py-6 sm:py-8 lg:py-9 border-b border-[#253A2F] flex flex-col md:flex-row md:items-center md:justify-between gap-4 sm:gap-6">
+          <div className="max-w-xl">
+            <p className="text-[9px] sm:text-[10px] font-mono uppercase tracking-[0.22em] text-[#8AA795] mb-1">
+              — Let's Build Something Great
+            </p>
+            <h2 className="font-serif-title text-xl sm:text-2xl lg:text-3xl font-medium text-[#FAF8F5] leading-tight">
+              Ready to Grow Your Brand?
+            </h2>
+            <p className="text-xs sm:text-[13px] text-[#CAD6CE] mt-1 font-light leading-relaxed">
+              Let's create a website, content or digital strategy that helps your business move forward.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+            <button
+              onClick={() => navigate('/contact')}
+              className="min-h-[40px] inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-[#FAF8F5] text-[#1B2E24] text-xs font-bold tracking-wider hover:bg-white transition-all shadow-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <span>Start Project</span>
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+            </button>
+
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="min-h-[40px] inline-flex items-center justify-center gap-2 px-4.5 py-2.5 rounded-full bg-[#25D366] text-white text-xs font-semibold tracking-wide hover:bg-[#20ba5a] transition-all shadow-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <WhatsAppIcon className="w-3.5 h-3.5" />
+              <span>WhatsApp Query</span>
+            </a>
+          </div>
+        </div>
+
+        {/* ROW 2: Ultra-Compact Multi-Column Navigation */}
+        <div className="py-6 sm:py-8 grid grid-cols-2 md:grid-cols-12 gap-5 sm:gap-6 lg:gap-8 text-xs">
+          {/* Brand Wordmark & Tagline: Fixed alignment with no vertical crowding */}
+          <div className="col-span-2 md:col-span-4 space-y-2">
+            <Link to="/" className="inline-block group focus-visible:outline-none">
+              <span className="font-serif-title text-lg sm:text-xl font-bold tracking-[0.18em] text-[#FAF8F5] uppercase block group-hover:text-white transition-colors">
                 {siteConfig.studioName}
               </span>
-              <span className="text-[8px] sm:text-[9px] tracking-[0.35em] text-[#7B8B81] uppercase -mt-0.5 sm:-mt-1 font-medium">
-                {siteConfig.tagline}
+              <span className="text-[8px] sm:text-[8.5px] font-mono tracking-[0.3em] text-[#8AA795] uppercase block mt-0.5">
+                DIGITAL STUDIO
               </span>
             </Link>
-            <p className="text-[11px] sm:text-xs text-[#89978F] leading-relaxed max-w-xs pt-1">
-              Websites. Creative Content. Digital Marketing. We help modern brands build, create and grow in the digital world.
+
+            <p className="text-[11px] sm:text-xs text-[#98AAA0] max-w-xs leading-relaxed">
+              Websites, creative content and digital marketing for growing businesses.
             </p>
-            {/* Social Icons & WhatsApp */}
-            <div className="flex items-center space-x-2.5 pt-1">
+
+            <div className="pt-1 flex items-center gap-2.5">
               <a
-                href={siteConfig.socials.instagram}
+                href={whatsappUrl}
                 target="_blank"
                 rel="noreferrer"
-                aria-label="Instagram"
-                className="w-7 h-7 rounded-full bg-[#1C2922] flex items-center justify-center hover:bg-white hover:text-[#1B2E24] transition-colors text-xs"
+                aria-label="WhatsApp Query"
+                className="w-7 h-7 rounded-full bg-[#22352B] hover:bg-[#25D366] text-[#FAF8F5] flex items-center justify-center transition-colors"
               >
-                <Instagram className="w-3.5 h-3.5" />
+                <WhatsAppIcon className="w-3.5 h-3.5" />
               </a>
               <a
-                href={siteConfig.socials.linkedin}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="LinkedIn"
-                className="w-7 h-7 rounded-full bg-[#1C2922] flex items-center justify-center hover:bg-white hover:text-[#1B2E24] transition-colors text-xs"
+                href={`mailto:${contactEmail}`}
+                aria-label="Email Studio"
+                className="w-7 h-7 rounded-full bg-[#22352B] hover:bg-white hover:text-[#18261F] text-[#FAF8F5] flex items-center justify-center transition-colors"
               >
-                <Linkedin className="w-3.5 h-3.5" />
-              </a>
-              <a
-                href={siteConfig.socials.youtube}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="YouTube"
-                className="w-7 h-7 rounded-full bg-[#1C2922] flex items-center justify-center hover:bg-white hover:text-[#1B2E24] transition-colors text-xs"
-              >
-                <Youtube className="w-3.5 h-3.5" />
-              </a>
-              <a
-                href={siteConfig.whatsappUrl}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="WhatsApp"
-                className="w-7 h-7 rounded-full bg-[#1C2922] flex items-center justify-center hover:bg-[#25D366] hover:text-white transition-colors text-xs"
-              >
-                <MessageSquare className="w-3.5 h-3.5" />
+                <Mail className="w-3.5 h-3.5" />
               </a>
             </div>
           </div>
 
-          {/* Column 2: Quick Links */}
-          <div className="col-span-1 lg:col-span-2 space-y-2 sm:space-y-3">
-            <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-white">
+          {/* Quick Links */}
+          <div className="col-span-1 md:col-span-2 space-y-2">
+            <p className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-white font-semibold">
               Quick Links
             </p>
-            <ul className="space-y-1.5 sm:space-y-2 text-[10px] sm:text-xs">
-              {navigationLinks.map((link) => (
-                <li key={link.label}>
-                  <Link
-                    to={link.href}
-                    className="hover:text-white transition-colors text-left block"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
+            <ul className="space-y-1.5 text-[11px] sm:text-xs">
+              <li><Link to="/" className="hover:text-white transition-colors">Home</Link></li>
+              <li><Link to="/services" className="hover:text-white transition-colors">Services</Link></li>
+              <li><Link to="/work" className="hover:text-white transition-colors">Work</Link></li>
+              <li><Link to="/demos" className="hover:text-white transition-colors">Demos</Link></li>
+              <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+              <li><Link to="/blog" className="hover:text-white transition-colors">Blog</Link></li>
+              <li><Link to="/about" className="hover:text-white transition-colors">About</Link></li>
+              <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
             </ul>
           </div>
 
-          {/* Column 3: Our Services */}
-          <div className="col-span-1 lg:col-span-3 space-y-2 sm:space-y-3">
-            <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-white">
-              Our Services
+          {/* Services Links */}
+          <div className="col-span-1 md:col-span-3 space-y-2">
+            <p className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-white font-semibold">
+              Services
             </p>
-            <ul className="space-y-1.5 sm:space-y-2 text-[10px] sm:text-xs">
-              {servicesData.map((service) => (
-                <li key={service.id}>
-                  <Link
-                    to={`/services/${service.slug}`}
-                    className="hover:text-white transition-colors text-left block"
-                  >
-                    {service.title}
-                  </Link>
-                </li>
-              ))}
+            <ul className="space-y-1.5 text-[11px] sm:text-xs">
+              <li><Link to="/services/website-development" className="hover:text-white transition-colors">Website Development</Link></li>
+              <li><Link to="/services/social-media-management" className="hover:text-white transition-colors">Social Media</Link></li>
+              <li><Link to="/services/social-media-advertising" className="hover:text-white transition-colors">Paid Advertising</Link></li>
+              <li><Link to="/services/ai-content-video" className="hover:text-white transition-colors">AI Creative</Link></li>
+              <li><Link to="/services/digital-growth-strategy" className="hover:text-white transition-colors">Digital Strategy</Link></li>
             </ul>
           </div>
 
-          {/* Column 4: Contact Us */}
-          <div className="col-span-2 lg:col-span-3 space-y-2 sm:space-y-3">
-            <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-white">
-              Contact Us
+          {/* Contact Direct */}
+          <div className="col-span-2 md:col-span-3 space-y-2">
+            <p className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-white font-semibold">
+              Contact
             </p>
-            <div className="space-y-2 text-[10px] sm:text-xs">
-              <div className="flex items-center space-x-2">
-                <Mail className="w-3.5 h-3.5 text-[#7C8F83] shrink-0" />
+            <div className="space-y-2 text-[11px] sm:text-xs">
+              <div>
+                <span className="text-[9.5px] font-mono uppercase text-[#7E9185] block">Email</span>
                 <a
-                  href={`mailto:${siteConfig.contactEmail}`}
-                  className="hover:text-white transition-colors text-white font-medium truncate"
+                  href={`mailto:${contactEmail}`}
+                  className="hover:text-white transition-colors text-white font-medium"
                 >
-                  {siteConfig.contactEmail}
+                  {contactEmail}
                 </a>
               </div>
-              <div className="flex items-center space-x-2">
-                <MessageSquare className="w-3.5 h-3.5 text-[#7C8F83] shrink-0" />
+
+              <div>
+                <span className="text-[9.5px] font-mono uppercase text-[#7E9185] block">Direct Inquiry</span>
                 <a
-                  href={siteConfig.whatsappUrl}
+                  href={whatsappUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="hover:text-white transition-colors text-[#89978F]"
+                  className="inline-flex items-center gap-1.5 text-[#5AE48B] hover:text-white transition-colors font-medium mt-0.5"
                 >
-                  WhatsApp: {siteConfig.whatsappNumber}
+                  <WhatsAppIcon className="w-3.5 h-3.5" />
+                  <span>WhatsApp Query</span>
                 </a>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Legal / Copyright Footer Row */}
-        <div className="pt-4 sm:pt-8 border-t border-[#1F2C24] flex flex-col sm:flex-row items-center justify-between text-[10px] sm:text-[11px] text-[#6E7C73] gap-2 sm:gap-0">
-          <p>© 2026 Yugark Digital Studio. All rights reserved.</p>
-          <div className="flex items-center space-x-4 sm:space-x-6">
+        {/* ROW 3: Ultra-Minimal Copyright & Legal Bar */}
+        <div className="py-4 border-t border-[#253A2F] flex flex-col sm:flex-row items-center justify-between text-[10px] sm:text-[11px] text-[#7E9185] gap-2 sm:gap-0">
+          <p>© {currentYear} Yugark Digital Studio. All rights reserved.</p>
+          <div className="flex items-center space-x-3 sm:space-x-4">
             <Link to="/privacy-policy" className="hover:text-white transition-colors">
               Privacy Policy
             </Link>
@@ -165,10 +205,6 @@ export const Footer: React.FC<FooterProps> = ({
                 Sitemap
               </Link>
             )}
-            <span>•</span>
-            <Link to="/admin" className="hover:text-[#A5C2B1] transition-colors font-mono">
-              Admin Portal
-            </Link>
           </div>
         </div>
       </div>

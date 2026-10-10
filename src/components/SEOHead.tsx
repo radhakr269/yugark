@@ -22,7 +22,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
   ogTitle,
   ogDescription,
   canonicalPath,
-  ogImage = '/assets/images/Hero.jpg',
+  ogImage = '/assets/images/hero.jpg',
   noIndex = false,
   articleData,
 }) => {
@@ -90,7 +90,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
         '@type': 'BlogPosting',
         headline: articleData.headline,
         description: description,
-        image: articleData.image ? `${window.location.origin}${articleData.image}` : `${window.location.origin}/assets/images/Hero.jpg`,
+        image: articleData.image ? `${window.location.origin}${articleData.image}` : `${window.location.origin}/assets/images/hero.jpg`,
         datePublished: articleData.datePublished || '2026-10-09',
         author: {
           '@type': 'Organization',

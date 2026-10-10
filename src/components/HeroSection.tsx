@@ -146,7 +146,197 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     >
       {/* Background is clean warm ivory; visual composition is fully responsive with zero text overlap */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 xl:gap-10 items-center">
+        {/* MOBILE HERO VIEW (strictly < md screens): Text on LEFT, feathered workspace image on upper RIGHT */}
+        <div className="block md:hidden">
+          {/* Top Split Row: Left Animated Copy & Right Feathered Visual */}
+          <div className="flex items-start justify-between gap-2 xs:gap-3 mb-2.5 xs:mb-3">
+            {/* Left: Animated Copy */}
+            <div className="flex-1 min-w-0 pr-1 xs:pr-2">
+              {/* Eyebrow */}
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <div className="inline-flex items-center space-x-1.5 text-[8.5px] xs:text-[9.5px] font-semibold tracking-[0.2em] text-[#556358] uppercase">
+                  <span className="w-3.5 h-[1.5px] bg-[#556358]" />
+                  <span
+                    key={`m-eyebrow-${currentState}`}
+                    className="transition-all duration-500 ease-out animate-fadeIn"
+                  >
+                    {activeMsg.eyebrow}
+                  </span>
+                </div>
+              </div>
+
+              {/* Headline */}
+              <div className="min-h-[52px] xs:min-h-[58px] flex items-center mb-1 xs:mb-1.5 overflow-hidden">
+                <h1
+                  key={`m-headline-${currentState}`}
+                  className="font-serif-title text-[21px] xs:text-[24px] sm:text-[26px] leading-[1.08] text-[#121614] font-medium tracking-tight transition-all duration-700 ease-out"
+                  style={{
+                    animation: 'heroSlideFade 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                  }}
+                >
+                  {activeMsg.headline.includes('Grow') ? (
+                    <>
+                      We{' '}
+                      <span className="italic font-normal text-[#2D4536]">
+                        Grow Brands.
+                      </span>
+                    </>
+                  ) : (
+                    activeMsg.headline
+                  )}
+                </h1>
+              </div>
+
+              {/* Supporting Text */}
+              <div className="min-h-[40px] xs:min-h-[44px] flex items-start">
+                <p
+                  key={`m-support-${currentState}`}
+                  className="text-[#555C56] text-[10.5px] xs:text-[11.5px] leading-[1.36] font-normal transition-all duration-600 ease-out line-clamp-3"
+                  style={{
+                    animation: 'heroFade 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                  }}
+                >
+                  {activeMsg.supportingText}
+                </p>
+              </div>
+            </div>
+
+            {/* Upper Right: Significantly Enlarged Workspace Image (1.8–2.2x) with Four-Sided Feather Mask */}
+            <div className="w-[46%] xs:w-[49%] sm:w-[50%] max-w-[240px] shrink-0 pt-0.5">
+              <div
+                className="relative w-full aspect-[4/3] xs:aspect-[15/11] overflow-hidden flex items-center justify-center pointer-events-none select-none"
+                style={{
+                  maskImage: `
+                    radial-gradient(ellipse 90% 86% at 50% 50%, black 58%, rgba(0,0,0,0.85) 76%, rgba(0,0,0,0.2) 92%, transparent 100%),
+                    linear-gradient(to right, transparent 0%, rgba(0,0,0,0.7) 4%, black 14%, black 86%, rgba(0,0,0,0.7) 96%, transparent 100%),
+                    linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.7) 4%, black 14%, black 86%, rgba(0,0,0,0.7) 96%, transparent 100%)
+                  `,
+                  WebkitMaskImage: `
+                    radial-gradient(ellipse 90% 86% at 50% 50%, black 58%, rgba(0,0,0,0.85) 76%, rgba(0,0,0,0.2) 92%, transparent 100%),
+                    linear-gradient(to right, transparent 0%, rgba(0,0,0,0.7) 4%, black 14%, black 86%, rgba(0,0,0,0.7) 96%, transparent 100%),
+                    linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.7) 4%, black 14%, black 86%, rgba(0,0,0,0.7) 96%, transparent 100%)
+                  `,
+                  maskComposite: 'intersect',
+                  WebkitMaskComposite: 'source-in',
+                }}
+              >
+                <img
+                  alt="Yugark Digital Studio workspace showcase"
+                  className="w-full h-full object-cover object-center transform scale-115"
+                  src={heroImage}
+                  loading="eager"
+                  decoding="async"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Badges / Labels for Active State */}
+          <div className="flex flex-wrap items-center gap-1.5 mb-2.5 xs:mb-3">
+            {activeMsg.labels.map((lbl, idx) => (
+              <span
+                key={`m-${currentState}-lbl-${idx}`}
+                className="inline-flex items-center text-[9.5px] font-medium text-[#2D4536] bg-[#EAE3D6]/70 border border-[#DBD2C3] px-2 py-0.5 rounded-full"
+              >
+                {lbl}
+              </span>
+            ))}
+          </div>
+
+          {/* Interactive State Indicators (01, 02, 03) */}
+          <div
+            className="flex items-center gap-2 mb-3 xs:mb-3.5"
+            role="tablist"
+            aria-label="Hero message state selector"
+          >
+            {heroStates.map((state, idx) => {
+              const isActive = idx === currentState;
+              return (
+                <button
+                  key={`m-tab-${idx}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-label={`Switch to ${state.headline}`}
+                  onClick={() => setCurrentState(idx)}
+                  className="group flex items-center gap-1.5 py-1 px-1 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#2D4536] rounded"
+                >
+                  <div
+                    className={`h-1.5 rounded-full transition-all duration-500 ${
+                      isActive
+                        ? 'w-7 bg-[#2D4536]'
+                        : 'w-2 bg-[#D4CBC0] hover:bg-[#A9A094]'
+                    }`}
+                  />
+                  <span
+                    className={`text-[9.5px] font-mono tracking-wider transition-colors duration-300 ${
+                      isActive
+                        ? 'text-[#1B2E24] font-semibold'
+                        : 'text-[#8C968E] group-hover:text-[#4A544C]'
+                    }`}
+                  >
+                    0{idx + 1}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-wrap items-center gap-2 pt-0.5 mb-3.5 xs:mb-4">
+            <button
+              onClick={onStartProject}
+              className="min-h-[38px] inline-flex items-center justify-center px-4 py-2 rounded-full bg-[#1A2621] text-white text-[11px] font-medium tracking-wide hover:bg-black transition-all shadow-sm group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4536]"
+            >
+              <span>{ctaLabels.primary}</span>
+              <ArrowRight className="w-3 h-3 ml-1.5 transition-transform group-hover:translate-x-1" />
+            </button>
+
+            <button
+              onClick={onViewWork}
+              className="min-h-[38px] inline-flex items-center justify-center px-3.5 py-2 rounded-full border border-[#D5CDC1] bg-white/80 text-[#121614] text-[11px] font-medium tracking-wide hover:bg-white hover:border-[#121614] transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4536]"
+            >
+              {ctaLabels.secondary}
+            </button>
+
+            <button
+              onClick={onFreeDemo}
+              className="min-h-[38px] inline-flex items-center justify-center px-3.5 py-2 rounded-full bg-[#E3ECE5] hover:bg-[#D5E3D8] text-[#1B3624] border border-[#B7C9BD] text-[11px] font-semibold tracking-wide transition-all shadow-2xs group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4536]"
+            >
+              <Sparkles className="w-3 h-3 mr-1 text-[#2D4536] transition-transform group-hover:rotate-12" />
+              <span>{ctaLabels.demo}</span>
+            </button>
+          </div>
+
+          {/* 4 Value Highlights for Mobile */}
+          <div className="pt-3 border-t border-[#E8E1D5] grid grid-cols-2 gap-2">
+            {valueHighlights.map((badge) => {
+              let Icon = Monitor;
+              if (badge.iconName === 'layers') Icon = Layers;
+              if (badge.iconName === 'zap') Icon = Zap;
+              if (badge.iconName === 'bar-chart') Icon = TrendingUp;
+
+              return (
+                <div key={`m-${badge.id}`} className="flex items-center gap-1.5 min-w-0">
+                  <div className="w-6 h-6 rounded-full bg-[#EAE3D6] flex items-center justify-center text-[#2D4536] shrink-0">
+                    <Icon className="w-3 h-3" />
+                  </div>
+                  <div className="leading-tight min-w-0 flex-1">
+                    <p className="font-bold uppercase tracking-wider text-[#121614] text-[8.5px] whitespace-normal">
+                      {badge.title}
+                    </p>
+                    <p className="text-[#687069] text-[7.5px] whitespace-normal">
+                      {badge.subtitle}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* DESKTOP & TABLET HERO VIEW (md: and above) — COMPLETELY PRESERVED */}
+        <div className="hidden md:grid md:grid-cols-12 gap-6 lg:gap-8 xl:gap-10 items-center">
           {/* Left: Dynamic Animated Copy with Fixed Stable Container Heights */}
           <div className="md:col-span-6 lg:col-span-5 z-10">
             {/* Eyebrow with Animated Pill Indicator */}
@@ -272,19 +462,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5 text-[#2D4536] transition-transform group-hover:rotate-12" />
                 <span>{ctaLabels.demo}</span>
               </button>
-            </div>
-
-            {/* Mobile Dedicated Showcase Visual: Cleanly placed in layout flow with zero text overlap and 100% guaranteed visibility */}
-            <div className="md:hidden my-4 sm:my-5 overflow-hidden rounded-xl border border-[#E3DBD0] bg-[#EAE2D5] shadow-xs">
-              <div className="w-full aspect-[16/10] overflow-hidden">
-                <img
-                  alt="Yugark Digital Studio multi-device mockup showcase: monitor, laptop and smartphone"
-                  className="w-full h-full object-cover object-center block"
-                  src={heroImage}
-                  loading="eager"
-                  decoding="async"
-                />
-              </div>
             </div>
 
             {/* 4 Value Highlights: Completely fixed clipping so 'Content That Connects' is never clipped */}

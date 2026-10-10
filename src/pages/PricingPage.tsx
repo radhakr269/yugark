@@ -32,7 +32,7 @@ export const PricingPage: React.FC = () => {
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>(['calc-frontend-web']);
   const [durationTerm, setDurationTerm] = useState<'one-time' | '1month' | '6months' | '1year'>('one-time');
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
-  const [whatsappUrl, setWhatsappUrl] = useState('https://wa.me/919125272460');
+  const [whatsappUrl, setWhatsappUrl] = useState('https://wa.me/919125205132');
 
   useEffect(() => {
     async function loadData() {
@@ -123,8 +123,8 @@ export const PricingPage: React.FC = () => {
 
     const encoded = encodeURIComponent(message);
     const cleanNumber = whatsappUrl.includes('wa.me')
-      ? whatsappUrl.split('wa.me/')[1]?.replace(/[^0-9]/g, '') || '919125272460'
-      : '919125272460';
+      ? whatsappUrl.split('wa.me/')[1]?.replace(/[^0-9]/g, '') || '919125205132'
+      : '919125205132';
 
     window.open(`https://wa.me/${cleanNumber}?text=${encoded}`, '_blank', 'noopener,noreferrer');
   };

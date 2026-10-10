@@ -236,24 +236,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               </button>
             </div>
 
-            {/* Mobile Dedicated Showcase Visual: Cleanly placed in layout flow with zero text overlap */}
-            <div className="md:hidden my-4 sm:my-5 overflow-hidden rounded-xl border border-[#E3DBD0] bg-[#EFE9DF]/50 shadow-2xs">
-              <div
-                className="w-full aspect-[16/10] overflow-hidden"
-                style={{
-                  maskImage: `
-                    radial-gradient(ellipse 95% 90% at 50% 50%, black 75%, rgba(0,0,0,0.85) 90%, transparent 100%),
-                    linear-gradient(to bottom, black 85%, transparent 100%)
-                  `,
-                  WebkitMaskImage: `
-                    radial-gradient(ellipse 95% 90% at 50% 50%, black 75%, rgba(0,0,0,0.85) 90%, transparent 100%),
-                    linear-gradient(to bottom, black 85%, transparent 100%)
-                  `,
-                }}
-              >
+            {/* Mobile Dedicated Showcase Visual: Cleanly placed in layout flow with zero text overlap and 100% guaranteed visibility */}
+            <div className="md:hidden my-4 sm:my-5 overflow-hidden rounded-xl border border-[#E3DBD0] bg-[#EAE2D5] shadow-xs">
+              <div className="w-full aspect-[16/10] overflow-hidden">
                 <img
                   alt="Yugark Digital Studio multi-device mockup showcase: monitor, laptop and smartphone"
-                  className="w-full h-full object-cover object-center"
+                  className="w-full h-full object-cover object-center block"
                   src={siteConfig.heroImage}
                   loading="eager"
                   decoding="async"

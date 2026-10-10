@@ -29,7 +29,7 @@ export const ServicesPage: React.FC = () => {
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [offerings, setOfferings] = useState<PricingCalculatorItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [whatsappUrl, setWhatsappUrl] = useState('https://wa.me/919125272460');
+  const [whatsappUrl, setWhatsappUrl] = useState('https://wa.me/919125205132');
 
   useEffect(() => {
     async function loadData() {
@@ -65,8 +65,8 @@ export const ServicesPage: React.FC = () => {
     const message = `Hi Radha Krishna Sir, I would like to inquire about the "${item.title}" service (${isMonthly ? `₹${item.price.toLocaleString('en-IN')}/mo` : `₹${item.price.toLocaleString('en-IN')}`}).\n\nDelivery/Turnaround: ${item.deliveryTime}\n\nPlease share the next steps and onboarding timeline!`;
     const encoded = encodeURIComponent(message);
     const cleanNumber = whatsappUrl.includes('wa.me')
-      ? whatsappUrl.split('wa.me/')[1]?.replace(/[^0-9]/g, '') || '919125272460'
-      : '919125272460';
+      ? whatsappUrl.split('wa.me/')[1]?.replace(/[^0-9]/g, '') || '919125205132'
+      : '919125205132';
     window.open(`https://wa.me/${cleanNumber}?text=${encoded}`, '_blank', 'noopener,noreferrer');
   };
 

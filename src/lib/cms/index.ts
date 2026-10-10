@@ -129,6 +129,15 @@ export async function getWebsiteSettings(): Promise<SiteConfig> {
     }
 
     const settings = data as WebsiteSettingsRecord;
+    const rawNumber = settings.whatsapp_number;
+    const isOldNumber = !rawNumber || rawNumber.includes('9125272460');
+    const normalizedNumber = isOldNumber ? '+91 9125205132' : rawNumber;
+    const cleanDigits = normalizedNumber.replace(/[^0-9]/g, '');
+
+    const rawInstagram = settings.social_links?.instagram;
+    const isOldInstagram = !rawInstagram || rawInstagram === 'https://instagram.com';
+    const normalizedInstagram = isOldInstagram ? 'https://www.instagram.com/yugark.in/' : rawInstagram;
+
     return {
       studioName: settings.site_name || initialSiteConfig.studioName,
       tagline: settings.tagline || initialSiteConfig.tagline,
@@ -138,11 +147,11 @@ export async function getWebsiteSettings(): Promise<SiteConfig> {
       heroDescription: initialSiteConfig.heroDescription,
       heroImage: initialSiteConfig.heroImage,
       contactEmail: settings.business_email || 'business@yugark.in',
-      whatsappNumber: settings.whatsapp_number || '+919125272460',
-      whatsappUrl: `https://wa.me/${(settings.whatsapp_number || '919125272460').replace(/[^0-9]/g, '')}`,
+      whatsappNumber: normalizedNumber,
+      whatsappUrl: `https://wa.me/${cleanDigits || '919125205132'}`,
       location: 'Global Digital Practice',
       socials: {
-        instagram: settings.social_links?.instagram || initialSiteConfig.socials.instagram,
+        instagram: normalizedInstagram,
         linkedin: settings.social_links?.linkedin || initialSiteConfig.socials.linkedin,
         youtube: settings.social_links?.youtube || initialSiteConfig.socials.youtube,
       },
@@ -1546,9 +1555,9 @@ export const adminCmsApi = {
       tagline: settings.tagline || current.tagline,
       contactEmail: settings.business_email || current.contactEmail,
       whatsappNumber: settings.whatsapp_number || current.whatsappNumber,
-      whatsappUrl: `https://wa.me/${(settings.whatsapp_number || '919125272460').replace(/[^0-9]/g, '')}`,
+      whatsappUrl: `https://wa.me/${(settings.whatsapp_number || current.whatsappNumber || '919125205132').replace(/[^0-9]/g, '')}`,
       socials: {
-        instagram: settings.social_links?.instagram || current.socials.instagram,
+        instagram: settings.social_links?.instagram || current.socials.instagram || 'https://www.instagram.com/yugark.in/',
         linkedin: settings.social_links?.linkedin || current.socials.linkedin,
         youtube: settings.social_links?.youtube || current.socials.youtube,
       },

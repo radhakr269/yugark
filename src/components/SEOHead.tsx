@@ -113,10 +113,10 @@ export const SEOHead: React.FC<SEOHeadProps> = ({
         contactPoint: {
           '@type': 'ContactPoint',
           contactType: 'Customer Support',
-          url: 'https://wa.me/919125272460',
+          url: 'https://wa.me/919125205132',
         },
         sameAs: [
-          'https://instagram.com',
+          'https://www.instagram.com/yugark.in/',
           'https://linkedin.com',
           'https://youtube.com',
         ],

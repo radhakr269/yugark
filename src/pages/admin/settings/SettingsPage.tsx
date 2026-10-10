@@ -7,9 +7,9 @@ export const SettingsPage: React.FC = () => {
     site_name: 'Yugark Digital Studio',
     tagline: 'We Build. We Create. We Grow Brands.',
     business_email: 'business@yugark.in',
-    whatsapp_number: '+919125272460',
+    whatsapp_number: '+91 9125205132',
     whatsapp_message: 'Hello Yugark Studio, I would like to discuss a project.',
-    instagram: 'https://instagram.com',
+    instagram: 'https://www.instagram.com/yugark.in/',
     linkedin: 'https://linkedin.com',
     youtube: 'https://youtube.com',
     footer_text: 'Websites. Creative Content. Digital Marketing. We help modern brands build, create and grow in the digital world.',
@@ -104,7 +104,7 @@ export const SettingsPage: React.FC = () => {
         </div>
         <p className="text-[11px] leading-relaxed">
           Physical addresses, map coordinates, and telephone call links have been strictly omitted in accordance with studio directives.
-          All client interaction is routed through verified WhatsApp (<strong>+91 9125272460</strong>) and studio email (<strong>business@yugark.in</strong>).
+          All client interaction is routed through verified WhatsApp (<strong>+91 9125205132</strong>) and studio email (<strong>business@yugark.in</strong>).
         </p>
       </div>
 

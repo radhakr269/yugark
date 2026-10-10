@@ -22,6 +22,13 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
   showText = true,
 }) => {
   const isDark = variant === 'dark';
+  const [hasValidImage, setHasValidImage] = React.useState(false);
+
+  React.useEffect(() => {
+    const img = new Image();
+    img.src = '/assets/images/logo.jpg';
+    img.onload = () => setHasValidImage(true);
+  }, []);
 
   const markSizes = {
     sm: 'w-7 h-7',
@@ -45,42 +52,50 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
     <div className={`inline-flex items-center gap-2.5 sm:gap-3 group select-none ${className}`}>
       {showMark && (
         <div
-          className={`relative ${markSizes[size]} shrink-0 rounded-lg sm:rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shadow-xs ${
+          className={`relative ${markSizes[size]} shrink-0 rounded-lg sm:rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shadow-xs overflow-hidden ${
             isDark
               ? 'bg-[#21352A] ring-1 ring-white/15'
               : 'bg-[#18261F] ring-1 ring-black/5'
           }`}
           aria-hidden="true"
         >
-          {/* Studio Monogram Vector Mark */}
-          <svg
-            viewBox="0 0 64 64"
-            className="w-4/5 h-4/5"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            {/* Geometric Y structure */}
-            <path
-              d="M19 19 L32 37 L45 19"
-              stroke={isDark ? '#FAF8F5' : '#F8F6F1'}
-              strokeWidth="4.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          {hasValidImage ? (
+            <img
+              src="/assets/images/logo.jpg"
+              alt="YUGARK"
+              className="w-full h-full object-cover rounded-lg sm:rounded-xl"
             />
-            <path
-              d="M32 37 L32 47"
-              stroke={isDark ? '#FAF8F5' : '#F8F6F1'}
-              strokeWidth="4.5"
-              strokeLinecap="round"
-            />
-            {/* Studio Green/Gold Accent dot */}
-            <circle
-              cx="32"
-              cy="18"
-              r="2.8"
-              fill={isDark ? '#5AE48B' : '#588157'}
-            />
-          </svg>
+          ) : (
+            /* Studio Monogram Vector Mark */
+            <svg
+              viewBox="0 0 64 64"
+              className="w-4/5 h-4/5"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* Geometric Y structure */}
+              <path
+                d="M19 19 L32 37 L45 19"
+                stroke={isDark ? '#FAF8F5' : '#F8F6F1'}
+                strokeWidth="4.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M32 37 L32 47"
+                stroke={isDark ? '#FAF8F5' : '#F8F6F1'}
+                strokeWidth="4.5"
+                strokeLinecap="round"
+              />
+              {/* Studio Green/Gold Accent dot */}
+              <circle
+                cx="32"
+                cy="18"
+                r="2.8"
+                fill={isDark ? '#5AE48B' : '#588157'}
+              />
+            </svg>
+          )}
         </div>
       )}
 

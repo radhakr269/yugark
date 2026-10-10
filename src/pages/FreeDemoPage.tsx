@@ -29,10 +29,22 @@ export const FreeDemoPage: React.FC = () => {
   const [requirements, setRequirements] = useState('');
   const [honeypot, setHoneypot] = useState('');
 
+  const [whatsappUrl, setWhatsappUrl] = useState(siteConfig.whatsappUrl);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [refId, setRefId] = useState('');
+
+  React.useEffect(() => {
+    async function loadSettings() {
+      const settings = await getWebsiteSettings();
+      if (settings?.whatsappUrl) {
+        setWhatsappUrl(settings.whatsappUrl);
+      }
+    }
+    loadSettings();
+  }, []);
 
   const categories = [
     'Clinic & Healthcare',
@@ -108,7 +120,8 @@ export const FreeDemoPage: React.FC = () => {
     const text = encodeURIComponent(
       `Hello Yugark Studio, I would like to request a Free Website Demo for "${businessName || 'my business'}" (${category}). Name: ${fullName}, Phone: ${whatsappNumber}. Requirements: ${requirements}`
     );
-    window.open(`https://wa.me/919125272460?text=${text}`, '_blank', 'noopener,noreferrer');
+    const baseUrl = whatsappUrl.includes('?') ? whatsappUrl.split('?')[0] : whatsappUrl;
+    window.open(`${baseUrl}?text=${text}`, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -121,6 +134,8 @@ export const FreeDemoPage: React.FC = () => {
 
       <div className="bg-[#F8F6F1] min-h-screen py-8 sm:py-12 lg:py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <InnerPageNav currentPageTitle="Free Website Demo" />
+
           {/* Breadcrumb Navigation */}
           <div className="flex items-center space-x-2 text-[10px] sm:text-xs text-[#7B857D] mb-4 sm:mb-6">
             <Link to="/" className="hover:text-[#121614] transition-colors">
@@ -372,7 +387,8 @@ export const FreeDemoPage: React.FC = () => {
                     rel="noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2D4536] hover:underline"
                   >
-                    <span>Prefer direct chat? Message {siteConfig.whatsappNumber}</span>
+                    <WhatsAppIcon className="w-3.5 h-3.5 text-[#25D366]" />
+                    <span>Prefer direct chat? WhatsApp Query</span>
                     <ArrowRight className="w-3 h-3" />
                   </a>
                 </div>

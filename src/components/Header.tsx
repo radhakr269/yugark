@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, Menu, X } from 'lucide-react';
 import { siteConfig } from '../data/studioData';
+import { BrandLogo } from './BrandLogo';
 
 interface HeaderProps {
   onStartProject?: () => void;
@@ -23,6 +24,7 @@ export const Header: React.FC<HeaderProps> = ({ onStartProject }) => {
   const [activeSection, setActiveSection] = useState<string>('home');
   const location = useLocation();
   const navigate = useNavigate();
+  const headerRef = useRef<HTMLElement>(null);
 
   const isHomepage = location.pathname === '/';
 
@@ -31,7 +33,6 @@ export const Header: React.FC<HeaderProps> = ({ onStartProject }) => {
     if (!isHomepage) return;
 
     const sectionIds = navItems.map((item) => item.sectionId);
-    const observers: IntersectionObserver[] = [];
 
     const observerCallback: IntersectionObserverCallback = (entries) => {
       entries.forEach((entry) => {
@@ -67,16 +68,27 @@ export const Header: React.FC<HeaderProps> = ({ onStartProject }) => {
     };
   }, [mobileMenuOpen]);
 
-  // Close mobile menu on Escape key
+  // Close mobile menu on Escape key or outside click
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setMobileMenuOpen(false);
       }
     };
+
+    const handlePointerDown = (e: MouseEvent) => {
+      if (mobileMenuOpen && headerRef.current && !headerRef.current.contains(e.target as Node)) {
+        setMobileMenuOpen(false);
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handlePointerDown);
+    };
+  }, [mobileMenuOpen]);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -88,13 +100,21 @@ export const Header: React.FC<HeaderProps> = ({ onStartProject }) => {
     setMobileMenuOpen(false);
 
     if (isHomepage) {
+      if (item.sectionId === 'home') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
       const targetElement = document.getElementById(item.sectionId);
       if (targetElement) {
         targetElement.scrollIntoView({ behavior: 'smooth' });
       }
     } else {
       // Navigate to homepage with anchor hash
-      navigate(`/#${item.sectionId}`);
+      if (item.sectionId === 'home') {
+        navigate('/');
+      } else {
+        navigate(`/#${item.sectionId}`);
+      }
     }
   };
 
@@ -111,24 +131,17 @@ export const Header: React.FC<HeaderProps> = ({ onStartProject }) => {
     if (isHomepage) {
       return activeSection === item.sectionId;
     }
-    return location.pathname.startsWith(item.pageHref) && item.pageHref !== '/' || location.pathname === item.pageHref;
+    return (location.pathname.startsWith(item.pageHref) && item.pageHref !== '/') || location.pathname === item.pageHref;
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#F8F6F1]/95 backdrop-blur-md border-b border-[#ECE6DC] transition-all">
+    <header
+      ref={headerRef}
+      className="sticky top-0 z-50 bg-[#F8F6F1]/95 backdrop-blur-md border-b border-[#ECE6DC] transition-all"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 h-14 sm:h-18 flex items-center justify-between">
         {/* Studio Logo (aligned left) */}
-        <Link
-          to="/"
-          className="flex flex-col group cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4536] rounded"
-        >
-          <span className="font-serif-title text-xl sm:text-2xl font-bold tracking-[0.18em] text-[#121614] group-hover:text-[#2D4536] transition-colors uppercase">
-            {siteConfig.studioName}
-          </span>
-          <span className="text-[8px] sm:text-[9px] tracking-[0.35em] text-[#787D75] uppercase -mt-0.5 sm:-mt-1 font-medium">
-            DIGITAL STUDIO
-          </span>
-        </Link>
+        <BrandLogo variant="light" size="md" />
 
         {/* Desktop Navigation Menu */}
         <nav className="hidden lg:flex items-center space-x-5 xl:space-x-7 text-[13px] font-medium tracking-wide text-[#3C423E]">
@@ -137,7 +150,7 @@ export const Header: React.FC<HeaderProps> = ({ onStartProject }) => {
             return (
               <a
                 key={item.label}
-                href={isHomepage ? `#${item.sectionId}` : `/#${item.sectionId}`}
+                href={isHomepage ? (item.sectionId === 'home' ? '#home' : `#${item.sectionId}`) : (item.sectionId === 'home' ? '/' : `/#${item.sectionId}`)}
                 onClick={(e) => handleNavClick(e, item)}
                 className={`transition-colors py-1 relative focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#2D4536] rounded ${
                   active
@@ -165,7 +178,7 @@ export const Header: React.FC<HeaderProps> = ({ onStartProject }) => {
           {/* Accessible Hamburger Menu button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2.5 rounded-lg text-[#121614] hover:bg-[#EAE3D6] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4536]"
+            className="lg:hidden p-2.5 rounded-lg text-[#121614] hover:bg-[#EAE3D6] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4536] cursor-pointer"
             aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
             aria-expanded={mobileMenuOpen}
           >
@@ -177,13 +190,13 @@ export const Header: React.FC<HeaderProps> = ({ onStartProject }) => {
       {/* Mobile/Tablet Navigation Drawer */}
       {mobileMenuOpen && (
         <div className="lg:hidden bg-[#F8F6F1] border-b border-[#ECE6DC] px-4 py-5 sm:px-6 sm:py-6 shadow-xl animate-fadeIn">
-          <nav className="flex flex-col space-y-1.5 text-sm font-medium text-[#3C423E]">
+          <nav className="flex flex-col space-y-1 text-sm font-medium text-[#3C423E]">
             {navItems.map((item) => {
               const active = isItemActive(item);
               return (
                 <a
                   key={item.label}
-                  href={isHomepage ? `#${item.sectionId}` : `/#${item.sectionId}`}
+                  href={isHomepage ? (item.sectionId === 'home' ? '#home' : `#${item.sectionId}`) : (item.sectionId === 'home' ? '/' : `/#${item.sectionId}`)}
                   onClick={(e) => handleNavClick(e, item)}
                   className={`min-h-[44px] px-3.5 py-2 rounded-lg transition-colors flex items-center justify-between ${
                     active

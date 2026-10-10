@@ -4,6 +4,8 @@ import { ArrowRight, ArrowUpRight, Sparkles, Filter } from 'lucide-react';
 import { ProjectItem } from '../types/content';
 import { SEOHead } from '../components/SEOHead';
 import { getPortfolioProjects } from '../lib/cms';
+import { InnerPageNav } from '../components/InnerPageNav';
+import { CardCarousel } from '../components/CardCarousel';
 
 export const WorkPage: React.FC = () => {
   const navigate = useNavigate();
@@ -43,6 +45,8 @@ export const WorkPage: React.FC = () => {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
+        <InnerPageNav currentPageTitle="Selected Work" />
+
         {/* Page Header */}
         <div className="max-w-3xl mb-8 sm:mb-12">
           <p className="text-[11px] sm:text-xs font-semibold tracking-[0.22em] text-[#69746A] uppercase mb-2">
@@ -87,81 +91,91 @@ export const WorkPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Projects Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 mb-16 sm:mb-24">
-          {filteredProjects.map((project) => (
-            <article
-              key={project.id}
-              className="bg-[#FAF7F2] rounded-2xl sm:rounded-3xl border border-[#E6DFD3] overflow-hidden group hover:border-[#2D4536]/40 hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
-            >
-              <div>
-                {/* Thumbnail Image */}
-                <div className="relative overflow-hidden aspect-[4/3] bg-[#EBE4D8]">
-                  <img
-                    src={project.image}
-                    alt={project.alt}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-black/5 pointer-events-none" />
+        {/* Projects Carousel Showcase */}
+        <div className="mb-14 sm:mb-20">
+          <CardCarousel
+            preset="work"
+            ariaLabel="Portfolio Showcase Projects"
+            autoScroll={true}
+            autoScrollInterval={5500}
+            showControls={true}
+            showDots={true}
+            controlsPosition="bottom"
+          >
+            {filteredProjects.map((project) => (
+              <article
+                key={project.id}
+                className="bg-[#FAF7F2] rounded-2xl sm:rounded-3xl border border-[#E6DFD3] overflow-hidden group hover:border-[#2D4536]/40 hover:shadow-xl transition-all duration-300 flex flex-col justify-between h-full"
+              >
+                <div>
+                  {/* Thumbnail Image */}
+                  <div className="relative overflow-hidden aspect-[4/3] bg-[#EBE4D8]">
+                    <img
+                      src={project.image}
+                      alt={project.alt}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-black/5 pointer-events-none" />
 
-                  {/* Concept Badge */}
-                  {project.isConcept && (
-                    <span className="absolute top-3 left-3 bg-[#1B2E24]/90 backdrop-blur-sm text-[#E5ECE7] text-[10px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                      Concept Showcase
-                    </span>
-                  )}
-
-                  <span className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-[#121614] text-[10px] font-mono px-2 py-0.5 rounded">
-                    {project.year}
-                  </span>
-                </div>
-
-                {/* Card Content */}
-                <div className="p-5 sm:p-7">
-                  <p className="text-[10px] sm:text-[11px] font-bold tracking-[0.18em] text-[#7E887E] uppercase mb-1.5">
-                    {project.category}
-                  </p>
-                  <h2 className="font-serif-title text-xl sm:text-2xl font-medium text-[#121614] mb-2 group-hover:text-[#2D4536] transition-colors">
-                    {project.title}
-                  </h2>
-                  <p className="text-xs sm:text-sm text-[#616B63] leading-relaxed mb-4 line-clamp-2">
-                    {project.description}
-                  </p>
-
-                  {/* Deliverables Tags */}
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    {project.deliverables.slice(0, 2).map((item, idx) => (
-                      <span
-                        key={idx}
-                        className="text-[10px] bg-[#EFE9DF] text-[#4E564F] px-2.5 py-0.5 rounded-full"
-                      >
-                        {item}
+                    {/* Concept Badge */}
+                    {project.isConcept && (
+                      <span className="absolute top-3 left-3 bg-[#1B2E24]/90 backdrop-blur-sm text-[#E5ECE7] text-[10px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                        Concept Showcase
                       </span>
-                    ))}
+                    )}
+
+                    <span className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-[#121614] text-[10px] font-mono px-2 py-0.5 rounded">
+                      {project.year}
+                    </span>
+                  </div>
+
+                  {/* Card Content */}
+                  <div className="p-4 sm:p-6">
+                    <p className="text-[10px] sm:text-[11px] font-bold tracking-[0.18em] text-[#7E887E] uppercase mb-1">
+                      {project.category}
+                    </p>
+                    <h2 className="font-serif-title text-lg sm:text-xl font-medium text-[#121614] mb-1.5 group-hover:text-[#2D4536] transition-colors leading-snug">
+                      {project.title}
+                    </h2>
+                    <p className="text-xs text-[#616B63] leading-relaxed mb-3 line-clamp-2">
+                      {project.description}
+                    </p>
+
+                    {/* Deliverables Tags */}
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {project.deliverables.slice(0, 2).map((item, idx) => (
+                        <span
+                          key={idx}
+                          className="text-[9.5px] bg-[#EFE9DF] text-[#4E564F] px-2 py-0.5 rounded-full"
+                        >
+                          {item}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Action Footer */}
-              <div className="p-5 sm:p-7 pt-0 border-t border-[#ECE5D9]/60 mt-2 flex items-center justify-between">
-                <Link
-                  to={`/work/${project.slug}`}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#121614] group-hover:text-[#2D4536] transition-colors"
-                >
-                  <span>View Case Study</span>
-                  <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-                </Link>
+                {/* Action Footer */}
+                <div className="p-4 sm:p-6 pt-0 border-t border-[#ECE5D9]/60 mt-2 flex items-center justify-between">
+                  <Link
+                    to={`/work/${project.slug}`}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#121614] group-hover:text-[#2D4536] transition-colors"
+                  >
+                    <span>View Case Study</span>
+                    <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                  </Link>
 
-                <button
-                  onClick={() => navigate(`/contact?project=${project.slug}`)}
-                  className="text-[11px] text-[#7C887E] hover:text-[#121614] transition-colors"
-                >
-                  Inquire Similar
-                </button>
-              </div>
-            </article>
-          ))}
+                  <button
+                    onClick={() => navigate(`/contact?project=${project.slug}`)}
+                    className="text-[11px] text-[#7C887E] hover:text-[#121614] transition-colors cursor-pointer"
+                  >
+                    Inquire Similar
+                  </button>
+                </div>
+              </article>
+            ))}
+          </CardCarousel>
         </div>
 
         {/* Ready-Made Demos Teaser Card */}

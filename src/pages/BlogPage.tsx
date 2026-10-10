@@ -4,6 +4,8 @@ import { ArrowRight, Clock, Calendar, Filter, Sparkles, BookOpen } from 'lucide-
 import { BlogPostItem } from '../types/content';
 import { SEOHead } from '../components/SEOHead';
 import { getPublishedBlogPosts } from '../lib/cms';
+import { InnerPageNav } from '../components/InnerPageNav';
+import { CardCarousel } from '../components/CardCarousel';
 
 export const BlogPage: React.FC = () => {
   const [posts, setPosts] = useState<BlogPostItem[]>([]);
@@ -43,6 +45,8 @@ export const BlogPage: React.FC = () => {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
+        <InnerPageNav currentPageTitle="Editorial Insights" />
+
         {/* Page Header */}
         <div className="max-w-3xl mb-6 sm:mb-10">
           <p className="text-[11px] sm:text-xs font-semibold tracking-[0.22em] text-[#69746A] uppercase mb-2">
@@ -78,91 +82,99 @@ export const BlogPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Blog Posts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10 mb-16 sm:mb-24">
-          {filteredPosts.map((post) => (
-            <article
-              key={post.id}
-              className="bg-[#FAF7F2] rounded-2xl sm:rounded-3xl border border-[#E6DFD3] overflow-hidden group hover:border-[#2D4536]/40 hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
-            >
-              <div>
-                {/* Visual Header / Cover Image or Graphic Representation */}
-                {post.isGraphicCard && post.graphicData ? (
-                  <div className="aspect-[16/10] bg-[#1B2E24] p-6 flex flex-col justify-between text-[#FAF8F5] relative overflow-hidden">
-                    <div className="flex items-center justify-between z-10">
-                      <span className="text-[10px] font-mono text-[#A5C2B1] uppercase tracking-wider">
-                        {post.graphicData.framework}
+        {/* Blog Posts Carousel */}
+        <div className="mb-14 sm:mb-20">
+          <CardCarousel
+            preset="blog"
+            ariaLabel="Insights and Ideas Articles"
+            autoScroll={true}
+            autoScrollInterval={6000}
+            showControls={true}
+            showDots={true}
+            controlsPosition="bottom"
+          >
+            {filteredPosts.map((post) => (
+              <article
+                key={post.id}
+                className="bg-[#FAF7F2] rounded-2xl sm:rounded-3xl border border-[#E6DFD3] overflow-hidden group hover:border-[#2D4536]/40 hover:shadow-xl transition-all duration-300 flex flex-col justify-between h-full"
+              >
+                <div>
+                  {/* Visual Header / Cover Image or Graphic Representation */}
+                  {post.isGraphicCard && post.graphicData ? (
+                    <div className="aspect-[16/10] bg-[#1B2E24] p-5 sm:p-6 flex flex-col justify-between text-[#FAF8F5] relative overflow-hidden">
+                      <div className="flex items-center justify-between z-10">
+                        <span className="text-[10px] font-mono text-[#A5C2B1] uppercase tracking-wider">
+                          {post.graphicData.framework}
+                        </span>
+                        <span className="bg-[#2D4536] text-[#E5ECE7] text-[10px] px-2 py-0.5 rounded-full font-medium">
+                          {post.graphicData.architectureBadge}
+                        </span>
+                      </div>
+
+                      <div className="z-10">
+                        <p className="text-[10.5px] font-medium text-[#A5C2B1] uppercase tracking-wider mb-1">
+                          {post.graphicData.playbookLabel}
+                        </p>
+                        <h3 className="font-serif-title text-base sm:text-lg text-white leading-tight">
+                          {post.graphicData.headline}
+                        </h3>
+                      </div>
+
+                      {/* Atmospheric background blur circle */}
+                      <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-[#2D4536]/40 rounded-full blur-2xl pointer-events-none" />
+                    </div>
+                  ) : (
+                    <div className="relative aspect-[16/10] bg-[#EBE4D8] overflow-hidden">
+                      <img
+                        src={post.image}
+                        alt={post.alt || post.title}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-black/5 pointer-events-none" />
+                    </div>
+                  )}
+
+                  {/* Content */}
+                  <div className="p-4 sm:p-6">
+                    <div className="flex items-center gap-2 text-[10.5px] text-[#788479] mb-2">
+                      <span className="font-bold tracking-wider uppercase text-[#2D4536]">
+                        {post.category}
                       </span>
-                      <span className="bg-[#2D4536] text-[#E5ECE7] text-[10px] px-2 py-0.5 rounded-full font-medium">
-                        {post.graphicData.architectureBadge}
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{post.readTime}</span>
                       </span>
                     </div>
 
-                    <div className="z-10">
-                      <p className="text-[11px] font-medium text-[#A5C2B1] uppercase tracking-wider mb-1">
-                        {post.graphicData.playbookLabel}
-                      </p>
-                      <h3 className="font-serif-title text-xl text-white leading-tight">
-                        {post.graphicData.headline}
-                      </h3>
-                    </div>
+                    <h2 className="font-serif-title text-base sm:text-lg font-medium text-[#121614] mb-2 group-hover:text-[#2D4536] transition-colors leading-snug">
+                      {post.title}
+                    </h2>
 
-                    {/* Atmospheric background blur circle */}
-                    <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-[#2D4536]/40 rounded-full blur-2xl pointer-events-none" />
+                    <p className="text-xs text-[#5C665E] leading-relaxed mb-4 line-clamp-2">
+                      {post.excerpt}
+                    </p>
                   </div>
-                ) : (
-                  <div className="relative aspect-[16/10] bg-[#EBE4D8] overflow-hidden">
-                    <img
-                      src={post.image}
-                      alt={post.alt || post.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-black/5 pointer-events-none" />
-                  </div>
-                )}
-
-                {/* Content */}
-                <div className="p-6 sm:p-8">
-                  <div className="flex items-center gap-3 text-[11px] text-[#788479] mb-3">
-                    <span className="font-bold tracking-wider uppercase text-[#2D4536]">
-                      {post.category}
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      <span>{post.readTime}</span>
-                    </span>
-                  </div>
-
-                  <h2 className="font-serif-title text-xl sm:text-2xl font-medium text-[#121614] mb-3 group-hover:text-[#2D4536] transition-colors leading-snug">
-                    {post.title}
-                  </h2>
-
-                  <p className="text-xs sm:text-sm text-[#5C665E] leading-relaxed mb-6 line-clamp-3">
-                    {post.excerpt}
-                  </p>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="p-6 sm:p-8 pt-0 border-t border-[#ECE5D9]/60 mt-2 flex items-center justify-between">
-                <div className="text-[11px] text-[#7C887E]">
-                  <span className="font-medium text-[#121614]">{post.author}</span>
-                  <span className="mx-1">•</span>
-                  <span>{post.publishedDate}</span>
                 </div>
 
-                <Link
-                  to={`/blog/${post.slug}`}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#121614] group-hover:text-[#2D4536] transition-colors"
-                >
-                  <span>Read Article</span>
-                  <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-                </Link>
-              </div>
-            </article>
-          ))}
+                {/* Footer */}
+                <div className="p-4 sm:p-6 pt-0 border-t border-[#ECE5D9]/60 mt-2 flex items-center justify-between">
+                  <div className="text-[10.5px] text-[#7C887E]">
+                    <span className="font-medium text-[#121614]">{post.author}</span>
+                  </div>
+
+                  <Link
+                    to={`/blog/${post.slug}`}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#121614] group-hover:text-[#2D4536] transition-colors"
+                  >
+                    <span>Read Article</span>
+                    <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </CardCarousel>
         </div>
 
         {/* Editorial Mission Statement Box */}

@@ -22,6 +22,8 @@ import {
 import { PricingPackage, PricingCalculatorItem } from '../types/content';
 import { SEOHead } from '../components/SEOHead';
 import { getPublishedPricing, getPricingCalculatorItems, getWebsiteSettings } from '../lib/cms';
+import { InnerPageNav } from '../components/InnerPageNav';
+import { CardCarousel } from '../components/CardCarousel';
 
 export const PricingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -30,7 +32,7 @@ export const PricingPage: React.FC = () => {
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>(['calc-frontend-web']);
   const [durationTerm, setDurationTerm] = useState<'one-time' | '1month' | '6months' | '1year'>('one-time');
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
-  const [whatsappUrl, setWhatsappUrl] = useState('https://wa.me/919125205132');
+  const [whatsappUrl, setWhatsappUrl] = useState('https://wa.me/919125272460');
 
   useEffect(() => {
     async function loadData() {
@@ -121,8 +123,8 @@ export const PricingPage: React.FC = () => {
 
     const encoded = encodeURIComponent(message);
     const cleanNumber = whatsappUrl.includes('wa.me')
-      ? whatsappUrl.split('wa.me/')[1]?.replace(/[^0-9]/g, '') || '919125205132'
-      : '919125205132';
+      ? whatsappUrl.split('wa.me/')[1]?.replace(/[^0-9]/g, '') || '919125272460'
+      : '919125272460';
 
     window.open(`https://wa.me/${cleanNumber}?text=${encoded}`, '_blank', 'noopener,noreferrer');
   };
@@ -176,6 +178,8 @@ export const PricingPage: React.FC = () => {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
+        <InnerPageNav currentPageTitle="Studio Investment & Packages" />
+
         {/* Page Header */}
         <div className="max-w-3xl mb-8 sm:mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E5ECE7] text-[#294B37] text-[11px] font-semibold tracking-wider uppercase mb-3">
@@ -206,7 +210,15 @@ export const PricingPage: React.FC = () => {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 items-stretch">
+          <CardCarousel
+            preset="pricing"
+            ariaLabel="Flagship Studio Packages"
+            autoScroll={true}
+            autoScrollInterval={6000}
+            showControls={true}
+            showDots={true}
+            controlsPosition="bottom"
+          >
             {packages.map((pkg) => {
               const hasDiscount = Boolean(pkg.regularPrice && pkg.launchPrice && pkg.regularPrice > pkg.launchPrice);
               const savings = hasDiscount ? (pkg.regularPrice! - pkg.launchPrice!) : 0;
@@ -214,9 +226,9 @@ export const PricingPage: React.FC = () => {
               return (
                 <div
                   key={pkg.id}
-                  className={`rounded-2xl sm:rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 relative ${
+                  className={`rounded-2xl sm:rounded-3xl p-5 sm:p-6 flex flex-col justify-between transition-all duration-300 relative h-full ${
                     pkg.popular
-                      ? 'bg-[#1B2E24] text-[#FAF8F5] shadow-xl border-2 border-[#2D4536] -translate-y-1'
+                      ? 'bg-[#1B2E24] text-[#FAF8F5] shadow-xl border-2 border-[#2D4536]'
                       : 'bg-[#FAF7F2] text-[#121614] border border-[#E6DFD3] hover:border-[#2D4536]/40 hover:shadow-lg'
                   }`}
                 >
@@ -236,11 +248,11 @@ export const PricingPage: React.FC = () => {
 
                   <div>
                     {/* Header */}
-                    <div className="mb-4 pt-1">
+                    <div className="mb-3 pt-1">
                       <div className="text-[10px] font-mono uppercase tracking-wider mb-1 font-semibold text-[#8E9B90]">
                         {pkg.billingType === 'monthly' ? 'Monthly Retainer' : 'One-Time Delivery'}
                       </div>
-                      <h3 className="font-serif-title text-xl sm:text-2xl font-medium mb-2 leading-snug">
+                      <h3 className="font-serif-title text-lg sm:text-xl font-medium mb-1.5 leading-snug">
                         {pkg.name}
                       </h3>
                       <p
@@ -254,12 +266,12 @@ export const PricingPage: React.FC = () => {
 
                     {/* Price Card */}
                     <div
-                      className={`p-3.5 rounded-xl mb-5 ${
+                      className={`p-3 rounded-xl mb-4 ${
                         pkg.popular ? 'bg-[#233B2E]' : 'bg-[#F4EFE6]'
                       }`}
                     >
                       <div className="flex items-baseline gap-2 mb-1">
-                        <span className="font-serif-title text-2xl sm:text-3xl font-medium">
+                        <span className="font-serif-title text-xl sm:text-2xl font-medium">
                           {pkg.launchPrice ? `₹${pkg.launchPrice.toLocaleString('en-IN')}` : pkg.investment}
                         </span>
                         {pkg.billingType === 'monthly' && (
@@ -273,30 +285,30 @@ export const PricingPage: React.FC = () => {
                       </div>
 
                       {hasDiscount && (
-                        <div className="text-[11px] font-semibold text-[#30784E] dark:text-[#A5C2B1] flex items-center gap-1">
+                        <div className="text-[10.5px] font-semibold text-[#30784E] dark:text-[#A5C2B1] flex items-center gap-1">
                           <span>Save ₹{savings.toLocaleString('en-IN')} on Launch Offer</span>
                         </div>
                       )}
 
-                      <div className="flex items-center gap-1.5 text-[11px] mt-2 opacity-80 pt-2 border-t border-current/10">
+                      <div className="flex items-center gap-1.5 text-[10.5px] mt-1.5 opacity-80 pt-1.5 border-t border-current/10">
                         <Clock className="w-3 h-3 shrink-0" />
                         <span>{pkg.turnaround || pkg.deliveryTime || '~7 Days Delivery'}</span>
                       </div>
                     </div>
 
                     {/* Features List */}
-                    <div className="space-y-2 mb-6">
+                    <div className="space-y-1.5 mb-5">
                       <p
-                        className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${
+                        className={`text-[9.5px] font-bold uppercase tracking-wider mb-1.5 ${
                           pkg.popular ? 'text-[#A5C2B1]' : 'text-[#2D4536]'
                         }`}
                       >
                         Included Features:
                       </p>
-                      {pkg.features.slice(0, 5).map((feature, idx) => (
+                      {pkg.features.slice(0, 4).map((feature, idx) => (
                         <div key={idx} className="flex items-start text-xs">
                           <CheckCircle
-                            className={`w-3.5 h-3.5 mt-0.5 mr-2 shrink-0 ${
+                            className={`w-3.5 h-3.5 mt-0.5 mr-1.5 shrink-0 ${
                               pkg.popular ? 'text-[#A5C2B1]' : 'text-[#2D4536]'
                             }`}
                           />
@@ -309,7 +321,7 @@ export const PricingPage: React.FC = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="pt-4 border-t border-current/10 space-y-2">
+                  <div className="pt-3 border-t border-current/10 space-y-2">
                     <button
                       onClick={() => navigate(`/contact?package=${encodeURIComponent(pkg.name)}`)}
                       className={`w-full py-2.5 rounded-full text-xs font-semibold tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm ${
@@ -325,7 +337,7 @@ export const PricingPage: React.FC = () => {
                 </div>
               );
             })}
-          </div>
+          </CardCarousel>
         </div>
 
         {/* All Verified Offerings & Rates at a Glance */}
@@ -726,7 +738,7 @@ export const PricingPage: React.FC = () => {
             Have a Specific Scope or Custom Requirement?
           </h2>
           <p className="text-xs sm:text-sm text-[#616B63] max-w-md mx-auto mb-6">
-            We will review your business background and provide an itemized proposal within 24 to 48 business hours.
+            We will review your business background and provide an itemized proposal tailored to your goals.
           </p>
           <button
             onClick={() => navigate('/contact')}

@@ -138,6 +138,40 @@ export interface PricingPackageRecord {
   updated_at: string;
 }
 
+export interface DiscountRuleRecord {
+  id: string;
+  name: string;
+  discount_type: 'launch' | 'duration' | 'multi_website' | 'website_combo';
+  discount_percentage: number;
+  fixed_amount?: number;
+  eligible_services?: string[];
+  eligible_quantities?: number[];
+  eligible_durations?: string[];
+  calculation_basis: 'additional_services' | 'website' | 'combined_subtotal';
+  stacking_priority: number;
+  is_exclusive: boolean;
+  max_discount?: number;
+  start_date?: string;
+  end_date?: string;
+  is_active: boolean;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PricingSettingsRecord {
+  id: string;
+  currency: string;
+  allow_discount_stacking: boolean;
+  default_combo_basis: 'additional_services' | 'website' | 'combined_subtotal';
+  multi_website_min_quantity: number;
+  multi_website_discount_pct: number;
+  tax_included: boolean;
+  tax_rate_pct: number;
+  rounding_mode: 'round' | 'floor' | 'ceil';
+  updated_at: string;
+}
+
 export interface BlogCategoryRecord {
   id: string;
   name: string;

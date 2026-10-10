@@ -22,13 +22,14 @@ import { SEOHead } from '../components/SEOHead';
 import { getPublishedServices, getPricingCalculatorItems, getWebsiteSettings } from '../lib/cms';
 import { WhatsAppIcon } from '../components/WhatsAppIcon';
 import { InnerPageNav } from '../components/InnerPageNav';
+import { CardCarousel } from '../components/CardCarousel';
 
 export const ServicesPage: React.FC = () => {
   const navigate = useNavigate();
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [offerings, setOfferings] = useState<PricingCalculatorItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [whatsappUrl, setWhatsappUrl] = useState('https://wa.me/919125205132');
+  const [whatsappUrl, setWhatsappUrl] = useState('https://wa.me/919125272460');
 
   useEffect(() => {
     async function loadData() {
@@ -64,8 +65,8 @@ export const ServicesPage: React.FC = () => {
     const message = `Hi Radha Krishna Sir, I would like to inquire about the "${item.title}" service (${isMonthly ? `₹${item.price.toLocaleString('en-IN')}/mo` : `₹${item.price.toLocaleString('en-IN')}`}).\n\nDelivery/Turnaround: ${item.deliveryTime}\n\nPlease share the next steps and onboarding timeline!`;
     const encoded = encodeURIComponent(message);
     const cleanNumber = whatsappUrl.includes('wa.me')
-      ? whatsappUrl.split('wa.me/')[1]?.replace(/[^0-9]/g, '') || '919125205132'
-      : '919125205132';
+      ? whatsappUrl.split('wa.me/')[1]?.replace(/[^0-9]/g, '') || '919125272460'
+      : '919125272460';
     window.open(`https://wa.me/${cleanNumber}?text=${encoded}`, '_blank', 'noopener,noreferrer');
   };
 
@@ -251,7 +252,15 @@ export const ServicesPage: React.FC = () => {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-8">
+          <CardCarousel
+            preset="work"
+            ariaLabel="Catalog Offerings and Retainers"
+            autoScroll={true}
+            autoScrollInterval={6500}
+            showControls={true}
+            showDots={true}
+            controlsPosition="bottom"
+          >
             {filteredOfferings.map((item) => {
               const hasDiscount = Boolean(item.originalPrice && item.originalPrice > item.price);
               const savings = hasDiscount ? (item.originalPrice! - item.price) : 0;
@@ -259,7 +268,7 @@ export const ServicesPage: React.FC = () => {
               return (
                 <div
                   key={item.id}
-                  className="bg-[#F4EFE6] rounded-xl p-5 sm:p-6 border border-[#ECE5D9] flex flex-col justify-between hover:border-[#2D4536]/40 transition-all shadow-xs"
+                  className="bg-[#F4EFE6] rounded-xl p-4 sm:p-5 border border-[#ECE5D9] flex flex-col justify-between hover:border-[#2D4536]/40 transition-all shadow-xs h-full"
                 >
                   <div>
                     <div className="flex items-center justify-between text-[11px] font-mono text-[#69746A] mb-2">
@@ -303,15 +312,15 @@ export const ServicesPage: React.FC = () => {
                       </div>
                     )}
 
-                    <p className="text-xs text-[#5A635C] leading-relaxed mb-4">
+                    <p className="text-xs text-[#5A635C] leading-relaxed mb-4 line-clamp-2">
                       {item.description}
                     </p>
 
-                    <ul className="space-y-1.5 text-xs text-[#445248] mb-5 pt-3 border-t border-[#E3DACB]/80">
-                      {item.features?.map((f, i) => (
+                    <ul className="space-y-1 text-xs text-[#445248] mb-4 pt-2.5 border-t border-[#E3DACB]/80">
+                      {item.features?.slice(0, 3).map((f, i) => (
                         <li key={i} className="flex items-start gap-1.5">
                           <CheckCircle className="w-3.5 h-3.5 text-[#2D4536] mt-0.5 shrink-0" />
-                          <span>{f}</span>
+                          <span className="line-clamp-1">{f}</span>
                         </li>
                       ))}
                     </ul>
@@ -343,7 +352,7 @@ export const ServicesPage: React.FC = () => {
                 </div>
               );
             })}
-          </div>
+          </CardCarousel>
 
           <div className="text-center pt-2">
             <Link

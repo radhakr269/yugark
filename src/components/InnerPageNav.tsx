@@ -10,8 +10,8 @@ export const InnerPageNav: React.FC<InnerPageNavProps> = ({ currentPageTitle }) 
   const navigate = useNavigate();
 
   const handleGoBack = () => {
-    // Only go back if internal history exists, otherwise fallback to home
-    if (window.history.length > 1 && document.referrer && document.referrer.includes(window.location.host)) {
+    // Navigate to previous internal history if safe, otherwise return to home
+    if (window.history.length > 1 && (window.history.state?.idx ?? 0) > 0) {
       navigate(-1);
     } else {
       navigate('/');

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { X, ArrowRight, CheckCircle, Clock, Send } from 'lucide-react';
 import { ProjectItem, DemoItem, BlogPostItem, ServiceItem } from '../types/content';
 import { WhatsAppIcon } from './WhatsAppIcon';
+import { siteConfig } from '../data/studioData';
+import { getWebsiteSettings } from '../lib/cms';
 
 // Reusable hook to handle Escape key dismissal
 function useEscapeKey(handler: () => void, isActive: boolean) {
@@ -462,7 +464,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) =
                 Inquiry Received!
               </h4>
               <p className="text-xs sm:text-sm text-[#555C56] max-w-sm mx-auto leading-relaxed">
-                Thank you, {formData.name || 'there'}! Our digital studio director will review your project brief and get in touch at {formData.email || 'your email'} within 24 hours.
+                Thank you, {formData.name || 'there'}! Our digital studio director will review your project brief and get in touch at {formData.email || 'your email'} promptly.
               </p>
               <button
                 onClick={() => {
@@ -634,6 +636,19 @@ export const FreeDemoModal: React.FC<FreeDemoModalProps> = ({ isOpen, onClose })
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [refId, setRefId] = useState('');
+  const [whatsappUrl, setWhatsappUrl] = useState(siteConfig.whatsappUrl);
+
+  useEffect(() => {
+    async function loadSettings() {
+      const settings = await getWebsiteSettings();
+      if (settings?.whatsappUrl) {
+        setWhatsappUrl(settings.whatsappUrl);
+      }
+    }
+    if (isOpen) {
+      loadSettings();
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -712,7 +727,8 @@ export const FreeDemoModal: React.FC<FreeDemoModalProps> = ({ isOpen, onClose })
     const text = encodeURIComponent(
       `Hello Yugark Studio, I would like to request a Free Website Demo for "${businessName || 'my business'}" (${category}). Name: ${fullName}, Phone: ${whatsappNumber}. Requirements: ${requirements}`
     );
-    window.open(`https://wa.me/919125272460?text=${text}`, '_blank', 'noopener,noreferrer');
+    const baseUrl = whatsappUrl.includes('?') ? whatsappUrl.split('?')[0] : whatsappUrl;
+    window.open(`${baseUrl}?text=${text}`, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -760,7 +776,7 @@ export const FreeDemoModal: React.FC<FreeDemoModalProps> = ({ isOpen, onClose })
                 Free Demo Request Received!
               </h4>
               <p className="text-xs sm:text-sm text-[#556358] max-w-sm mx-auto leading-relaxed">
-                Thank you, <span className="font-semibold text-[#121614]">{fullName}</span>! We have queued your demonstration for <span className="font-semibold text-[#121614]">{businessName}</span>. Our lead digital designer will review your specifications and contact your WhatsApp within 24–48 hours.
+                Thank you, <span className="font-semibold text-[#121614]">{fullName}</span>! We have queued your demonstration for <span className="font-semibold text-[#121614]">{businessName}</span>. Our lead digital designer will review your specifications and contact your WhatsApp directly.
               </p>
 
               <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-2.5">
@@ -910,7 +926,7 @@ export const FreeDemoModal: React.FC<FreeDemoModalProps> = ({ isOpen, onClose })
                   )}
                 </button>
                 <p className="text-[10px] text-center text-[#7A857D] mt-2">
-                  100% Free Demo • No Obligation • Delivered Within 24–48 Hours
+                  100% Free Demo • No Obligation • Custom Studio Preview
                 </p>
               </div>
             </form>

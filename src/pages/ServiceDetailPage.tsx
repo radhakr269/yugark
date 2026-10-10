@@ -28,6 +28,7 @@ export const ServiceDetailPage: React.FC = () => {
   const [service, setService] = useState<ServiceItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [whatsappUrl, setWhatsappUrl] = useState(siteConfig.whatsappUrl);
 
   useEffect(() => {
     async function loadService() {
@@ -37,7 +38,14 @@ export const ServiceDetailPage: React.FC = () => {
       }
       setLoading(false);
     }
+    async function loadSettings() {
+      const settings = await getWebsiteSettings();
+      if (settings?.whatsappUrl) {
+        setWhatsappUrl(settings.whatsappUrl);
+      }
+    }
     loadService();
+    loadSettings();
   }, [slug]);
 
   if (loading) {
@@ -309,7 +317,7 @@ export const ServiceDetailPage: React.FC = () => {
               <ArrowRight className="w-4 h-4" />
             </button>
             <a
-              href={`https://wa.me/919125272460?text=${encodeURIComponent(`Hello Yugark Studio, I have an inquiry regarding ${service.title}.`)}`}
+              href={`${whatsappUrl.includes('?') ? whatsappUrl.split('?')[0] : whatsappUrl}?text=${encodeURIComponent(`Hello Yugark Studio, I have an inquiry regarding ${service.title}.`)}`}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#25D366] text-white text-xs font-semibold hover:bg-[#20ba5a] transition-colors shadow-sm"

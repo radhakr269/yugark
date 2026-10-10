@@ -15,6 +15,8 @@ import { DemoItem } from '../types/content';
 import { SEOHead } from '../components/SEOHead';
 import { getPublishedDemos } from '../lib/cms';
 import { isSafeExternalUrl } from '../lib/supabase/storage';
+import { InnerPageNav } from '../components/InnerPageNav';
+import { CardCarousel } from '../components/CardCarousel';
 
 export const DemosPage: React.FC = () => {
   const navigate = useNavigate();
@@ -68,6 +70,8 @@ export const DemosPage: React.FC = () => {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
+        <InnerPageNav currentPageTitle="Website Demos" />
+
         {/* Page Header */}
         <div className="max-w-3xl mb-6 sm:mb-10">
           <p className="text-[11px] sm:text-xs font-semibold tracking-[0.22em] text-[#69746A] uppercase mb-2">
@@ -103,102 +107,112 @@ export const DemosPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Demos Grid */}
+        {/* Demos Carousel */}
         {loading ? (
           <div className="py-20 text-center">
             <div className="w-8 h-8 border-2 border-[#2D4536] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
             <p className="text-xs text-[#7C887E]">Loading CMS Demos...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10 mb-16 sm:mb-24">
-            {filteredDemos.map((demo) => (
-              <div
-                key={demo.id}
-                className="bg-[#FAF7F2] rounded-2xl sm:rounded-3xl border border-[#E6DFD3] overflow-hidden group hover:border-[#2D4536]/40 hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
-              >
-                <div>
-                  {/* Image Showcase Container */}
-                  <div className="relative aspect-[16/10] bg-[#EBE4D8] overflow-hidden">
-                    <img
-                      src={demo.image}
-                      alt={demo.alt}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-black/5 pointer-events-none" />
+          <div className="mb-14 sm:mb-20">
+            <CardCarousel
+              preset="demos"
+              ariaLabel="Turnkey Website Demos"
+              autoScroll={true}
+              autoScrollInterval={5000}
+              showControls={true}
+              showDots={true}
+              controlsPosition="bottom"
+            >
+              {filteredDemos.map((demo) => (
+                <div
+                  key={demo.id}
+                  className="bg-[#FAF7F2] rounded-2xl sm:rounded-3xl border border-[#E6DFD3] overflow-hidden group hover:border-[#2D4536]/40 hover:shadow-xl transition-all duration-300 flex flex-col justify-between h-full"
+                >
+                  <div>
+                    {/* Image Showcase Container */}
+                    <div className="relative aspect-[16/10] bg-[#EBE4D8] overflow-hidden">
+                      <img
+                        src={demo.image}
+                        alt={demo.alt}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-black/5 pointer-events-none" />
 
-                    {/* Industry Badge */}
-                    <span className="absolute top-3 left-3 bg-[#1B2E24]/90 backdrop-blur-sm text-[#E5ECE7] text-[10px] font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
-                      {demo.industry}
-                    </span>
-
-                    {demo.featured && (
-                      <span className="absolute top-3 right-3 bg-[#C5A880] text-[#121614] text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
-                        <Sparkles className="w-3 h-3" />
-                        <span>Featured</span>
+                      {/* Industry Badge */}
+                      <span className="absolute top-2.5 left-2.5 bg-[#1B2E24]/90 backdrop-blur-sm text-[#E5ECE7] text-[9.5px] font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                        {demo.industry}
                       </span>
-                    )}
-                  </div>
 
-                  {/* Content */}
-                  <div className="p-6 sm:p-8">
-                    <div className="flex items-start justify-between mb-2">
-                      <h2 className="font-serif-title text-2xl sm:text-3xl font-medium text-[#121614]">
-                        {demo.title}
-                      </h2>
-                    </div>
-
-                    <p className="text-xs sm:text-sm text-[#5D665F] leading-relaxed mb-6">
-                      {demo.description}
-                    </p>
-
-                    {/* Key Features */}
-                    <div className="space-y-2 mb-6">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-[#2D4536] block mb-2">
-                        Template Highlights:
-                      </span>
-                      {demo.features.map((feature, idx) => (
-                        <div key={idx} className="flex items-center text-xs text-[#3C423E]">
-                          <CheckCircle className="w-3.5 h-3.5 text-[#2D4536] mr-2 shrink-0" />
-                          <span>{feature}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Tech stack pills */}
-                    <div className="flex flex-wrap gap-1.5 pt-4 border-t border-[#ECE5D9]">
-                      {demo.techStack.map((tech, idx) => (
-                        <span
-                          key={idx}
-                          className="text-[10px] font-mono bg-[#EFE9DF] text-[#4E564F] px-2.5 py-0.5 rounded"
-                        >
-                          {tech}
+                      {demo.featured && (
+                        <span className="absolute top-2.5 right-2.5 bg-[#C5A880] text-[#121614] text-[9.5px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                          <Sparkles className="w-2.5 h-2.5" />
+                          <span>Featured</span>
                         </span>
-                      ))}
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-4 sm:p-5">
+                      <div className="flex items-start justify-between mb-1.5">
+                        <h2 className="font-serif-title text-lg sm:text-xl font-medium text-[#121614]">
+                          {demo.title}
+                        </h2>
+                      </div>
+
+                      <p className="text-xs text-[#5D665F] leading-relaxed mb-3 line-clamp-2">
+                        {demo.description}
+                      </p>
+
+                      {/* Key Features */}
+                      <div className="space-y-1 mb-3">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-[#2D4536] block mb-1">
+                          Template Highlights:
+                        </span>
+                        {demo.features.slice(0, 3).map((feature, idx) => (
+                          <div key={idx} className="flex items-center text-[11px] text-[#3C423E]">
+                            <CheckCircle className="w-3 h-3 text-[#2D4536] mr-1.5 shrink-0" />
+                            <span className="truncate">{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Tech stack pills */}
+                      <div className="flex flex-wrap gap-1 pt-2.5 border-t border-[#ECE5D9]">
+                        {demo.techStack.slice(0, 3).map((tech, idx) => (
+                          <span
+                            key={idx}
+                            className="text-[9px] font-mono bg-[#EFE9DF] text-[#4E564F] px-2 py-0.5 rounded"
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Action Buttons */}
-                <div className="p-6 sm:p-8 pt-0 flex flex-wrap items-center gap-3">
-                  <button
-                    onClick={() => handleLaunchDemo(demo)}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-[#1A2621] text-white text-xs font-semibold tracking-wider hover:bg-black transition-all shadow-sm cursor-pointer"
-                  >
-                    <Monitor className="w-3.5 h-3.5" />
-                    <span>Launch Live Demo</span>
-                  </button>
+                  {/* Action Buttons */}
+                  <div className="p-4 sm:p-5 pt-0 flex flex-col sm:flex-row items-center gap-2">
+                    <button
+                      onClick={() => handleLaunchDemo(demo)}
+                      className="w-full sm:flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-full bg-[#1A2621] text-white text-[11px] font-semibold tracking-wider hover:bg-black transition-all shadow-sm cursor-pointer"
+                    >
+                      <Monitor className="w-3 h-3" />
+                      <span>Launch Demo</span>
+                    </button>
 
-                  <button
-                    onClick={() => navigate(`/contact?demo=${demo.slug}`)}
-                    className="inline-flex items-center justify-center gap-1.5 px-5 py-3 rounded-full border border-[#D5CDC0] text-[#121614] text-xs font-medium hover:bg-[#EAE3D6] transition-colors cursor-pointer"
-                  >
-                    <span>Acquire This Demo</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                    <button
+                      onClick={() => navigate(`/contact?demo=${demo.slug}`)}
+                      className="w-full sm:flex-1 inline-flex items-center justify-center gap-1 px-3.5 py-2.5 rounded-full border border-[#D5CDC0] text-[#121614] text-[11px] font-medium hover:bg-[#EAE3D6] transition-colors cursor-pointer"
+                    >
+                      <span>Acquire</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </CardCarousel>
           </div>
         )}
 

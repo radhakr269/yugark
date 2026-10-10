@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { siteConfig } from '../data/studioData';
 import { SEOHead } from '../components/SEOHead';
+import { InnerPageNav } from '../components/InnerPageNav';
 
 export const AboutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -80,6 +81,8 @@ export const AboutPage: React.FC = () => {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
+        <InnerPageNav currentPageTitle="About Yugark" />
+
         {/* Page Hero */}
         <div className="max-w-3xl mb-8 sm:mb-12">
           <p className="text-[11px] sm:text-xs font-semibold tracking-[0.22em] text-[#69746A] uppercase mb-2">

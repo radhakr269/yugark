@@ -13,6 +13,7 @@ import {
 import { ProjectItem } from '../types/content';
 import { SEOHead } from '../components/SEOHead';
 import { getProjectBySlug } from '../lib/cms';
+import { InnerPageNav } from '../components/InnerPageNav';
 
 export const WorkDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -73,6 +74,8 @@ export const WorkDetailPage: React.FC = () => {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
+        <InnerPageNav currentPageTitle={project.title} />
+
         {/* Breadcrumb Navigation */}
         <nav className="flex items-center space-x-2 text-xs font-medium text-[#7C887E] mb-8">
           <Link to="/" className="hover:text-[#121614] transition-colors">

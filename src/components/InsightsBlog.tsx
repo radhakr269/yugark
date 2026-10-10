@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { blogPostsData as initialBlogPosts } from '../data/studioData';
 import { BlogPostItem } from '../types/content';
 import { getPublishedBlogPosts } from '../lib/cms';
+import { CardCarousel } from './CardCarousel';
 
 interface InsightsBlogProps {
   onSelectArticle: (article: BlogPostItem) => void;
@@ -45,7 +46,7 @@ export const InsightsBlog: React.FC<InsightsBlogProps> = ({
               Useful tips about websites, creative content and digital marketing.
             </p>
           </div>
-          <div className="shrink-0">
+          <div className="shrink-0 flex items-center gap-3">
             <button
               onClick={onViewAllArticles}
               className="inline-flex items-center text-[10px] sm:text-xs font-semibold text-[#121614] hover:text-[#2D4536] transition-colors cursor-pointer group pb-0.5"
@@ -56,32 +57,40 @@ export const InsightsBlog: React.FC<InsightsBlogProps> = ({
           </div>
         </div>
 
-        {/* 3 Editorial Blog Cards: Adaptable responsive grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 lg:gap-8">
-          {posts.slice(0, 3).map((post) => (
+        {/* Insights & Blog Horizontal Carousel */}
+        <CardCarousel
+          preset="blog"
+          ariaLabel="Insights & Ideas Blog Articles"
+          autoScroll={true}
+          autoScrollInterval={6000}
+          showControls={true}
+          showDots={true}
+          controlsPosition="bottom"
+        >
+          {posts.map((post) => (
             <article
               key={post.id}
               onClick={() => onSelectArticle(post)}
-              className="editorial-card group bg-[#FAF7F2] rounded-xl sm:rounded-2xl overflow-hidden border border-[#E6DFD3] flex flex-col justify-between shadow-xs hover:shadow-md transition-all cursor-pointer"
+              className="editorial-card group bg-[#FAF7F2] rounded-xl sm:rounded-2xl overflow-hidden border border-[#E6DFD3] flex flex-col justify-between shadow-xs hover:shadow-md transition-all cursor-pointer h-full"
             >
               <div>
                 {/* Card Media or Graphic Header */}
                 {post.isGraphicCard && post.graphicData ? (
-                  <div className="relative aspect-[16/10] overflow-hidden bg-[#1B2E24] p-5 flex flex-col justify-between text-[#FAF8F5]">
+                  <div className="relative aspect-[16/10] overflow-hidden bg-[#1B2E24] p-4 sm:p-5 flex flex-col justify-between text-[#FAF8F5]">
                     <div className="flex items-center justify-between z-10">
                       <span className="text-[9px] font-mono text-[#A5C2B1] uppercase tracking-wider">
                         {post.graphicData.framework}
                       </span>
-                      <span className="bg-[#2D4536] text-[#E5ECE7] text-[9px] px-2 py-0.5 rounded-full font-medium">
+                      <span className="bg-[#2D4536] text-[#E5ECE7] text-[8.5px] px-2 py-0.5 rounded-full font-medium">
                         {post.graphicData.architectureBadge}
                       </span>
                     </div>
 
                     <div className="z-10">
-                      <p className="text-[10px] font-medium text-[#A5C2B1] uppercase tracking-wider mb-0.5">
+                      <p className="text-[9.5px] font-medium text-[#A5C2B1] uppercase tracking-wider mb-0.5">
                         {post.graphicData.playbookLabel}
                       </p>
-                      <h4 className="font-serif-title text-base text-white leading-tight">
+                      <h4 className="font-serif-title text-sm sm:text-base text-white leading-tight">
                         {post.graphicData.headline}
                       </h4>
                     </div>
@@ -102,29 +111,29 @@ export const InsightsBlog: React.FC<InsightsBlogProps> = ({
                 )}
 
                 {/* Card Body */}
-                <div className="p-3 sm:p-5">
-                  <span className="text-[9px] font-mono uppercase text-[#76857A] tracking-wider block mb-1">
+                <div className="p-3 sm:p-4">
+                  <span className="text-[8.5px] sm:text-[9px] font-mono uppercase text-[#76857A] tracking-wider block mb-1">
                     {post.category}
                   </span>
-                  <h3 className="font-serif-title text-sm sm:text-base lg:text-lg font-medium text-[#121614] group-hover:text-[#2D4536] transition-colors leading-snug mb-2 line-clamp-2">
+                  <h3 className="font-serif-title text-sm sm:text-base font-medium text-[#121614] group-hover:text-[#2D4536] transition-colors leading-snug mb-1.5 line-clamp-2">
                     {post.title}
                   </h3>
-                  <p className="text-[11px] sm:text-xs text-[#6F766F] leading-relaxed line-clamp-2 mb-2">
+                  <p className="text-[10.5px] sm:text-[11.5px] text-[#6F766F] leading-relaxed line-clamp-2 mb-2 font-light">
                     {post.excerpt}
                   </p>
                 </div>
               </div>
 
-              {/* Card Action Link */}
-              <div className="px-3 pb-3 sm:px-5 sm:pb-5 pt-0">
-                <div className="inline-flex items-center text-xs font-semibold tracking-wider text-[#121614] group-hover:text-[#2D4536]">
-                  <span>Read Article</span>
-                  <ArrowRight className="w-3 h-3 ml-1 transition-transform group-hover:translate-x-1" />
-                </div>
+              {/* Card Footer */}
+              <div className="px-3 sm:px-4 pb-3 sm:pb-3.5 pt-2 border-t border-[#EFE9DF] flex items-center justify-between text-[10px] sm:text-[11px] text-[#78857C]">
+                <span>{post.readTime}</span>
+                <span className="inline-flex items-center font-medium text-[#121614] group-hover:text-[#2D4536] transition-colors">
+                  Read article <ArrowRight className="w-2.5 h-2.5 ml-1 transition-transform group-hover:translate-x-0.5" />
+                </span>
               </div>
             </article>
           ))}
-        </div>
+        </CardCarousel>
       </div>
     </section>
   );

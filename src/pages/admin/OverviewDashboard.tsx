@@ -14,31 +14,36 @@ import {
   CheckCircle,
   AlertCircle,
   TrendingUp,
+  Layers,
+  DollarSign,
 } from 'lucide-react';
-import { adminCmsApi, getPublishedDemos, getPublishedBlogPosts, getPublishedServices } from '../../lib/cms';
-import { LeadRecord, WebsiteDemoRecord, BlogPostRecord } from '../../lib/supabase/types';
+import { adminCmsApi, getPublishedDemos, getPublishedBlogPosts, getPublishedServices, getPortfolioProjects } from '../../lib/cms';
+import { LeadRecord, WebsiteDemoRecord, BlogPostRecord, PortfolioProjectRecord } from '../../lib/supabase/types';
 import { isSupabaseConfigured } from '../../lib/supabase/client';
 
 export const OverviewDashboard: React.FC = () => {
   const [leads, setLeads] = useState<LeadRecord[]>([]);
   const [demos, setDemos] = useState<WebsiteDemoRecord[]>([]);
   const [blogs, setBlogs] = useState<BlogPostRecord[]>([]);
+  const [projects, setProjects] = useState<PortfolioProjectRecord[]>([]);
   const [servicesCount, setServicesCount] = useState(5);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadMetrics() {
       try {
-        const [leadList, demoList, blogList, services] = await Promise.all([
+        const [leadList, demoList, blogList, services, projectList] = await Promise.all([
           adminCmsApi.listLeads(),
           adminCmsApi.listDemos(),
           adminCmsApi.listBlogPosts(),
           adminCmsApi.listServices(),
+          adminCmsApi.listProjects(),
         ]);
         setLeads(leadList);
         setDemos(demoList);
         setBlogs(blogList);
         setServicesCount(services.length);
+        setProjects(projectList);
       } catch (err) {
         console.error('Failed to load overview data:', err);
       } finally {
@@ -58,6 +63,7 @@ export const OverviewDashboard: React.FC = () => {
   const followUpLeads = leads.filter((l) => l.status === 'contacted' || l.status === 'in_discussion').length;
   const publishedDemos = demos.filter((d) => d.status === 'published').length;
   const publishedBlogs = blogs.filter((b) => b.status === 'published').length;
+  const publishedProjects = projects.filter((p: any) => p.status !== 'draft').length;
 
   // Calculate total tracked views from actual storage
   const totalViews = blogs.reduce((acc, b) => acc + adminCmsApi.getBlogViews(b.slug), 0);
@@ -88,125 +94,178 @@ export const OverviewDashboard: React.FC = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           <Link
             to="/admin/demos"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#1B2E24] text-white text-xs font-medium hover:bg-[#253D30] transition-colors shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1B2E24] text-white text-xs font-medium hover:bg-[#253D30] transition-colors shadow-sm"
           >
             <PlusCircle className="w-3.5 h-3.5" />
             <span>Add Demo</span>
           </Link>
           <Link
             to="/admin/blog"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#E8E1D5] text-[#121614] text-xs font-medium hover:bg-[#DED5C7] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#E8E1D5] text-[#121614] text-xs font-medium hover:bg-[#DED5C7] transition-colors"
           >
             <PlusCircle className="w-3.5 h-3.5" />
-            <span>Write Article</span>
+            <span>Write Blog</span>
+          </Link>
+          <Link
+            to="/admin/portfolio"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FAF8F5] border border-[#D5CDC0] text-[#121614] text-xs font-medium hover:bg-[#F2ECE1] transition-colors"
+          >
+            <Layers className="w-3.5 h-3.5 text-[#2D4536]" />
+            <span>Add Portfolio Project</span>
           </Link>
           <Link
             to="/admin/leads"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-[#D5CDC0] text-[#121614] text-xs font-medium hover:bg-[#FAF7F2] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#D5CDC0] text-[#121614] text-xs font-medium hover:bg-[#FAF7F2] transition-colors"
           >
             <Users className="w-3.5 h-3.5 text-[#2D4536]" />
-            <span>Leads CRM</span>
+            <span>View Leads</span>
+          </Link>
+          <Link
+            to="/admin/services"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#D5CDC0] text-[#121614] text-xs font-medium hover:bg-[#FAF7F2] transition-colors"
+          >
+            <Briefcase className="w-3.5 h-3.5 text-[#2D4536]" />
+            <span>Manage Services</span>
+          </Link>
+          <Link
+            to="/admin/pricing"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#D5CDC0] text-[#121614] text-xs font-medium hover:bg-[#FAF7F2] transition-colors"
+          >
+            <DollarSign className="w-3.5 h-3.5 text-[#2D4536]" />
+            <span>Edit Pricing</span>
           </Link>
         </div>
       </div>
 
       {/* Metric Cards Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         {/* Card 1: Total Leads */}
-        <div className="bg-white p-4 rounded-2xl border border-[#E5DFD5] shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[#6D7B71] mb-2">
+        <div className="bg-white p-3.5 rounded-2xl border border-[#E5DFD5] shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#6D7B71] mb-1.5">
             <span className="text-[10px] uppercase font-mono tracking-wider font-semibold">Total Leads</span>
-            <Users className="w-4 h-4 text-[#2D4536]" />
+            <Users className="w-3.5 h-3.5 text-[#2D4536]" />
           </div>
           <div>
-            <div className="font-serif-title text-2xl sm:text-3xl font-semibold text-[#121614]">
+            <div className="font-serif-title text-2xl font-semibold text-[#121614]">
               {totalLeads}
             </div>
-            <div className="text-[11px] text-[#25D366] font-medium mt-1">
-              {newLeads} new awaiting review
+            <div className="text-[10px] text-[#718075] font-medium mt-0.5">
+              All client inquiries
             </div>
           </div>
         </div>
 
-        {/* Card 2: Follow-Up Leads */}
-        <div className="bg-white p-4 rounded-2xl border border-[#E5DFD5] shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[#6D7B71] mb-2">
-            <span className="text-[10px] uppercase font-mono tracking-wider font-semibold">In Discussion</span>
-            <Clock className="w-4 h-4 text-[#C5A880]" />
+        {/* Card 2: New Leads */}
+        <div className="bg-white p-3.5 rounded-2xl border border-[#E5DFD5] shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#6D7B71] mb-1.5">
+            <span className="text-[10px] uppercase font-mono tracking-wider font-semibold">New Leads</span>
+            <Users className="w-3.5 h-3.5 text-[#25D366]" />
           </div>
           <div>
-            <div className="font-serif-title text-2xl sm:text-3xl font-semibold text-[#121614]">
+            <div className="font-serif-title text-2xl font-semibold text-[#121614]">
+              {newLeads}
+            </div>
+            <div className="text-[10px] text-[#25D366] font-medium mt-0.5">
+              Awaiting review
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Follow-Up Leads */}
+        <div className="bg-white p-3.5 rounded-2xl border border-[#E5DFD5] shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#6D7B71] mb-1.5">
+            <span className="text-[10px] uppercase font-mono tracking-wider font-semibold">Follow-Up</span>
+            <Clock className="w-3.5 h-3.5 text-[#C5A880]" />
+          </div>
+          <div>
+            <div className="font-serif-title text-2xl font-semibold text-[#121614]">
               {followUpLeads}
             </div>
-            <div className="text-[11px] text-[#718075] mt-1">
-              Active prospect scopes
+            <div className="text-[10px] text-[#718075] mt-0.5">
+              In active discussion
             </div>
           </div>
         </div>
 
-        {/* Card 3: Website Demos */}
-        <div className="bg-white p-4 rounded-2xl border border-[#E5DFD5] shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[#6D7B71] mb-2">
-            <span className="text-[10px] uppercase font-mono tracking-wider font-semibold">Live Demos</span>
-            <MonitorPlay className="w-4 h-4 text-[#2D4536]" />
+        {/* Card 4: Published Demos */}
+        <div className="bg-white p-3.5 rounded-2xl border border-[#E5DFD5] shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#6D7B71] mb-1.5">
+            <span className="text-[10px] uppercase font-mono tracking-wider font-semibold">Demos</span>
+            <MonitorPlay className="w-3.5 h-3.5 text-[#2D4536]" />
           </div>
           <div>
-            <div className="font-serif-title text-2xl sm:text-3xl font-semibold text-[#121614]">
+            <div className="font-serif-title text-2xl font-semibold text-[#121614]">
               {publishedDemos}
             </div>
-            <div className="text-[11px] text-[#718075] mt-1">
-              {demos.length} total in system
+            <div className="text-[10px] text-[#718075] mt-0.5">
+              Published on /demos
             </div>
           </div>
         </div>
 
-        {/* Card 4: Published Articles */}
-        <div className="bg-white p-4 rounded-2xl border border-[#E5DFD5] shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[#6D7B71] mb-2">
-            <span className="text-[10px] uppercase font-mono tracking-wider font-semibold">Editorial</span>
-            <FileText className="w-4 h-4 text-[#2D4536]" />
+        {/* Card 5: Published Portfolio Projects */}
+        <div className="bg-white p-3.5 rounded-2xl border border-[#E5DFD5] shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#6D7B71] mb-1.5">
+            <span className="text-[10px] uppercase font-mono tracking-wider font-semibold">Portfolio</span>
+            <Layers className="w-3.5 h-3.5 text-[#2D4536]" />
           </div>
           <div>
-            <div className="font-serif-title text-2xl sm:text-3xl font-semibold text-[#121614]">
+            <div className="font-serif-title text-2xl font-semibold text-[#121614]">
+              {publishedProjects}
+            </div>
+            <div className="text-[10px] text-[#718075] mt-0.5">
+              Selected work items
+            </div>
+          </div>
+        </div>
+
+        {/* Card 6: Published Articles */}
+        <div className="bg-white p-3.5 rounded-2xl border border-[#E5DFD5] shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#6D7B71] mb-1.5">
+            <span className="text-[10px] uppercase font-mono tracking-wider font-semibold">Editorial</span>
+            <FileText className="w-3.5 h-3.5 text-[#2D4536]" />
+          </div>
+          <div>
+            <div className="font-serif-title text-2xl font-semibold text-[#121614]">
               {publishedBlogs}
             </div>
-            <div className="text-[11px] text-[#718075] mt-1">
+            <div className="text-[10px] text-[#718075] mt-0.5">
               Articles on /blog
             </div>
           </div>
         </div>
 
-        {/* Card 5: Core Services */}
-        <div className="bg-white p-4 rounded-2xl border border-[#E5DFD5] shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[#6D7B71] mb-2">
+        {/* Card 7: Published Services */}
+        <div className="bg-white p-3.5 rounded-2xl border border-[#E5DFD5] shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#6D7B71] mb-1.5">
             <span className="text-[10px] uppercase font-mono tracking-wider font-semibold">Services</span>
-            <Briefcase className="w-4 h-4 text-[#2D4536]" />
+            <Briefcase className="w-3.5 h-3.5 text-[#2D4536]" />
           </div>
           <div>
-            <div className="font-serif-title text-2xl sm:text-3xl font-semibold text-[#121614]">
+            <div className="font-serif-title text-2xl font-semibold text-[#121614]">
               {servicesCount}
             </div>
-            <div className="text-[11px] text-[#718075] mt-1">
-              Discipline offerings
+            <div className="text-[10px] text-[#718075] mt-0.5">
+              Active disciplines
             </div>
           </div>
         </div>
 
-        {/* Card 6: Tracked Views */}
-        <div className="bg-white p-4 rounded-2xl border border-[#E5DFD5] shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[#6D7B71] mb-2">
+        {/* Card 8: Tracked Blog Views */}
+        <div className="bg-white p-3.5 rounded-2xl border border-[#E5DFD5] shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#6D7B71] mb-1.5">
             <span className="text-[10px] uppercase font-mono tracking-wider font-semibold">Blog Views</span>
-            <Eye className="w-4 h-4 text-[#2D4536]" />
+            <Eye className="w-3.5 h-3.5 text-[#2D4536]" />
           </div>
           <div>
-            <div className="font-serif-title text-2xl sm:text-3xl font-semibold text-[#121614]">
+            <div className="font-serif-title text-2xl font-semibold text-[#121614]">
               {totalViews}
             </div>
-            <div className="text-[11px] text-[#718075] mt-1">
-              Actual recorded reads
+            <div className="text-[10px] text-[#718075] mt-0.5">
+              Recorded reads
             </div>
           </div>
         </div>

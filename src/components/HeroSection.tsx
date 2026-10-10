@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowRight, Monitor, Layers, Zap, TrendingUp, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowRight, Monitor, Layers, Zap, TrendingUp, Sparkles, ChevronRight } from 'lucide-react';
 import { siteConfig, valueHighlights } from '../data/studioData';
-import { adminCmsApi } from '../lib/cms';
 
 interface HeroSectionProps {
   onStartProject: () => void;
@@ -9,99 +8,201 @@ interface HeroSectionProps {
   onFreeDemo: () => void;
 }
 
+interface HeroMessageState {
+  eyebrow: string;
+  headline: string;
+  supportingText: string;
+  labels: string[];
+}
+
+const HERO_STATES: HeroMessageState[] = [
+  {
+    eyebrow: 'DIGITAL STUDIO FOR MODERN BRANDS',
+    headline: 'We Build.',
+    supportingText:
+      'Premium websites and smart digital systems that help your business make a lasting impression.',
+    labels: ['Business Websites', 'Landing Pages', 'Lead Management'],
+  },
+  {
+    eyebrow: 'CREATIVE CONTENT THAT CONNECTS',
+    headline: 'We Create.',
+    supportingText:
+      'Engaging videos, social media content and brand creatives that make your business stand out.',
+    labels: ['Promotional Videos', 'Social Media', 'Brand Creatives'],
+  },
+  {
+    eyebrow: 'STRATEGY FOR BUSINESS GROWTH',
+    headline: 'We Grow Brands.',
+    supportingText:
+      'Targeted advertising and digital strategies that help your business reach more customers.',
+    labels: ['Meta & Google Ads', 'Content Strategy', 'Digital Growth'],
+  },
+];
+
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onStartProject,
   onViewWork,
   onFreeDemo,
 }) => {
-  const [heroContent, setHeroContent] = useState({
-    headlineLine1: siteConfig.headlineLine1,
-    headlineLine2: siteConfig.headlineLine2,
-    headlineLine3Accent: siteConfig.headlineLine3Accent,
-    heroDescription: siteConfig.heroDescription,
-  });
+  const [currentState, setCurrentState] = useState<number>(0);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [isVisible, setIsVisible] = useState<boolean>(true);
+  const sectionRef = useRef<HTMLElement>(null);
 
+  // IntersectionObserver to pause rotation when section is off-screen
   useEffect(() => {
-    async function load() {
-      const data = await adminCmsApi.getHomepageContent();
-      if (data) {
-        setHeroContent({
-          headlineLine1: data.headlineLine1 || siteConfig.headlineLine1,
-          headlineLine2: data.headlineLine2 || siteConfig.headlineLine2,
-          headlineLine3Accent: data.headlineLine3Accent || siteConfig.headlineLine3Accent,
-          heroDescription: data.heroDescription || siteConfig.heroDescription,
-        });
-      }
-    }
-    load();
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0.15 }
+    );
 
-    const handleUpdate = () => load();
-    window.addEventListener('yugark-cms-updated', handleUpdate);
-    return () => window.removeEventListener('yugark-cms-updated', handleUpdate);
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => observer.disconnect();
   }, []);
+
+  // Visibility change to pause rotation when tab is hidden
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setIsPaused(true);
+      } else {
+        setIsPaused(false);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Automatic rotation: 3.8s per slide (smooth reading duration)
+  useEffect(() => {
+    if (isPaused || !isVisible) return;
+
+    const timer = setInterval(() => {
+      setCurrentState((prev) => (prev + 1) % HERO_STATES.length);
+    }, 3800);
+
+    return () => clearInterval(timer);
+  }, [isPaused, isVisible]);
+
+  const activeMsg = HERO_STATES[currentState];
 
   return (
     <section
+      ref={sectionRef}
       className="relative pt-3 pb-6 sm:pt-6 sm:pb-9 lg:pt-10 lg:pb-14 overflow-hidden bg-[#F8F6F1]"
       id="home"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
     >
-      {/* 
-        Mobile Upper-Right Blended Hero Visual (Enlarged ~20% with seamless feathering)
-        Blended into upper-right quadrant with transparent left gradient so copy remains 100% legible.
-      */}
-      <div className="md:hidden absolute -right-2 top-0 w-[68%] sm:w-[58%] max-w-[360px] h-[270px] sm:h-[320px] pointer-events-none z-0 overflow-hidden">
-        <div
-          className="w-full h-full"
-          style={{
-            maskImage: `
-              radial-gradient(ellipse 92% 88% at 75% 42%, black 45%, rgba(0,0,0,0.85) 62%, rgba(0,0,0,0.15) 82%, transparent 100%),
-              linear-gradient(to right, transparent 0%, rgba(0,0,0,0.06) 12%, rgba(0,0,0,0.5) 36%, black 65%, black 90%, transparent 100%),
-              linear-gradient(to bottom, transparent 0%, black 8%, black 85%, transparent 100%)
-            `,
-            WebkitMaskImage: `
-              radial-gradient(ellipse 92% 88% at 75% 42%, black 45%, rgba(0,0,0,0.85) 62%, rgba(0,0,0,0.15) 82%, transparent 100%),
-              linear-gradient(to right, transparent 0%, rgba(0,0,0,0.06) 12%, rgba(0,0,0,0.5) 36%, black 65%, black 90%, transparent 100%),
-              linear-gradient(to bottom, transparent 0%, black 8%, black 85%, transparent 100%)
-            `,
-            maskComposite: 'intersect',
-            WebkitMaskComposite: 'source-in',
-          }}
-        >
-          <img
-            alt="Multi-device mockups"
-            aria-hidden="true"
-            className="w-full h-full object-cover object-left-top transform scale-115"
-            src={siteConfig.heroImage}
-            loading="eager"
-          />
-        </div>
-      </div>
-
+      {/* Background is clean warm ivory; visual composition is fully responsive with zero text overlap */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 xl:gap-10 items-center">
-          {/* Left: Editorial Copy */}
-          <div className="md:col-span-6 lg:col-span-5 space-y-3 sm:space-y-4 lg:space-y-6 z-10">
-            {/* Editorial Kicker */}
-            <div className="inline-flex items-center space-x-1.5 sm:space-x-2 text-[9px] sm:text-[11px] font-semibold tracking-[0.22em] text-[#556358] uppercase">
-              <span className="w-3.5 sm:w-5 h-[1.5px] bg-[#556358]" />
-              <span>Digital Studio For Modern Brands</span>
+          {/* Left: Dynamic Animated Copy with Fixed Stable Container Heights */}
+          <div className="md:col-span-6 lg:col-span-5 z-10">
+            {/* Eyebrow with Animated Pill Indicator */}
+            <div className="flex items-center gap-2 mb-2 sm:mb-3">
+              <div className="inline-flex items-center space-x-1.5 sm:space-x-2 text-[9px] sm:text-[11px] font-semibold tracking-[0.22em] text-[#556358] uppercase">
+                <span className="w-3.5 sm:w-5 h-[1.5px] bg-[#556358]" />
+                <span
+                  key={`eyebrow-${currentState}`}
+                  className="transition-all duration-500 ease-out animate-fadeIn"
+                >
+                  {activeMsg.eyebrow}
+                </span>
+              </div>
             </div>
 
-            {/* Main Headline: Exact approved copy */}
-            <h1 className="font-serif-title text-[30px] sm:text-[38px] md:text-4xl lg:text-[50px] xl:text-[56px] leading-[1.08] text-[#121614] font-medium tracking-tight">
-              {heroContent.headlineLine1}
-              <br />
-              {heroContent.headlineLine2}
-              <br />
-              <span className="italic font-normal text-[#2D4536]">
-                {heroContent.headlineLine3Accent}
-              </span>
-            </h1>
+            {/* Main Headline: Exactly ONE headline visible at a time with smooth reveal */}
+            <div className="min-h-[52px] sm:min-h-[64px] lg:min-h-[76px] xl:min-h-[84px] flex items-center mb-2 sm:mb-3 overflow-hidden">
+              <h1
+                key={`headline-${currentState}`}
+                className="font-serif-title text-[32px] sm:text-[44px] md:text-[42px] lg:text-[54px] xl:text-[60px] leading-[1.05] text-[#121614] font-medium tracking-tight transition-all duration-700 ease-out transform translate-y-0 opacity-100"
+                style={{
+                  animation: 'heroSlideFade 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                }}
+              >
+                {activeMsg.headline.includes('Grow') ? (
+                  <>
+                    We{' '}
+                    <span className="italic font-normal text-[#2D4536]">
+                      Grow Brands.
+                    </span>
+                  </>
+                ) : (
+                  activeMsg.headline
+                )}
+              </h1>
+            </div>
 
-            {/* Lead Description */}
-            <p className="text-[#555C56] text-[12px] sm:text-[13.5px] lg:text-[15px] leading-relaxed max-w-[280px] xs:max-w-xs sm:max-w-md lg:max-w-lg font-normal">
-              {heroContent.heroDescription}
-            </p>
+            {/* Supporting Text: Stable min-height to prevent layout jumping */}
+            <div className="min-h-[46px] sm:min-h-[52px] lg:min-h-[56px] flex items-start mb-3 sm:mb-4">
+              <p
+                key={`support-${currentState}`}
+                className="text-[#555C56] text-[12.5px] sm:text-[14px] lg:text-[15px] leading-relaxed max-w-[290px] xs:max-w-xs sm:max-w-md lg:max-w-lg font-normal transition-all duration-600 ease-out"
+                style={{
+                  animation: 'heroFade 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                }}
+              >
+                {activeMsg.supportingText}
+              </p>
+            </div>
+
+            {/* Small Supporting Labels / Badges for active state */}
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4 sm:mb-5">
+              {activeMsg.labels.map((lbl, idx) => (
+                <span
+                  key={`${currentState}-lbl-${idx}`}
+                  className="inline-flex items-center text-[10px] sm:text-[11px] font-medium text-[#2D4536] bg-[#EAE3D6]/70 border border-[#DBD2C3] px-2.5 py-0.5 rounded-full backdrop-blur-xs transition-all duration-500"
+                >
+                  {lbl}
+                </span>
+              ))}
+            </div>
+
+            {/* Interactive State Indicators / Progress Controls */}
+            <div
+              className="flex items-center gap-2 mb-4 sm:mb-5"
+              role="tablist"
+              aria-label="Hero message state selector"
+            >
+              {HERO_STATES.map((state, idx) => {
+                const isActive = idx === currentState;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-label={`Switch to ${state.headline}`}
+                    onClick={() => setCurrentState(idx)}
+                    className="group flex items-center gap-1.5 py-1 px-1 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#2D4536] rounded"
+                  >
+                    <div
+                      className={`h-1.5 rounded-full transition-all duration-500 ${
+                        isActive
+                          ? 'w-7 sm:w-9 bg-[#2D4536]'
+                          : 'w-2 sm:w-2.5 bg-[#D4CBC0] hover:bg-[#A9A094]'
+                      }`}
+                    />
+                    <span
+                      className={`text-[9.5px] font-mono tracking-wider transition-colors duration-300 ${
+                        isActive
+                          ? 'text-[#1B2E24] font-semibold'
+                          : 'text-[#8C968E] group-hover:text-[#4A544C]'
+                      }`}
+                    >
+                      0{idx + 1}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
             {/* Triple Call to Actions: Start Project, View Our Work, and Get Your Free Website Demo */}
             <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 pt-0.5 sm:pt-1">
@@ -127,6 +228,31 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5 text-[#2D4536] transition-transform group-hover:rotate-12" />
                 <span>Get Your Free Website Demo</span>
               </button>
+            </div>
+
+            {/* Mobile Dedicated Showcase Visual: Cleanly placed in layout flow with zero text overlap */}
+            <div className="md:hidden my-4 sm:my-5 overflow-hidden rounded-xl border border-[#E3DBD0] bg-[#EFE9DF]/50 shadow-2xs">
+              <div
+                className="w-full aspect-[16/10] overflow-hidden"
+                style={{
+                  maskImage: `
+                    radial-gradient(ellipse 95% 90% at 50% 50%, black 75%, rgba(0,0,0,0.85) 90%, transparent 100%),
+                    linear-gradient(to bottom, black 85%, transparent 100%)
+                  `,
+                  WebkitMaskImage: `
+                    radial-gradient(ellipse 95% 90% at 50% 50%, black 75%, rgba(0,0,0,0.85) 90%, transparent 100%),
+                    linear-gradient(to bottom, black 85%, transparent 100%)
+                  `,
+                }}
+              >
+                <img
+                  alt="Yugark Digital Studio multi-device mockup showcase: monitor, laptop and smartphone"
+                  className="w-full h-full object-cover object-center"
+                  src={siteConfig.heroImage}
+                  loading="eager"
+                  decoding="async"
+                />
+              </div>
             </div>
 
             {/* 4 Value Highlights: Completely fixed clipping so 'Content That Connects' is never clipped */}
@@ -156,7 +282,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </div>
           </div>
 
-          {/* Desktop & Tablet Showcase Visual: Significantly enlarged by ~15-25% */}
+          {/* Desktop & Tablet Showcase Visual: Dominant right workspace image with seamless mask */}
           <div className="hidden md:block md:col-span-6 lg:col-span-7 relative">
             <div className="relative flex items-center justify-center lg:-mr-6 xl:-mr-10">
               <div

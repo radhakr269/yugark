@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { websiteDemosData as initialDemos } from '../data/studioData';
 import { DemoItem } from '../types/content';
 import { getFeaturedDemos } from '../lib/cms';
+import { CardCarousel } from './CardCarousel';
 
 interface WebsiteDemosProps {
   onSelectDemo: (demo: DemoItem) => void;
@@ -52,7 +53,7 @@ export const WebsiteDemos: React.FC<WebsiteDemosProps> = ({
               See ready-to-customize website designs for different businesses.
             </p>
           </div>
-          <div className="shrink-0">
+          <div className="shrink-0 flex items-center gap-3">
             <button
               onClick={onViewAllDemos}
               className="inline-flex items-center text-[10px] sm:text-xs font-semibold text-[#121614] hover:text-[#2D4536] transition-colors cursor-pointer group pb-0.5"
@@ -63,16 +64,24 @@ export const WebsiteDemos: React.FC<WebsiteDemosProps> = ({
           </div>
         </div>
 
-        {/* Demos Grid: Adaptable responsive grid (up to 4 cols) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 lg:gap-6">
-          {demos.slice(0, 4).map((demo) => (
+        {/* Website Demos Horizontal Carousel */}
+        <CardCarousel
+          preset="demos"
+          ariaLabel="Website Demos Carousel"
+          autoScroll={true}
+          autoScrollInterval={5000}
+          showControls={true}
+          showDots={true}
+          controlsPosition="bottom"
+        >
+          {demos.map((demo) => (
             <div
               key={demo.id}
               onClick={() => onSelectDemo(demo)}
-              className="editorial-card group cursor-pointer flex flex-col justify-between"
+              className="editorial-card group cursor-pointer flex flex-col justify-between h-full bg-[#FAF7F2] rounded-lg sm:rounded-xl p-2 sm:p-2.5 border border-[#ECE5D9] shadow-2xs hover:shadow-md transition-all"
             >
               <div>
-                <div className="relative overflow-hidden rounded-md sm:rounded-xl bg-[#EBE4D8] aspect-[16/10] mb-1 sm:mb-3 shadow-sm">
+                <div className="relative overflow-hidden rounded-md sm:rounded-lg bg-[#EBE4D8] aspect-[16/10] mb-1.5 sm:mb-2.5 shadow-2xs">
                   <img
                     alt={demo.alt}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -80,14 +89,14 @@ export const WebsiteDemos: React.FC<WebsiteDemosProps> = ({
                     loading="lazy"
                     decoding="async"
                   />
-                  <div className="absolute inset-0 pointer-events-none rounded-md sm:rounded-xl ring-1 ring-inset ring-black/5" />
+                  <div className="absolute inset-0 pointer-events-none rounded-md sm:rounded-lg ring-1 ring-inset ring-black/5" />
                 </div>
                 <div className="px-0.5">
-                  <div className="flex items-center justify-between gap-0.5">
-                    <h3 className="font-serif-title text-[11px] sm:text-sm lg:text-base font-semibold text-[#121614] truncate">
+                  <div className="flex items-center justify-between gap-1">
+                    <h3 className="font-serif-title text-[11px] sm:text-sm lg:text-[15px] font-semibold text-[#121614] truncate leading-snug">
                       {demo.title}
                     </h3>
-                    <ArrowRight className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 text-[#121614] shrink-0" />
+                    <ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#121614] shrink-0 transition-transform group-hover:translate-x-0.5" />
                   </div>
                   <p className="text-[9px] sm:text-[10px] text-[#717871] truncate mt-0.5">
                     {demo.industry || demo.category}
@@ -96,7 +105,7 @@ export const WebsiteDemos: React.FC<WebsiteDemosProps> = ({
               </div>
             </div>
           ))}
-        </div>
+        </CardCarousel>
       </div>
     </section>
   );

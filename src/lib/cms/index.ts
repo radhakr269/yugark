@@ -46,6 +46,7 @@ const STORAGE_KEYS = {
   PROJECTS: 'yugark_cms_projects',
   PRICING: 'yugark_cms_pricing',
   CALCULATOR: 'yugark_cms_calculator',
+  DISCOUNT_RULES: 'yugark_cms_discount_rules',
   BLOGS: 'yugark_cms_blogs',
   LEADS: 'yugark_cms_leads',
   MEDIA: 'yugark_cms_media',
@@ -228,6 +229,11 @@ export async function getServiceBySlug(slug: string): Promise<ServiceItem | null
 
 export async function getPricingCalculatorItems(): Promise<PricingCalculatorItem[]> {
   return safeGetStorage<PricingCalculatorItem[]>(STORAGE_KEYS.CALCULATOR, initialCalculatorItems);
+}
+
+export async function getDiscountRules(): Promise<any[]> {
+  const { defaultDiscountRules } = await import('../pricing/pricingEngine');
+  return safeGetStorage<any[]>(STORAGE_KEYS.DISCOUNT_RULES, defaultDiscountRules);
 }
 
 // ============================================================================

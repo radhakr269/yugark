@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, ArrowUpRight } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { selectedWorkProjects as initialProjects } from '../data/studioData';
 import { ProjectItem } from '../types/content';
 import { getPortfolioProjects } from '../lib/cms';
+import { CardCarousel } from './CardCarousel';
 
 interface SelectedWorkProps {
   onSelectProject: (project: ProjectItem) => void;
@@ -45,7 +46,7 @@ export const SelectedWork: React.FC<SelectedWorkProps> = ({
               Explore website designs and creative projects made to help businesses stand out.
             </p>
           </div>
-          <div className="shrink-0">
+          <div className="shrink-0 flex items-center gap-3">
             <button
               onClick={onViewAllWork}
               className="inline-flex items-center text-[10px] sm:text-xs font-semibold text-[#121614] hover:text-[#2D4536] transition-colors cursor-pointer group pb-0.5"
@@ -56,16 +57,24 @@ export const SelectedWork: React.FC<SelectedWorkProps> = ({
           </div>
         </div>
 
-        {/* Selected Work Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 lg:gap-8">
-          {projects.slice(0, 3).map((project) => (
+        {/* Selected Work Horizontal Carousel */}
+        <CardCarousel
+          preset="work"
+          ariaLabel="Selected Work Projects"
+          autoScroll={true}
+          autoScrollInterval={5500}
+          showControls={true}
+          showDots={true}
+          controlsPosition="bottom"
+        >
+          {projects.map((project) => (
             <article
               key={project.id}
               onClick={() => onSelectProject(project)}
-              className="editorial-card group cursor-pointer flex flex-col justify-between"
+              className="editorial-card group cursor-pointer flex flex-col justify-between h-full bg-[#FAF7F2] rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 border border-[#ECE5D9] shadow-2xs hover:shadow-md transition-all"
             >
               <div>
-                <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-[#EBE4D8] aspect-[4/3] mb-2 sm:mb-3 shadow-xs transition-all duration-500 group-hover:shadow-md">
+                <div className="relative overflow-hidden rounded-lg sm:rounded-xl bg-[#EBE4D8] aspect-[4/3] mb-2 sm:mb-3 shadow-xs transition-all duration-500 group-hover:shadow-sm">
                   <img
                     alt={project.alt || project.title}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -73,14 +82,14 @@ export const SelectedWork: React.FC<SelectedWorkProps> = ({
                     loading="lazy"
                     decoding="async"
                   />
-                  <div className="absolute inset-0 pointer-events-none rounded-xl sm:rounded-2xl ring-1 ring-inset ring-black/5" />
+                  <div className="absolute inset-0 pointer-events-none rounded-lg sm:rounded-xl ring-1 ring-inset ring-black/5" />
                 </div>
                 <div className="flex items-start justify-between px-0.5">
                   <div className="min-w-0 pr-1">
                     <p className="text-[8px] sm:text-[9px] font-bold tracking-[0.16em] text-[#7E887E] uppercase truncate mb-0.5">
                       {project.category}
                     </p>
-                    <h3 className="font-serif-title text-sm sm:text-base lg:text-xl font-medium text-[#121614] group-hover:text-[#2D4536] transition-colors truncate leading-tight">
+                    <h3 className="font-serif-title text-sm sm:text-base lg:text-lg font-medium text-[#121614] group-hover:text-[#2D4536] transition-colors truncate leading-tight">
                       {project.title}
                     </h3>
                     <p className="text-[10px] sm:text-[11px] text-[#737C73] mt-0.5 truncate">
@@ -98,7 +107,7 @@ export const SelectedWork: React.FC<SelectedWorkProps> = ({
               </div>
             </article>
           ))}
-        </div>
+        </CardCarousel>
       </div>
     </section>
   );

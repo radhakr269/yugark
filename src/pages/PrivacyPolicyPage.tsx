@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Shield, Lock, FileText, CheckCircle } from 'lucide-react';
 import { siteConfig } from '../data/studioData';
 import { SEOHead } from '../components/SEOHead';
+import { InnerPageNav } from '../components/InnerPageNav';
 
 export const PrivacyPolicyPage: React.FC = () => {
   return (
@@ -14,6 +15,8 @@ export const PrivacyPolicyPage: React.FC = () => {
       />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <InnerPageNav currentPageTitle="Privacy Policy" />
+
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-xs font-medium text-[#7C887E] mb-8">
           <Link to="/" className="hover:text-[#121614] transition-colors">

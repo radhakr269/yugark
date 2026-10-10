@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Code, MessageSquare, Send, Zap, Palette, CheckCircle2, TrendingUp, Sparkles, Layers, Sliders } from 'lucide-react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { servicesData as initialServices } from '../data/studioData';
 import { ServiceItem } from '../types/content';
 import { getPublishedServices } from '../lib/cms';
+import { CardCarousel } from './CardCarousel';
 
 interface ServicesSectionProps {
   onSelectService: (service: ServiceItem) => void;
@@ -16,79 +17,64 @@ const serviceMeta: Record<
     badge: string;
     ctaText: string;
     highlights: string[];
-    visualType: 'image' | 'ads_ui' | 'ai_ui' | 'branding_ui';
+    visualType?: 'image';
     imageSrc?: string;
     imageAlt?: string;
   }
 > = {
   'website-development': {
     step: '01',
-    badge: 'Digital Flagships',
-    ctaText: 'Explore Websites',
-    highlights: ['Custom React & Vite Architecture', 'Sub-Second Core Web Vitals'],
+    badge: 'Core Architecture',
+    ctaText: 'Explore Service',
+    highlights: ['Next-Gen Responsive Architecture', 'Sub-Second Page Performance'],
     visualType: 'image',
     imageSrc: '/assets/images/website devlopment.jpg',
-    imageAlt: 'Modern multi-device website interface on desktop and mobile',
+    imageAlt: 'Custom website development and user experience engineering',
   },
   'social-media-management': {
     step: '02',
-    badge: 'Authority & Reach',
-    ctaText: 'Explore Social Media',
-    highlights: ['Monthly Content Roadmaps', 'High-Retention Video Reels'],
+    badge: 'Content Strategy',
+    ctaText: 'Explore Retainers',
+    highlights: ['Narrative Brand Grid Layouts', 'Engagement & Audience Systems'],
     visualType: 'image',
     imageSrc: '/assets/images/content-and-social-media.jpg',
-    imageAlt: 'Editorial social media content and brand visuals showcase',
-  },
-  'social-media': {
-    step: '02',
-    badge: 'Authority & Reach',
-    ctaText: 'Explore Social Media',
-    highlights: ['Monthly Editorial Roadmaps', 'High-Fidelity Visual Assets'],
-    visualType: 'image',
-    imageSrc: '/assets/images/content-and-social-media.jpg',
-    imageAlt: 'Editorial social media content and brand visuals showcase',
+    imageAlt: 'Social media management and visual storytelling',
   },
   'social-media-advertising': {
     step: '03',
-    badge: 'Conversion Engine',
-    ctaText: 'Explore Advertising',
-    highlights: ['Meta & Google Campaign Testing', 'Attribution & ROAS Auditing'],
-    visualType: 'ads_ui',
-  },
-  'ads': {
-    step: '03',
-    badge: 'Conversion Engine',
-    ctaText: 'Explore Advertising',
-    highlights: ['Meta & Google Campaign Testing', 'Attribution & ROAS Auditing'],
-    visualType: 'ads_ui',
+    badge: 'Paid Acquisition',
+    ctaText: 'Explore Campaigns',
+    highlights: ['Precision Meta & Google Targeting', 'High ROAS Conversion Funnels'],
+    visualType: 'image',
+    imageSrc: '/assets/images/business-pro.jpg',
+    imageAlt: 'Targeted advertising and customer acquisition',
   },
   'ai-content-video': {
     step: '04',
-    badge: 'Speed Advantage',
-    ctaText: 'Explore Videos',
-    highlights: ['15–30s Video Ads & Hooks', '3–5m Explainer Brand Videos'],
-    visualType: 'ai_ui',
-  },
-  'ai-creative': {
-    step: '04',
-    badge: 'Speed Advantage',
-    ctaText: 'Explore Videos',
-    highlights: ['Brand-Trained Prompt Pipelines', 'Rapid Concept Visualization'],
-    visualType: 'ai_ui',
+    badge: 'Creative Engine',
+    ctaText: 'Explore Creative',
+    highlights: ['Studio-Grade Motion Graphics', 'Short-Form Reels & Story Scripts'],
+    visualType: 'image',
+    imageSrc: '/assets/images/Sole beauty.jpg',
+    imageAlt: 'AI content creation and high-end promotional video',
   },
   'digital-growth-strategy': {
     step: '05',
-    badge: 'Growth Engine',
+    badge: 'Strategic Direction',
     ctaText: 'Explore Strategy',
     highlights: ['360° Digital Footprint Audit', 'Multi-Channel Acquisition Roadmaps'],
-    visualType: 'branding_ui',
+    visualType: 'image',
+    imageSrc: '/assets/images/aurora-living.jpg',
+    imageAlt: 'Digital growth strategy and brand architecture',
   },
   'branding': {
     step: '05',
     badge: 'Identity System',
     ctaText: 'Explore Strategy',
     highlights: ['Refined Typography & Color Tokens', 'Cohesive Digital Guidelines'],
-    visualType: 'branding_ui',
+    visualType: 'image',
+    imageSrc: '/assets/images/aurora-living.jpg',
+    imageAlt: 'Digital growth strategy and brand architecture',
   },
 };
 
@@ -126,7 +112,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
             </p>
           </div>
           {onViewAllServices && (
-            <div className="shrink-0">
+            <div className="shrink-0 flex items-center gap-3">
               <button
                 onClick={onViewAllServices}
                 className="inline-flex items-center text-[10px] sm:text-xs font-semibold text-[#121614] hover:text-[#2D4536] transition-colors cursor-pointer group pb-0.5"
@@ -138,15 +124,17 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
           )}
         </div>
 
-        {/* Dynamic Services Grid with Premium Visuals & 3D Micro-Interactions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4 lg:gap-4.5 [perspective:1200px]">
+        {/* Dynamic Services Carousel: up to 5 compact cards on desktop, peek on mobile & tablet */}
+        <CardCarousel
+          preset="services"
+          ariaLabel="Our Studio Services"
+          autoScroll={true}
+          autoScrollInterval={5500}
+          showControls={true}
+          showDots={true}
+          controlsPosition="bottom"
+        >
           {services.map((service) => {
-            let Icon = Code;
-            if (service.iconType === 'chat') Icon = MessageSquare;
-            if (service.iconType === 'target') Icon = Send;
-            if (service.iconType === 'sparkles') Icon = Zap;
-            if (service.iconType === 'palette') Icon = Palette;
-
             const meta = serviceMeta[service.slug] || {
               step: '01',
               badge: 'Specialized Discipline',
@@ -161,13 +149,12 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
               <div
                 key={service.id}
                 onClick={() => onSelectService(service)}
-                className="bg-[#FAF7F2] rounded-2xl border border-[#E6DFD3] flex flex-col justify-between cursor-pointer group relative overflow-hidden transition-all duration-300 ease-out hover:-translate-y-2 hover:shadow-[0_20px_35px_-12px_rgba(25,40,30,0.22)] hover:border-[#2D4536]/80 hover:ring-1 hover:ring-[#2D4536]/20 [transform-style:preserve-3d] hover:[transform:perspective(900px)_rotateX(2deg)_translateY(-6px)]"
+                className="bg-[#FAF7F2] rounded-xl sm:rounded-2xl border border-[#E6DFD3] flex flex-col justify-between cursor-pointer group relative overflow-hidden transition-all duration-300 ease-out hover:-translate-y-1.5 hover:shadow-[0_16px_30px_-10px_rgba(25,40,30,0.18)] hover:border-[#2D4536]/70 h-full"
               >
                 <div>
-                  {/* Service Visual Presentation Container */}
+                  {/* Service Visual Header: Real photographic assets with step badge */}
                   <div className="relative aspect-[16/10] w-full overflow-hidden bg-[#ECE5D9] border-b border-[#E6DFD3]">
-                    {/* 1. Website Development: Multi-device interface */}
-                    {meta.visualType === 'image' && meta.imageSrc && (
+                    {meta.imageSrc ? (
                       <div className="w-full h-full relative overflow-hidden">
                         <img
                           src={meta.imageSrc}
@@ -175,129 +162,15 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
                           loading="lazy"
                           className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent opacity-70 group-hover:opacity-40 transition-opacity" />
+                      </div>
+                    ) : (
+                      <div className="w-full h-full bg-[#1A2621] p-3 text-white flex flex-col justify-between">
+                        <span className="text-xs font-mono">{meta.badge}</span>
                       </div>
                     )}
 
-                    {/* 2. Ads: Advertising Campaign & Performance Visual */}
-                    {meta.visualType === 'ads_ui' && (
-                      <div className="w-full h-full bg-[#1A2621] p-3 text-white flex flex-col justify-between relative overflow-hidden transition-transform duration-700 ease-out group-hover:scale-102">
-                        {/* Subtle background graph grid */}
-                        <div
-                          className="absolute inset-0 opacity-15 pointer-events-none"
-                          style={{
-                            backgroundImage: 'radial-gradient(#8EA396 1px, transparent 1px)',
-                            backgroundSize: '12px 12px',
-                          }}
-                        />
-
-                        {/* Top metric badge & platform tags */}
-                        <div className="relative z-10 flex items-center justify-between">
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#2D4536] border border-[#3E5C49] text-[8.5px] font-mono text-[#D7E8DC] font-semibold">
-                            <TrendingUp className="w-2.5 h-2.5 text-[#5AE48B]" />
-                            <span>ROAS 4.8x</span>
-                          </span>
-                          <span className="text-[8px] font-mono tracking-wider text-[#A2B5A8] uppercase">
-                            Meta & Google
-                          </span>
-                        </div>
-
-                        {/* Performance bar chart preview */}
-                        <div className="relative z-10 space-y-1 my-auto">
-                          <div className="flex items-center justify-between text-[8px] text-[#CAD6CE]">
-                            <span>Campaign Reach</span>
-                            <span className="font-mono text-[#5AE48B] font-bold">+164%</span>
-                          </div>
-                          <div className="w-full h-2 bg-[#121A16] rounded-full overflow-hidden p-0.5 border border-[#2A3C31]">
-                            <div className="h-full bg-gradient-to-r from-[#2D4536] via-[#487358] to-[#5AE48B] rounded-full w-[82%]" />
-                          </div>
-                          <div className="flex justify-between items-center text-[7.5px] font-mono text-[#8C9C90] pt-0.5">
-                            <span>Imp: 240k</span>
-                            <span>CTR: 3.4%</span>
-                            <span>CPA: -28%</span>
-                          </div>
-                        </div>
-
-                        <div className="relative z-10 flex items-center justify-between text-[7.5px] font-mono text-[#86998C] border-t border-[#2A3E31] pt-1">
-                          <span>Targeting Matrix</span>
-                          <span className="text-[#CAD6CE]">Active</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 3. AI Creative: Premium AI-powered creative composition */}
-                    {meta.visualType === 'ai_ui' && (
-                      <div className="w-full h-full bg-[#18211D] p-3 text-white flex flex-col justify-between relative overflow-hidden transition-transform duration-700 ease-out group-hover:scale-102">
-                        {/* Glow halo */}
-                        <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-[#2D4536] blur-xl opacity-60" />
-                        <div className="absolute -left-4 -bottom-4 w-20 h-20 rounded-full bg-[#9B8053] blur-xl opacity-30" />
-
-                        {/* Header */}
-                        <div className="relative z-10 flex items-center justify-between">
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#27382F] border border-[#3A5245] text-[8.5px] font-mono text-[#E4F0E8] font-semibold">
-                            <Sparkles className="w-2.5 h-2.5 text-[#C9A96E]" />
-                            <span>Generative Node</span>
-                          </span>
-                          <span className="text-[8px] font-mono text-[#A2B3A7]">Diffusion v2</span>
-                        </div>
-
-                        {/* Visual Creative Layers Node Box */}
-                        <div className="relative z-10 bg-[#121915]/80 backdrop-blur-xs border border-[#2B3F34] rounded-lg p-1.5 space-y-1 my-auto shadow-inner">
-                          <div className="flex items-center gap-1.5 text-[8.5px] font-mono text-[#D7E4DC]">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#5AE48B] animate-pulse" />
-                            <span className="truncate">prompt: luxury-editorial-render</span>
-                          </div>
-                          <div className="h-4 rounded bg-gradient-to-r from-[#21372B] via-[#4F6C5A] to-[#A88C5E] opacity-90 flex items-center px-1.5 text-[7px] font-mono text-white justify-between">
-                            <span>Latent Space</span>
-                            <span>4K Render</span>
-                          </div>
-                        </div>
-
-                        <div className="relative z-10 flex items-center justify-between text-[7.5px] font-mono text-[#86998C] border-t border-[#2A3E31] pt-1">
-                          <span>Brand-Trained Lora</span>
-                          <span className="text-[#C9A96E]">Loss: 0.012</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 4. Branding: Identity, logo and brand system presentation */}
-                    {meta.visualType === 'branding_ui' && (
-                      <div className="w-full h-full bg-[#F3ECE0] p-3 text-[#121614] flex flex-col justify-between relative overflow-hidden transition-transform duration-700 ease-out group-hover:scale-102">
-                        {/* Header with step */}
-                        <div className="relative z-10 flex items-center justify-between">
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#E4DACB] border border-[#D5C9B7] text-[8.5px] font-mono text-[#38483D] font-bold uppercase">
-                            <Palette className="w-2.5 h-2.5 text-[#2D4536]" />
-                            <span>Design Tokens</span>
-                          </span>
-                          <span className="text-[8px] font-mono text-[#6E7C72]">Identity v2</span>
-                        </div>
-
-                        {/* Typography & Geometry Specimen */}
-                        <div className="relative z-10 flex items-center justify-between my-auto bg-white/70 backdrop-blur-xs p-1.5 rounded-lg border border-[#DDD3C2]">
-                          <div className="leading-tight">
-                            <span className="font-serif-title text-xl font-bold text-[#1A2621]">
-                              Aa
-                            </span>
-                            <span className="block text-[7.5px] font-mono text-[#5C6B60] uppercase">
-                              Garamond / Serif
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <div className="w-3.5 h-3.5 rounded-full bg-[#1A2621] border border-black/10 shadow-2xs" title="#1A2621 Deep Forest" />
-                            <div className="w-3.5 h-3.5 rounded-full bg-[#2D4536] border border-black/10 shadow-2xs" title="#2D4536 Pine" />
-                            <div className="w-3.5 h-3.5 rounded-full bg-[#C5A880] border border-black/10 shadow-2xs" title="#C5A880 Bronze" />
-                            <div className="w-3.5 h-3.5 rounded-full bg-[#FAF7F2] border border-[#D5C9B7] shadow-2xs" title="#FAF7F2 Warm Ivory" />
-                          </div>
-                        </div>
-
-                        <div className="relative z-10 flex items-center justify-between text-[7.5px] font-mono text-[#5E6D62] border-t border-[#DDD3C2] pt-1">
-                          <span>Vector Guidelines</span>
-                          <span className="font-semibold text-[#1A2621]">100% Scalable</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Step tag pinned to top-right of visual */}
+                    {/* Pinned Step Indicator */}
                     <div className="absolute top-2 right-2 z-20">
                       <span className="inline-block px-1.5 py-0.5 rounded-md bg-[#121614]/85 text-white backdrop-blur-xs font-mono text-[9px] font-bold tracking-wider">
                         {meta.step}
@@ -305,45 +178,45 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
                     </div>
                   </div>
 
-                  {/* Card Body */}
-                  <div className="p-4 sm:p-4.5 flex flex-col justify-between">
+                  {/* Card Body: Compact, readable, professional hierarchy */}
+                  <div className="p-3 sm:p-3.5 flex flex-col justify-between">
                     <div>
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <span className="inline-block px-2 py-0.5 rounded text-[8.5px] font-bold uppercase tracking-wider bg-[#EBE4D8] text-[#4F5B51]">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="inline-block px-2 py-0.5 rounded text-[8px] sm:text-[8.5px] font-bold uppercase tracking-wider bg-[#EBE4D8] text-[#4F5B51]">
                           {meta.badge}
                         </span>
                       </div>
 
-                      <h3 className="font-serif-title text-base sm:text-lg font-medium text-[#121614] group-hover:text-[#2D4536] transition-colors leading-snug mb-1.5">
+                      <h3 className="font-serif-title text-[14px] sm:text-[15px] font-medium text-[#121614] group-hover:text-[#2D4536] transition-colors leading-snug mb-1">
                         {service.lines ? service.lines.join(' ') : service.title}
                       </h3>
 
-                      <p className="text-[11px] sm:text-xs text-[#636C64] leading-relaxed mb-3 line-clamp-2">
+                      <p className="text-[10.5px] text-[#636C64] leading-relaxed mb-2 line-clamp-2">
                         {service.description}
                       </p>
 
                       {/* Visual Bullet Points */}
                       <ul className="space-y-1 mb-2 pt-1 border-t border-[#ECE5D9]/70">
                         {meta.highlights.map((item, idx) => (
-                          <li key={idx} className="flex items-start gap-1.5 text-[10px] text-[#4E564F]">
-                            <CheckCircle2 className="w-3 h-3 text-[#2D4536] shrink-0 mt-0.5" />
+                          <li key={idx} className="flex items-start gap-1.5 text-[9px] sm:text-[9.5px] text-[#4E564F]">
+                            <CheckCircle2 className="w-2.5 h-2.5 text-[#2D4536] shrink-0 mt-0.5" />
                             <span className="line-clamp-1">{item}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
 
-                    {/* Action Button */}
-                    <div className="pt-2.5 mt-2 border-t border-[#ECE5D9] flex items-center justify-between text-[11px] font-semibold tracking-wider text-[#2D4536] group-hover:text-black uppercase">
+                    {/* Action Link */}
+                    <div className="pt-2 mt-1 border-t border-[#ECE5D9] flex items-center justify-between text-[9.5px] sm:text-[10px] font-semibold tracking-wider text-[#2D4536] group-hover:text-black uppercase">
                       <span>{meta.ctaText || 'Learn More'}</span>
-                      <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+                      <ArrowRight className="w-3 h-3 transition-transform duration-300 group-hover:translate-x-1" />
                     </div>
                   </div>
                 </div>
               </div>
             );
           })}
-        </div>
+        </CardCarousel>
       </div>
     </section>
   );

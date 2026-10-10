@@ -27,6 +27,7 @@ import {
 import { isSupabaseConfigured } from '../../lib/supabase/client';
 import { getCurrentAdminRole, signOutAdmin } from '../../lib/supabase/auth';
 import { AdminRoleRecord } from '../../lib/supabase/types';
+import { BrandLogo } from '../../components/BrandLogo';
 
 export const AdminLayout: React.FC = () => {
   const location = useLocation();
@@ -81,16 +82,14 @@ export const AdminLayout: React.FC = () => {
       <aside className="hidden lg:flex w-64 bg-[#111A15] border-r border-[#1F2E25] flex-col justify-between shrink-0 sticky top-0 h-screen overflow-y-auto">
         <div>
           {/* Studio Brand Header */}
-          <div className="p-6 border-b border-[#1F2E25]">
-            <Link to="/" target="_blank" className="flex items-center gap-2 group">
-              <span className="font-serif-title text-xl font-bold tracking-[0.2em] text-[#FAF8F5] uppercase">
-                YUGARK
-              </span>
-              <span className="text-[10px] tracking-widest text-[#A5C2B1] font-mono uppercase bg-[#1D2B22] px-2 py-0.5 rounded border border-[#2B3E32]">
+          <div className="p-5 border-b border-[#1F2E25]">
+            <div className="flex items-center justify-between">
+              <BrandLogo variant="dark" size="sm" asLink={true} to="/" />
+              <span className="text-[9px] tracking-widest text-[#A5C2B1] font-mono uppercase bg-[#1D2B22] px-2 py-0.5 rounded border border-[#2B3E32]">
                 CMS v2
               </span>
-            </Link>
-            <p className="text-[11px] text-[#7C8B82] mt-1 font-mono tracking-wider uppercase">
+            </div>
+            <p className="text-[10.5px] text-[#7C8B82] mt-2 font-mono tracking-wider uppercase">
               Admin &amp; Leads Portal
             </p>
           </div>
@@ -200,11 +199,11 @@ export const AdminLayout: React.FC = () => {
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
-          <div className="flex flex-col">
-            <span className="font-serif-title text-base font-bold text-[#FAF8F5] uppercase tracking-wider">
-              YUGARK CMS
+          <div className="flex items-center gap-2">
+            <BrandLogo variant="dark" size="sm" asLink={false} />
+            <span className="text-[9px] text-[#A5C2B1] font-mono bg-[#1D2B22] px-1.5 py-0.5 rounded border border-[#2B3E32]">
+              {currentNav.label}
             </span>
-            <span className="text-[10px] text-[#A5C2B1] font-mono">{currentNav.label}</span>
           </div>
         </div>
 

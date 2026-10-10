@@ -15,6 +15,7 @@ import {
 import { BlogPostItem } from '../types/content';
 import { SEOHead } from '../components/SEOHead';
 import { getPublishedBlogPosts, trackBlogView } from '../lib/cms';
+import { InnerPageNav } from '../components/InnerPageNav';
 
 export const BlogDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -98,6 +99,8 @@ export const BlogDetailPage: React.FC = () => {
       />
 
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <InnerPageNav currentPageTitle={post.title} />
+
         {/* Breadcrumb Navigation */}
         <nav className="flex items-center space-x-2 text-xs font-medium text-[#7C887E] mb-8">
           <Link to="/" className="hover:text-[#121614] transition-colors">

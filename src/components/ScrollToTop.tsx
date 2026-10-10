@@ -6,15 +6,23 @@ export const ScrollToTop = () => {
 
   useEffect(() => {
     if (hash) {
-      // If navigating with an anchor hash (e.g. /#pricing, /#services)
+      // If navigating with an anchor hash (e.g. /#pricing, /#services, /#contact)
       const elementId = hash.replace('#', '');
-      const timer = setTimeout(() => {
+      let attempts = 0;
+      let timerId: ReturnType<typeof setTimeout>;
+
+      const checkAndScroll = () => {
         const el = document.getElementById(elementId);
         if (el) {
           el.scrollIntoView({ behavior: 'smooth' });
+        } else if (attempts < 12) {
+          attempts += 1;
+          timerId = setTimeout(checkAndScroll, 50);
         }
-      }, 100);
-      return () => clearTimeout(timer);
+      };
+
+      timerId = setTimeout(checkAndScroll, 30);
+      return () => clearTimeout(timerId);
     } else {
       window.scrollTo({
         top: 0,

@@ -120,9 +120,11 @@ export interface PricingPackage {
   name: string;
   slug: string;
   tagline: string;
+  description?: string;
   investment: string;
   turnaround: string;
   popular?: boolean;
+  isPopular?: boolean;
   bestFor: string;
   features: string[];
   deliverables: string[];
@@ -132,6 +134,7 @@ export interface PricingPackage {
   launchPrice?: number;
   type?: 'one-time' | 'monthly';
   billingType?: 'one-time' | 'monthly';
+  billingCycle?: 'one-time' | 'monthly' | string;
   deliveryTime?: string;
   ctaText?: string;
 }

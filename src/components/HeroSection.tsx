@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowRight, Monitor, Layers, Zap, TrendingUp, Sparkles, ChevronRight } from 'lucide-react';
 import { siteConfig, valueHighlights } from '../data/studioData';
+import { adminCmsApi } from '../lib/cms';
 
 interface HeroSectionProps {
   onStartProject: () => void;
@@ -15,7 +16,7 @@ interface HeroMessageState {
   labels: string[];
 }
 
-const HERO_STATES: HeroMessageState[] = [
+const DEFAULT_HERO_STATES: HeroMessageState[] = [
   {
     eyebrow: 'DIGITAL STUDIO FOR MODERN BRANDS',
     headline: 'We Build.',
@@ -44,10 +45,47 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onViewWork,
   onFreeDemo,
 }) => {
+  const [heroStates, setHeroStates] = useState<HeroMessageState[]>(DEFAULT_HERO_STATES);
+  const [heroImage, setHeroImage] = useState<string>(siteConfig.heroImage || '/assets/images/hero.jpg');
+  const [ctaLabels, setCtaLabels] = useState({
+    primary: 'Start Project',
+    secondary: 'View Our Work',
+    demo: 'Get Your Free Website Demo',
+  });
   const [currentState, setCurrentState] = useState<number>(0);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const sectionRef = useRef<HTMLElement>(null);
+
+  // Load dynamic CMS hero configuration
+  useEffect(() => {
+    async function loadHeroConfig() {
+      try {
+        const config = await adminCmsApi.getHeroSettings();
+        if (config?.heroStates && Array.isArray(config.heroStates) && config.heroStates.length > 0) {
+          setHeroStates(config.heroStates);
+        }
+        if (config?.heroImage) {
+          setHeroImage(config.heroImage);
+        }
+        if (config?.ctaPrimaryText) {
+          setCtaLabels({
+            primary: config.ctaPrimaryText,
+            secondary: config.ctaSecondaryText || 'View Our Work',
+            demo: config.ctaDemoText || 'Get Your Free Website Demo',
+          });
+        }
+      } catch (err) {
+        console.warn('Fallback to default hero state:', err);
+      }
+    }
+
+    loadHeroConfig();
+
+    const handleCmsUpdate = () => loadHeroConfig();
+    window.addEventListener('yugark-cms-updated', handleCmsUpdate);
+    return () => window.removeEventListener('yugark-cms-updated', handleCmsUpdate);
+  }, []);
 
   // IntersectionObserver to pause rotation when section is off-screen
   useEffect(() => {
@@ -81,20 +119,20 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
   // Automatic rotation: 3.8s per slide (smooth reading duration)
   useEffect(() => {
-    if (isPaused || !isVisible) return;
+    if (isPaused || !isVisible || heroStates.length === 0) return;
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       return;
     }
 
     const timer = setInterval(() => {
-      setCurrentState((prev) => (prev + 1) % HERO_STATES.length);
+      setCurrentState((prev) => (prev + 1) % heroStates.length);
     }, 3800);
 
     return () => clearInterval(timer);
-  }, [isPaused, isVisible]);
+  }, [isPaused, isVisible, heroStates.length]);
 
-  const activeMsg = HERO_STATES[currentState];
+  const activeMsg = heroStates[currentState % heroStates.length] || DEFAULT_HERO_STATES[0];
 
   return (
     <section
@@ -177,7 +215,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               role="tablist"
               aria-label="Hero message state selector"
             >
-              {HERO_STATES.map((state, idx) => {
+              {heroStates.map((state, idx) => {
                 const isActive = idx === currentState;
                 return (
                   <button
@@ -216,7 +254,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 onClick={onStartProject}
                 className="min-h-[38px] sm:min-h-[42px] inline-flex items-center justify-center px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-[#1A2621] text-white text-[11px] sm:text-[12.5px] font-medium tracking-wide hover:bg-black transition-all shadow-sm group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4536]"
               >
-                <span>Start Project</span>
+                <span>{ctaLabels.primary}</span>
                 <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 ml-1.5 transition-transform group-hover:translate-x-1" />
               </button>
 
@@ -224,7 +262,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 onClick={onViewWork}
                 className="min-h-[38px] sm:min-h-[42px] inline-flex items-center justify-center px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border border-[#D5CDC1] bg-white/80 text-[#121614] text-[11px] sm:text-[12.5px] font-medium tracking-wide hover:bg-white hover:border-[#121614] transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4536]"
               >
-                View Our Work
+                {ctaLabels.secondary}
               </button>
 
               <button
@@ -232,7 +270,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 className="min-h-[38px] sm:min-h-[42px] inline-flex items-center justify-center px-4 sm:px-4.5 py-2 sm:py-2.5 rounded-full bg-[#E3ECE5] hover:bg-[#D5E3D8] text-[#1B3624] border border-[#B7C9BD] text-[11px] sm:text-[12.5px] font-semibold tracking-wide transition-all shadow-2xs group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D4536]"
               >
                 <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1.5 text-[#2D4536] transition-transform group-hover:rotate-12" />
-                <span>Get Your Free Website Demo</span>
+                <span>{ctaLabels.demo}</span>
               </button>
             </div>
 
@@ -242,7 +280,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <img
                   alt="Yugark Digital Studio multi-device mockup showcase: monitor, laptop and smartphone"
                   className="w-full h-full object-cover object-center block"
-                  src={siteConfig.heroImage}
+                  src={heroImage}
                   loading="eager"
                   decoding="async"
                 />
@@ -299,7 +337,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <img
                   alt="Yugark Digital Studio multi-device mockup showcase: monitor, laptop and smartphone"
                   className="w-full h-auto object-cover transform scale-110 lg:scale-120 transition-transform duration-700 hover:scale-[1.22]"
-                  src={siteConfig.heroImage}
+                  src={heroImage}
                   loading="eager"
                   decoding="async"
                 />

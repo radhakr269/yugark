@@ -50,6 +50,7 @@ export const AdminLayout: React.FC = () => {
 
   const navItems = [
     { label: 'Overview', path: '/admin', icon: LayoutDashboard },
+    { label: 'Hero Manager', path: '/admin/hero', icon: Sparkles, badge: 'Homepage' },
     { label: 'Website Demos', path: '/admin/demos', icon: MonitorPlay, badge: 'High Priority' },
     { label: 'Blog & Insights', path: '/admin/blog', icon: FileText },
     { label: 'Services', path: '/admin/services', icon: Briefcase },

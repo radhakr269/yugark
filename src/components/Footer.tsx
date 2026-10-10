@@ -83,7 +83,8 @@ export const Footer: React.FC<FooterProps> = () => {
             </button>
 
             <a
-              href={`mailto:${contactEmail}`}
+              href={`mailto:${contactEmail || 'business@yugark.in'}`}
+              aria-label="Send email to Yugark Digital Studio"
               className="h-10 sm:h-11 rounded-full bg-[#273E31] hover:bg-[#2F4A3B] text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-all shadow-xs px-2 text-center"
             >
               <Mail className="w-3.5 h-3.5 shrink-0" />
@@ -215,8 +216,8 @@ export const Footer: React.FC<FooterProps> = () => {
               </button>
 
               <a
-                href={`mailto:${contactEmail}`}
-                aria-label="Email Us"
+                href={`mailto:${contactEmail || 'business@yugark.in'}`}
+                aria-label="Email Us at business@yugark.in"
                 className="w-9 h-9 rounded-full bg-[#273E31] hover:bg-[#2F4A3B] text-white flex items-center justify-center transition-all shadow-xs"
               >
                 <Mail className="w-4 h-4 text-[#CAD7CE]" />

@@ -52,6 +52,7 @@ const STORAGE_KEYS = {
   MEDIA: 'yugark_cms_media',
   VIEWS: 'yugark_cms_views',
   PAGE_CONTENT: 'yugark_cms_pages',
+  HERO: 'yugark_cms_hero',
 };
 
 function safeGetStorage<T>(key: string, fallback: T): T {
@@ -1528,6 +1529,54 @@ export const adminCmsApi = {
 
   async updateHomepageContent(content: any): Promise<void> {
     safeSetStorage(STORAGE_KEYS.PAGE_CONTENT, content);
+  },
+
+  // --------------------------------------------------------------------------
+  // HERO MANAGER
+  // --------------------------------------------------------------------------
+  async getHeroSettings(): Promise<{
+    heroImage: string;
+    heroStates: Array<{
+      eyebrow: string;
+      headline: string;
+      supportingText: string;
+      labels: string[];
+    }>;
+    ctaPrimaryText: string;
+    ctaSecondaryText: string;
+    ctaDemoText: string;
+  }> {
+    const defaultHero = {
+      heroImage: '/assets/images/hero.jpg',
+      heroStates: [
+        {
+          eyebrow: 'DIGITAL STUDIO FOR MODERN BRANDS',
+          headline: 'We Build.',
+          supportingText: 'Premium websites and smart digital systems that help your business make a lasting impression.',
+          labels: ['Business Websites', 'Landing Pages', 'Lead Management'],
+        },
+        {
+          eyebrow: 'CREATIVE CONTENT THAT CONNECTS',
+          headline: 'We Create.',
+          supportingText: 'Engaging videos, social media content and brand creatives that make your business stand out.',
+          labels: ['Promotional Videos', 'Social Media', 'Brand Creatives'],
+        },
+        {
+          eyebrow: 'STRATEGY FOR BUSINESS GROWTH',
+          headline: 'We Grow Brands.',
+          supportingText: 'Targeted advertising and digital strategies that help your business reach more customers.',
+          labels: ['Meta & Google Ads', 'Content Strategy', 'Digital Growth'],
+        },
+      ],
+      ctaPrimaryText: 'Start Project',
+      ctaSecondaryText: 'View Our Work',
+      ctaDemoText: 'Get Your Free Website Demo',
+    };
+    return safeGetStorage(STORAGE_KEYS.HERO, defaultHero);
+  },
+
+  async updateHeroSettings(heroData: any): Promise<void> {
+    safeSetStorage(STORAGE_KEYS.HERO, heroData);
   },
 
   // --------------------------------------------------------------------------

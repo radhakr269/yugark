@@ -17,6 +17,7 @@ export const PortfolioManager: React.FC = () => {
     description: '',
     thumbnail_url: '/assets/images/Aurora living.jpg',
     project_url: '',
+    video_url: '',
     is_verified_client_work: false,
     year: '2025–2026',
     challenge: '',
@@ -298,6 +299,29 @@ export const PortfolioManager: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold uppercase text-[10px] text-[#637267] mb-1">Live Website URL</label>
+                  <input
+                    type="url"
+                    value={formData.project_url}
+                    onChange={(e) => setFormData({ ...formData, project_url: e.target.value })}
+                    placeholder="https://client-domain.com"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold uppercase text-[10px] text-[#637267] mb-1">Embedded Video / Shorts URL</label>
+                  <input
+                    type="url"
+                    value={formData.video_url}
+                    onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                    placeholder="https://youtube.com/watch?v=... or shorts"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-xs"
+                  />
+                </div>
               </div>
 
               <div className="p-3 bg-[#F2EDE4] rounded-2xl flex items-center gap-3">

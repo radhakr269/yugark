@@ -44,6 +44,7 @@ import { LeadsCrm } from './pages/admin/leads/LeadsCrm';
 import { AnalyticsPage } from './pages/admin/analytics/AnalyticsPage';
 import { SeoManager } from './pages/admin/seo/SeoManager';
 import { SettingsPage } from './pages/admin/settings/SettingsPage';
+import { HeroManager } from './pages/admin/hero/HeroManager';
 
 export default function App() {
   const navigate = useNavigate();
@@ -100,6 +101,7 @@ export default function App() {
           <Route path="/admin/reset-password" element={<ResetPasswordPage />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<OverviewDashboard />} />
+            <Route path="hero" element={<HeroManager />} />
             <Route path="demos" element={<DemoManager />} />
             <Route path="blog" element={<BlogManager />} />
             <Route path="services" element={<ServicesManager />} />

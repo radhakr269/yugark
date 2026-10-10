@@ -83,6 +83,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   useEffect(() => {
     if (isPaused || !isVisible) return;
 
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+
     const timer = setInterval(() => {
       setCurrentState((prev) => (prev + 1) % HERO_STATES.length);
     }, 3800);
@@ -99,6 +103,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       id="home"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
+      onFocus={() => setIsPaused(true)}
+      onBlur={() => setIsPaused(false)}
     >
       {/* Background is clean warm ivory; visual composition is fully responsive with zero text overlap */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 relative z-10">

@@ -69,23 +69,22 @@ export const AboutProcessPreview: React.FC = () => {
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
             {processSteps.map((step) => (
               <div
                 key={step.number}
-                className="bg-[#FAF7F2] rounded-xl border border-[#E6DFD3] p-4 flex flex-col justify-between hover:border-[#2D4536]/40 transition-colors"
+                className="bg-[#FAF7F2] rounded-xl border border-[#E6DFD3] p-3 sm:p-4 flex flex-col justify-between hover:border-[#2D4536]/40 transition-colors"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono text-xs font-bold text-[#2D4536] bg-[#E5ECE7] px-2 py-0.5 rounded">
+                  <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                    <span className="font-mono text-[11px] sm:text-xs font-bold text-[#2D4536] bg-[#E5ECE7] px-1.5 sm:px-2 py-0.5 rounded">
                       {step.number}
                     </span>
-                    <span className="text-[9px] font-mono text-[#8C988F] uppercase">Step</span>
                   </div>
-                  <h4 className="font-serif-title text-base font-semibold text-[#121614] mb-1">
+                  <h4 className="font-serif-title text-sm sm:text-base font-semibold text-[#121614] mb-0.5 sm:mb-1">
                     {step.title}
                   </h4>
-                  <p className="text-xs text-[#636C64] leading-relaxed">
+                  <p className="text-[11px] sm:text-xs text-[#636C64] leading-snug sm:leading-relaxed">
                     {step.description}
                   </p>
                 </div>

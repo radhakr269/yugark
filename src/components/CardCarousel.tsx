@@ -46,7 +46,7 @@ export const CardCarousel: React.FC<CardCarouselProps> = ({
   cardClassName = '',
   gapClassName = 'gap-3 sm:gap-4 lg:gap-6',
   autoScroll = true,
-  autoScrollInterval = 5500,
+  autoScrollInterval = 3800,
   ariaLabel = 'Card carousel',
   showControls = true,
   showDots = true,
@@ -60,10 +60,55 @@ export const CardCarousel: React.FC<CardCarouselProps> = ({
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [hasOverflow, setHasOverflow] = useState(false);
+  const [isInViewport, setIsInViewport] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const pauseResumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const totalCards = children.length;
   const widthClass = PRESET_WIDTH_CLASSES[preset];
+
+  // Pause on user interaction and resume after 6s idle
+  const handleUserInteractionStart = useCallback(() => {
+    setIsPaused(true);
+    if (pauseResumeTimeoutRef.current) {
+      clearTimeout(pauseResumeTimeoutRef.current);
+      pauseResumeTimeoutRef.current = null;
+    }
+  }, []);
+
+  const handleUserInteractionEnd = useCallback(() => {
+    if (pauseResumeTimeoutRef.current) {
+      clearTimeout(pauseResumeTimeoutRef.current);
+    }
+    pauseResumeTimeoutRef.current = setTimeout(() => {
+      setIsPaused(false);
+    }, 6000);
+  }, []);
+
+  // Viewport IntersectionObserver to pause autoplay when carousel is not visible
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInViewport(entry.isIntersecting);
+      },
+      { threshold: 0.15 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Cleanup resume timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (pauseResumeTimeoutRef.current) {
+        clearTimeout(pauseResumeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Check scroll boundary and update active index
   const updateScrollState = useCallback(() => {
@@ -152,8 +197,8 @@ export const CardCarousel: React.FC<CardCarouselProps> = ({
 
   // Auto-scroll loop
   useEffect(() => {
-    // Only auto-advance if enabled, not paused, and container actually has overflow
-    if (!autoScroll || isPaused || !hasOverflow || totalCards <= 1) {
+    // Only auto-advance if enabled, not paused, in viewport, and container actually has overflow
+    if (!autoScroll || isPaused || !isInViewport || !hasOverflow || totalCards <= 1) {
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
@@ -170,7 +215,7 @@ export const CardCarousel: React.FC<CardCarouselProps> = ({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [autoScroll, isPaused, hasOverflow, autoScrollInterval, scrollNext, totalCards]);
+  }, [autoScroll, isPaused, isInViewport, hasOverflow, autoScrollInterval, scrollNext, totalCards]);
 
   // Keyboard navigation inside carousel
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -196,12 +241,12 @@ export const CardCarousel: React.FC<CardCarouselProps> = ({
   return (
     <div
       className={`relative group/carousel ${className}`}
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      onTouchStart={() => setIsPaused(true)}
-      onTouchEnd={() => setIsPaused(false)}
-      onFocus={() => setIsPaused(true)}
-      onBlur={() => setIsPaused(false)}
+      onMouseEnter={handleUserInteractionStart}
+      onMouseLeave={handleUserInteractionEnd}
+      onTouchStart={handleUserInteractionStart}
+      onTouchEnd={handleUserInteractionEnd}
+      onFocus={handleUserInteractionStart}
+      onBlur={handleUserInteractionEnd}
       onKeyDown={handleKeyDown}
       role="region"
       aria-roledescription="carousel"

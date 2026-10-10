@@ -55,7 +55,7 @@ const serviceMeta: Record<
     ctaText: 'Explore Creative',
     highlights: ['Studio-Grade Motion Graphics', 'Short-Form Reels & Story Scripts'],
     visualType: 'image',
-    imageSrc: '/assets/images/Sole beauty.jpg',
+    imageSrc: '/assets/images/pixelplay.jpg',
     imageAlt: 'AI content creation and high-end promotional video',
   },
   'digital-growth-strategy': {

@@ -552,7 +552,7 @@ export async function submitLead(payload: SubmitLeadPayload): Promise<{ success:
       return { success: true, refId, message: 'Your project brief has been recorded in our studio system.' };
     } else if (error) {
       console.error('Supabase lead submit error:', error);
-      throw new Error(error.message || 'Failed to submit lead to database');
+      throw new Error('Unable to record your project brief at this time. Please connect directly via WhatsApp or email.');
     }
   }
 

@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "tsx src/lib/pricing/pricingEngine.test.ts"
+    "test": "tsx src/lib/pricing/pricingEngine.test.ts && tsx src/lib/server/backend.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

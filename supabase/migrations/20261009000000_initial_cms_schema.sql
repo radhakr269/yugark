@@ -334,6 +334,7 @@ RETURNS BOOLEAN
 LANGUAGE sql
 SECURITY DEFINER
 STABLE
+SET search_path = public, pg_temp
 AS $$
     SELECT EXISTS (
         SELECT 1
@@ -344,7 +345,12 @@ AS $$
 $$;
 
 -- A. ADMIN ROLES POLICIES
-CREATE POLICY "Admins can view admin roles"
+CREATE POLICY "Users can view their own admin role"
+    ON public.admin_roles FOR SELECT
+    TO authenticated
+    USING (user_id = auth.uid());
+
+CREATE POLICY "Admins can view all admin roles"
     ON public.admin_roles FOR SELECT
     TO authenticated
     USING (public.is_admin());

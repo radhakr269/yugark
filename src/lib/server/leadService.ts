@@ -255,9 +255,27 @@ export async function processLeadSubmission(
 
     // 3. Database Persistence
     if (serverSupabase) {
-      const { data, error } = await serverSupabase
+      // 1. Primary schema: full_name, whatsapp_number, business_company, project_requirement
+      const primaryPayload: Record<string, any> = {
+        full_name: lead.name,
+        email: lead.email,
+        whatsapp_number: lead.phone,
+        business_company: lead.business_name,
+        project_requirement: lead.requirement,
+        service: lead.service,
+        status: lead.status,
+        priority: lead.priority,
+      };
+
+      let { data, error } = await serverSupabase
         .from('leads')
-        .insert({
+        .insert(primaryPayload)
+        .select('id')
+        .single();
+
+      // 2. If column mismatch error (table uses name, phone, etc.), fallback
+      if (error && (error.message.includes('column') || error.code === '42703' || error.code === 'PGRST204')) {
+        const fallbackPayload: Record<string, any> = {
           name: lead.name,
           email: lead.email,
           phone: lead.phone,
@@ -268,9 +286,15 @@ export async function processLeadSubmission(
           page_source: lead.page_source,
           status: lead.status,
           priority: lead.priority,
-        })
-        .select('id')
-        .single();
+        };
+        const fallbackRes = await serverSupabase
+          .from('leads')
+          .insert(fallbackPayload)
+          .select('id')
+          .single();
+        data = fallbackRes.data;
+        error = fallbackRes.error;
+      }
 
       if (error) {
         // Log detailed error internally on server; NEVER leak database schema/credentials to public visitors
@@ -284,7 +308,7 @@ export async function processLeadSubmission(
       }
 
       if (data && data.id) {
-        leadRefId = `YUG-${data.id.substring(0, 6).toUpperCase()}`;
+        leadRefId = `YUG-${String(data.id).substring(0, 6).toUpperCase()}`;
       }
     } else {
       // In production environment without database credentials, return 503 instead of false positive

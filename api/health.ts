@@ -1,5 +1,3 @@
-import { getBackendHealth } from '../src/lib/server/leadService';
-
 export default async function handler(req: any, res: any) {
   // CORS & Security Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,11 +11,33 @@ export default async function handler(req: any, res: any) {
     return res.end();
   }
 
-  const health = getBackendHealth('Vercel Serverless');
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.VITE_SUPABASE_ANON_KEY ||
+    '';
+
+  const isConfigured = Boolean(
+    supabaseUrl &&
+    supabaseKey &&
+    supabaseUrl.startsWith('https://') &&
+    !supabaseUrl.includes('placeholder') &&
+    !supabaseUrl.includes('your-project-id')
+  );
+
+  const payload = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    backend: 'Vercel Serverless',
+    supabaseConnected: isConfigured,
+    storageBucket: 'public-cms-media',
+  };
+
   res.statusCode = 200;
-  if (typeof res.json === 'function') {
-    return res.json(health);
-  }
   res.setHeader('Content-Type', 'application/json');
-  return res.end(JSON.stringify(health));
+  if (typeof res.json === 'function') {
+    return res.json(payload);
+  }
+  return res.end(JSON.stringify(payload));
 }

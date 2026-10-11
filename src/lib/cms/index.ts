@@ -529,22 +529,41 @@ export async function submitLead(payload: SubmitLeadPayload): Promise<{ success:
 
     const effectiveEmail = payload.email?.trim() || (payload.phone ? `${payload.phone.replace(/\D/g, '')}@whatsapp.demo` : 'inquiry@yugark.in');
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('leads')
       .insert({
-        name: payload.name.trim(),
+        full_name: payload.name.trim(),
         email: effectiveEmail,
-        phone: payload.phone?.trim() || null,
-        business_name: payload.business_name?.trim() || null,
-        requirement: payload.requirement.trim(),
+        whatsapp_number: payload.phone?.trim() || null,
+        business_company: payload.business_name?.trim() || null,
+        project_requirement: payload.requirement.trim(),
         service: payload.service || 'General Inquiry',
-        timeline: payload.timeline || 'Standard (2–4 weeks)',
-        page_source: payload.page_source || 'website_contact',
         status: 'new',
         priority: payload.service === 'Free Website Demo' ? 'high' : 'normal',
       })
       .select('id')
       .single();
+
+    if (error && (error.message.includes('column') || error.code === '42703' || error.code === 'PGRST204')) {
+      const fallbackRes = await supabase
+        .from('leads')
+        .insert({
+          name: payload.name.trim(),
+          email: effectiveEmail,
+          phone: payload.phone?.trim() || null,
+          business_name: payload.business_name?.trim() || null,
+          requirement: payload.requirement.trim(),
+          service: payload.service || 'General Inquiry',
+          timeline: payload.timeline || 'Standard (2–4 weeks)',
+          page_source: payload.page_source || 'website_contact',
+          status: 'new',
+          priority: payload.service === 'Free Website Demo' ? 'high' : 'normal',
+        })
+        .select('id')
+        .single();
+      data = fallbackRes.data;
+      error = fallbackRes.error;
+    }
 
     if (!error && data) {
       const refId = `YUG-${data.id.substring(0, 6).toUpperCase()}`;

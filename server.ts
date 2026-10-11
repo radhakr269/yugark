@@ -48,6 +48,10 @@ app.post('/api/leads', async (req: Request, res: Response) => {
   return res.status(result.status).json(result.body);
 });
 
+app.all('/api/leads', (_req: Request, res: Response) => {
+  return res.status(405).json({ error: 'Method Not Allowed. Leads submission requires POST.' });
+});
+
 /**
  * Privacy-Conscious Blog View Tracking
  */

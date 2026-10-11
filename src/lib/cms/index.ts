@@ -608,6 +608,97 @@ function recordLeadLocally(leadData: any) {
 }
 
 // ============================================================================
+// DATABASE LEAD MAPPER & NORMALIZER
+// Bidirectionally maps and normalizes production Supabase records:
+// full_name <-> name
+// whatsapp_number <-> phone
+// business_company <-> business_name
+// project_requirement <-> requirement
+// ============================================================================
+export function mapDatabaseLead(row: any): LeadRecord {
+  if (!row) {
+    throw new Error('Invalid lead record data received.');
+  }
+
+  // 1. Full name mapping
+  const name = String(row.name || row.full_name || 'Anonymous Client').trim();
+
+  // 2. Phone / WhatsApp mapping
+  const rawPhone = row.phone || row.whatsapp_number || null;
+  const phone = rawPhone ? String(rawPhone).trim() : null;
+
+  // 3. Email mapping with safe fallback for phone-only entries
+  const rawEmail = row.email ? String(row.email).trim() : '';
+  const email =
+    rawEmail ||
+    (phone ? `${phone.replace(/\D/g, '') || 'client'}@whatsapp.client` : 'inquiry@yugark.in');
+
+  // 4. Business / Company name mapping
+  const rawBusiness = row.business_name || row.business_company || null;
+  const business_name = rawBusiness ? String(rawBusiness).trim() : null;
+
+  // 5. Project Requirement mapping
+  const rawRequirement = row.requirement || row.project_requirement || '';
+  const requirement = String(rawRequirement).trim() || 'No project description provided.';
+
+  // 6. Service discipline
+  const service = row.service ? String(row.service).trim() : 'General Inquiry';
+
+  // 7. Timeline
+  const timeline = row.timeline ? String(row.timeline).trim() : 'Standard (2–4 weeks)';
+
+  // 8. Page Source
+  const page_source = row.page_source ? String(row.page_source).trim() : 'website_contact';
+
+  // 9. Status canonicalization
+  const validStatuses: LeadRecord['status'][] = [
+    'new',
+    'contacted',
+    'in_discussion',
+    'proposal_sent',
+    'closed_won',
+    'closed_lost',
+  ];
+  const rawStatus = String(row.status || 'new').toLowerCase().trim();
+  const status: LeadRecord['status'] = validStatuses.includes(rawStatus as any)
+    ? (rawStatus as LeadRecord['status'])
+    : 'new';
+
+  // 10. Priority canonicalization
+  const validPriorities: LeadRecord['priority'][] = ['low', 'normal', 'high', 'urgent'];
+  const rawPriority = String(
+    row.priority || (service === 'Free Website Demo' ? 'high' : 'normal')
+  ).toLowerCase().trim();
+  const priority: LeadRecord['priority'] = validPriorities.includes(rawPriority as any)
+    ? (rawPriority as LeadRecord['priority'])
+    : 'normal';
+
+  // 11. Internal remarks / notes
+  const remarks = row.remarks ? String(row.remarks).trim() : null;
+
+  // 12. Timestamps
+  const created_at = row.created_at || new Date().toISOString();
+  const updated_at = row.updated_at || created_at;
+
+  return {
+    id: String(row.id || `lead-${Date.now()}`),
+    name,
+    email,
+    phone,
+    business_name,
+    requirement,
+    service,
+    timeline,
+    page_source,
+    status,
+    priority,
+    remarks,
+    created_at,
+    updated_at,
+  };
+}
+
+// ============================================================================
 // 8. FULL ADMIN CMS REPOSITORY (ALL CRUD MODULES)
 // ============================================================================
 export const adminCmsApi = {
@@ -1396,16 +1487,29 @@ export const adminCmsApi = {
         .from('leads')
         .select('*')
         .order('created_at', { ascending: false });
-      if (!error && data) return data as LeadRecord[];
+
+      if (error) {
+        console.error('[Yugark Studio] Supabase listLeads error:', error);
+        throw new Error(error.message || 'Unable to retrieve leads from the Supabase database. Please check authorization.');
+      }
+
+      if (data) {
+        return data.map(mapDatabaseLead);
+      }
     }
-    return safeGetStorage<LeadRecord[]>(STORAGE_KEYS.LEADS, [
+
+    const fallbackItems = safeGetStorage<any[]>(STORAGE_KEYS.LEADS, [
       {
         id: 'YUG-918234',
         name: 'Aarav Mehta',
+        full_name: 'Aarav Mehta',
         email: 'aarav@solestudio.com',
         phone: '+91 98765 43210',
+        whatsapp_number: '+91 98765 43210',
         business_name: 'Sole Beauty & Wellness',
+        business_company: 'Sole Beauty & Wellness',
         requirement: 'We need a high-conversion modern eCommerce and portfolio website with direct WhatsApp customer routing and interactive treatment booking.',
+        project_requirement: 'We need a high-conversion modern eCommerce and portfolio website with direct WhatsApp customer routing and interactive treatment booking.',
         service: 'Website Development',
         timeline: 'Standard (2–4 weeks)',
         page_source: 'website_contact',
@@ -1418,10 +1522,14 @@ export const adminCmsApi = {
       {
         id: 'YUG-771249',
         name: 'Elena Rostova',
+        full_name: 'Elena Rostova',
         email: 'elena@auroraliving.design',
         phone: '+44 7700 900077',
+        whatsapp_number: '+44 7700 900077',
         business_name: 'Aurora Living Interior Practice',
+        business_company: 'Aurora Living Interior Practice',
         requirement: 'Looking for complete brand architecture, editorial typography layout, and turnkey portfolio demo setup.',
+        project_requirement: 'Looking for complete brand architecture, editorial typography layout, and turnkey portfolio demo setup.',
         service: 'Branding & Identity',
         timeline: 'Urgent (1–2 weeks)',
         page_source: 'demos_showcase',
@@ -1432,40 +1540,78 @@ export const adminCmsApi = {
         updated_at: new Date(Date.now() - 3600000 * 12).toISOString(),
       },
     ]);
+
+    return fallbackItems.map(mapDatabaseLead);
   },
 
   async updateLeadStatus(id: string, status: LeadRecord['status'], remarks?: string): Promise<LeadRecord> {
     if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase
+      const updatePayload: Record<string, any> = {
+        status,
+        updated_at: new Date().toISOString(),
+      };
+      if (remarks !== undefined) {
+        updatePayload.remarks = remarks;
+      }
+
+      let { data, error } = await supabase
+        .from('leads')
+        .update(updatePayload)
+        .eq('id', id)
+        .select()
+        .single();
+
+      // If remarks or updated_at column is missing, retry updating status only
+      if (error && (error.message.includes('column') || error.code === '42703')) {
+        const fallbackRes = await supabase
           .from('leads')
-          .update({ status, remarks, updated_at: new Date().toISOString() })
+          .update({ status })
           .eq('id', id)
           .select()
           .single();
-        if (!error && data) return data as LeadRecord;
-      } catch (err) {
-        console.warn('Supabase updateLeadStatus error:', err);
+        data = fallbackRes.data;
+        error = fallbackRes.error;
+      }
+
+      if (error) {
+        console.error('[Yugark Studio] Supabase updateLeadStatus error:', error);
+        throw new Error(error.message || 'Failed to update lead status in Supabase database.');
+      }
+
+      if (data) {
+        return mapDatabaseLead(data);
       }
     }
 
     const existing = safeGetStorage<LeadRecord[]>(STORAGE_KEYS.LEADS, []);
-    const updated = existing.map((l) => (l.id === id ? { ...l, status, remarks: remarks ?? l.remarks, updated_at: new Date().toISOString() } : l));
+    const updated = existing.map((l) =>
+      l.id === id ? { ...l, status, remarks: remarks ?? l.remarks, updated_at: new Date().toISOString() } : l
+    );
     safeSetStorage(STORAGE_KEYS.LEADS, updated);
     const found = updated.find((l) => l.id === id);
-    return found || ({ id, status, remarks } as any);
+    return found ? mapDatabaseLead(found) : mapDatabaseLead({ id, status, remarks });
   },
 
   async updateLeadPriority(id: string, priority: LeadRecord['priority']): Promise<void> {
     if (isSupabaseConfigured) {
-      try {
-        await supabase
+      let { error } = await supabase
+        .from('leads')
+        .update({ priority, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error && (error.message.includes('column') || error.code === '42703')) {
+        const fallbackRes = await supabase
           .from('leads')
-          .update({ priority, updated_at: new Date().toISOString() })
+          .update({ priority })
           .eq('id', id);
-      } catch (err) {
-        console.warn('Supabase updateLeadPriority error:', err);
+        error = fallbackRes.error;
       }
+
+      if (error) {
+        console.error('[Yugark Studio] Supabase updateLeadPriority error:', error);
+        throw new Error(error.message || 'Failed to update lead priority in Supabase database.');
+      }
+      return;
     }
 
     const existing = safeGetStorage<LeadRecord[]>(STORAGE_KEYS.LEADS, []);

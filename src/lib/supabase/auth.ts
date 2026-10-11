@@ -8,9 +8,123 @@ export interface AdminAuthState {
   isLoading: boolean;
 }
 
+export interface AdminValidationResult {
+  isAuthenticated: boolean;
+  isAdmin: boolean;
+  user: any | null;
+  role: AdminRoleRecord | null;
+  error?: string;
+}
+
+/**
+ * Validates active admin session with Supabase server-side session and admin role authorization.
+ * Strict enforcement:
+ * - Checks active cryptographic session via Supabase Auth
+ * - Validates authentic user identity via getUser()
+ * - Queries public.admin_roles for user_id to confirm super_admin/admin/editor permissions
+ * - Never trusts insecure client-side localStorage flags in production
+ */
+export async function validateAdminSession(): Promise<AdminValidationResult> {
+  if (!isSupabaseConfigured) {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('yugark_admin_session');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.session && parsed.role) {
+            return {
+              isAuthenticated: true,
+              isAdmin: true,
+              user: parsed.session.user,
+              role: parsed.role,
+            };
+          }
+        } catch {}
+      }
+    }
+    return {
+      isAuthenticated: false,
+      isAdmin: false,
+      user: null,
+      role: null,
+      error: 'Administrator authentication required. Please sign in.',
+    };
+  }
+
+  try {
+    // 1. Verify active session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !session) {
+      return {
+        isAuthenticated: false,
+        isAdmin: false,
+        user: null,
+        role: null,
+        error: sessionError?.message || 'No active administrator session found. Please log in.',
+      };
+    }
+
+    // 2. Verify authentic user object with Supabase Auth
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return {
+        isAuthenticated: false,
+        isAdmin: false,
+        user: null,
+        role: null,
+        error: userError?.message || 'Unable to authenticate administrator user.',
+      };
+    }
+
+    // 3. Verify user's administrative role in database
+    const { data: roleData, error: roleError } = await supabase
+      .from('admin_roles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (roleError || !roleData) {
+      return {
+        isAuthenticated: true,
+        isAdmin: false,
+        user,
+        role: null,
+        error: 'Access denied. Account is authenticated but has not been assigned administrator privileges in public.admin_roles.',
+      };
+    }
+
+    const roleName = roleData.role;
+    if (!['super_admin', 'admin', 'editor'].includes(roleName)) {
+      return {
+        isAuthenticated: true,
+        isAdmin: false,
+        user,
+        role: null,
+        error: 'Access denied. Account does not possess sufficient administrative permissions.',
+      };
+    }
+
+    return {
+      isAuthenticated: true,
+      isAdmin: true,
+      user,
+      role: roleData as AdminRoleRecord,
+    };
+  } catch (err: any) {
+    console.error('[Yugark Auth] Admin validation exception:', err);
+    return {
+      isAuthenticated: false,
+      isAdmin: false,
+      user: null,
+      role: null,
+      error: err?.message || 'Security check failed. Please re-authenticate.',
+    };
+  }
+}
+
 export async function signInAdmin(email: string, password: string) {
   if (!isSupabaseConfigured) {
-    // Sandbox mode authentication
+    // Sandbox mode authentication for local development only
     if (email.toLowerCase().includes('admin') || email.toLowerCase().includes('yugark')) {
       const sandboxRole: AdminRoleRecord = {
         id: 'sandbox-role-1',
@@ -47,16 +161,16 @@ export async function signInAdmin(email: string, password: string) {
     throw error;
   }
 
-  // Verify that the user has an admin role
+  // Verify that the authenticated user possesses an administrative role in admin_roles
   const { data: roleData, error: roleError } = await supabase
     .from('admin_roles')
     .select('*')
     .eq('user_id', data.user.id)
     .single();
 
-  if (roleError || !roleData) {
+  if (roleError || !roleData || !['super_admin', 'admin', 'editor'].includes(roleData.role)) {
     await supabase.auth.signOut();
-    throw new Error('Access denied. This account does not possess authorized administrator privileges.');
+    throw new Error('Access denied. This account does not possess authorized administrator privileges in public.admin_roles.');
   }
 
   return { session: data.session, user: data.user, role: roleData as AdminRoleRecord };
@@ -71,45 +185,13 @@ export async function signOutAdmin() {
 }
 
 export async function getCurrentAdminRole(): Promise<AdminRoleRecord | null> {
-  if (!isSupabaseConfigured) {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('yugark_admin_session');
-      if (saved) {
-        try {
-          return JSON.parse(saved).role as AdminRoleRecord;
-        } catch {}
-      }
-    }
-    // Return default super_admin in sandbox so admin dashboard preview is accessible
-    return {
-      id: 'sandbox-role-1',
-      user_id: 'sandbox-admin-user',
-      role: 'super_admin',
-      full_name: 'Studio Director',
-      permissions: { manage_content: true, manage_leads: true, manage_settings: true },
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-  }
-
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-
-    const { data: roleData } = await supabase
-      .from('admin_roles')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    return roleData as AdminRoleRecord | null;
-  } catch (err) {
-    console.error('Error fetching admin role:', err);
-    return null;
-  }
+  const result = await validateAdminSession();
+  return result.isAdmin ? result.role : null;
 }
 
 export async function getAdminSession() {
+  const result = await validateAdminSession();
+  if (!result.isAuthenticated || !result.isAdmin) return null;
   if (!isSupabaseConfigured) {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('yugark_admin_session');
@@ -118,8 +200,6 @@ export async function getAdminSession() {
           return JSON.parse(saved).session;
         } catch {}
       }
-      // In sandbox mode return a valid mock session
-      return { access_token: 'sandbox-token', user: { email: 'admin@yugark.in' } };
     }
     return null;
   }

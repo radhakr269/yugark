@@ -24,8 +24,8 @@ import {
   CloudOff,
   CloudCheck,
 } from 'lucide-react';
-import { isSupabaseConfigured } from '../../lib/supabase/client';
-import { getCurrentAdminRole, signOutAdmin } from '../../lib/supabase/auth';
+import { isSupabaseConfigured, supabase } from '../../lib/supabase/client';
+import { validateAdminSession, signOutAdmin } from '../../lib/supabase/auth';
 import { AdminRoleRecord } from '../../lib/supabase/types';
 import { BrandLogo } from '../../components/BrandLogo';
 
@@ -34,18 +34,74 @@ export const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [adminRole, setAdminRole] = useState<AdminRoleRecord | null>(null);
+  const [authStatus, setAuthStatus] = useState<'checking' | 'authenticated' | 'unauthenticated' | 'unauthorized'>('checking');
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadRole() {
-      const role = await getCurrentAdminRole();
-      setAdminRole(role);
+    let isMounted = true;
+
+    async function checkAdminAuth() {
+      setAuthStatus('checking');
+      setAuthError(null);
+      const result = await validateAdminSession();
+      if (!isMounted) return;
+
+      if (result.isAuthenticated && result.isAdmin && result.role) {
+        setAdminRole(result.role);
+        setAuthStatus('authenticated');
+      } else {
+        const errorMsg = result.error || 'Administrator session required. Please sign in.';
+        setAuthError(errorMsg);
+        setAuthStatus(result.isAuthenticated ? 'unauthorized' : 'unauthenticated');
+        navigate('/admin/login', {
+          replace: true,
+          state: {
+            from: location.pathname,
+            error: errorMsg,
+          },
+        });
+      }
     }
-    loadRole();
-  }, []);
+
+    checkAdminAuth();
+
+    // Listen to real-time Supabase Auth state transitions
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+      if (event === 'SIGNED_OUT' || !session) {
+        setAuthStatus('unauthenticated');
+        setAdminRole(null);
+        navigate('/admin/login', {
+          replace: true,
+          state: { error: 'Your session has ended. Please log in again.' },
+        });
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        const result = await validateAdminSession();
+        if (!isMounted) return;
+        if (result.isAuthenticated && result.isAdmin && result.role) {
+          setAdminRole(result.role);
+          setAuthStatus('authenticated');
+        } else {
+          setAuthStatus(result.isAuthenticated ? 'unauthorized' : 'unauthenticated');
+          navigate('/admin/login', {
+            replace: true,
+            state: { error: result.error || 'Access denied.' },
+          });
+        }
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      authListener?.subscription.unsubscribe();
+    };
+  }, [navigate, location.pathname]);
 
   const handleLogout = async () => {
     await signOutAdmin();
-    navigate('/admin/login');
+    setAuthStatus('unauthenticated');
+    setAdminRole(null);
+    navigate('/admin/login', { replace: true });
   };
 
   const navItems = [
@@ -74,6 +130,29 @@ export const AdminLayout: React.FC = () => {
 
   // Current page title
   const currentNav = navItems.find((item) => isActive(item.path)) || navItems[0];
+
+  if (authStatus === 'checking') {
+    return (
+      <div className="min-h-screen bg-[#111A15] flex flex-col items-center justify-center p-6 text-center select-none">
+        <div className="w-14 h-14 rounded-2xl bg-[#1C2C23] border border-[#2B4033] flex items-center justify-center text-[#A5C2B1] mb-5 shadow-2xl">
+          <ShieldCheck className="w-7 h-7 animate-pulse text-[#4ADE80]" />
+        </div>
+        <span className="text-[10px] font-mono tracking-[0.25em] text-[#A5C2B1] uppercase block mb-1">
+          YUGARK DIGITAL STUDIO
+        </span>
+        <h2 className="font-serif-title text-xl text-[#FAF8F5] font-medium mb-2">
+          Verifying Administrator Authorization
+        </h2>
+        <p className="text-xs text-[#8A9A90] max-w-sm leading-relaxed">
+          Verifying cryptographic session and database Row-Level Security permissions...
+        </p>
+      </div>
+    );
+  }
+
+  if (authStatus !== 'authenticated') {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-[#F5F2EB] text-[#121614] flex flex-col lg:flex-row antialiased">

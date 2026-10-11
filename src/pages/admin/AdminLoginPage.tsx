@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, ArrowLeft, Key, Eye, EyeOff } from 'lucide-react';
 import { signInAdmin, getAdminSession } from '../../lib/supabase/auth';
 import { isSupabaseConfigured } from '../../lib/supabase/client';
@@ -7,22 +7,27 @@ import { SEOHead } from '../../components/SEOHead';
 
 export const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(
+    (location.state as any)?.error || null
+  );
+
+  const destination = (location.state as any)?.from || '/admin';
 
   useEffect(() => {
     // Check if user is already logged in
     async function checkExistingSession() {
       const session = await getAdminSession();
       if (session) {
-        navigate('/admin');
+        navigate(destination, { replace: true });
       }
     }
     checkExistingSession();
-  }, [navigate]);
+  }, [navigate, destination]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,16 +35,8 @@ export const AdminLoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      if (!isSupabaseConfigured) {
-        setErrorMsg(
-          'Supabase credentials pending. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable authentication.'
-        );
-        setIsLoading(false);
-        return;
-      }
-
       await signInAdmin(email.trim(), password);
-      navigate('/admin');
+      navigate(destination, { replace: true });
     } catch (err: any) {
       setErrorMsg(err.message || 'Invalid administrator credentials or unassigned role.');
     } finally {

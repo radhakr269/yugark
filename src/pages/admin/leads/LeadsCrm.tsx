@@ -14,6 +14,7 @@ import {
   ExternalLink,
   Save,
   Calendar,
+  RefreshCw,
 } from 'lucide-react';
 import { adminCmsApi } from '../../../lib/cms';
 import { LeadRecord } from '../../../lib/supabase/types';
@@ -21,6 +22,7 @@ import { LeadRecord } from '../../../lib/supabase/types';
 export const LeadsCrm: React.FC = () => {
   const [leads, setLeads] = useState<LeadRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
@@ -32,6 +34,7 @@ export const LeadsCrm: React.FC = () => {
   const [drawerStatus, setDrawerStatus] = useState<LeadRecord['status']>('new');
   const [drawerPriority, setDrawerPriority] = useState<LeadRecord['priority']>('normal');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [drawerError, setDrawerError] = useState<string | null>(null);
 
   useEffect(() => {
     loadLeads();
@@ -39,11 +42,15 @@ export const LeadsCrm: React.FC = () => {
 
   async function loadLeads() {
     setLoading(true);
+    setFetchError(null);
     try {
       const list = await adminCmsApi.listLeads();
       setLeads(list);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error('[Leads CRM] Error fetching leads:', err);
+      setFetchError(
+        err.message || 'Unable to retrieve leads from the Supabase database. Please check authorization.'
+      );
     } finally {
       setLoading(false);
     }
@@ -52,13 +59,15 @@ export const LeadsCrm: React.FC = () => {
   const handleSelectLead = (lead: LeadRecord) => {
     setSelectedLead(lead);
     setDrawerRemarks(lead.remarks || '');
-    setDrawerStatus(lead.status);
-    setDrawerPriority(lead.priority);
+    setDrawerStatus(lead.status || 'new');
+    setDrawerPriority(lead.priority || 'normal');
+    setDrawerError(null);
   };
 
   const handleSaveLeadDrawer = async () => {
     if (!selectedLead) return;
     setIsUpdating(true);
+    setDrawerError(null);
     try {
       const updated = await adminCmsApi.updateLeadStatus(
         selectedLead.id,
@@ -66,10 +75,16 @@ export const LeadsCrm: React.FC = () => {
         drawerRemarks
       );
       await adminCmsApi.updateLeadPriority(selectedLead.id, drawerPriority);
-      setSelectedLead({ ...selectedLead, status: drawerStatus, priority: drawerPriority, remarks: drawerRemarks });
+      setSelectedLead({
+        ...selectedLead,
+        status: drawerStatus,
+        priority: drawerPriority,
+        remarks: drawerRemarks,
+      });
       await loadLeads();
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error('[Leads CRM] Error updating lead:', err);
+      setDrawerError(err.message || 'Failed to update lead record in the database.');
     } finally {
       setIsUpdating(false);
     }
@@ -78,21 +93,35 @@ export const LeadsCrm: React.FC = () => {
   // Export Leads to CSV
   const handleExportCsv = () => {
     if (leads.length === 0) return;
-    const headers = ['Ref ID', 'Name', 'Email', 'Phone', 'Service', 'Timeline', 'Status', 'Priority', 'Requirement', 'Date'];
+    const headers = [
+      'Ref ID',
+      'Name',
+      'Email',
+      'Phone',
+      'Business',
+      'Service',
+      'Timeline',
+      'Status',
+      'Priority',
+      'Requirement',
+      'Date',
+    ];
     const rows = leads.map((l) => [
       `"${l.id}"`,
-      `"${l.name}"`,
-      `"${l.email}"`,
-      `"${l.phone || ''}"`,
-      `"${l.service || ''}"`,
-      `"${l.timeline || ''}"`,
-      `"${l.status}"`,
-      `"${l.priority}"`,
+      `"${(l.name || 'Anonymous').replace(/"/g, '""')}"`,
+      `"${(l.email || '').replace(/"/g, '""')}"`,
+      `"${(l.phone || '').replace(/"/g, '""')}"`,
+      `"${(l.business_name || '').replace(/"/g, '""')}"`,
+      `"${(l.service || 'General Inquiry').replace(/"/g, '""')}"`,
+      `"${(l.timeline || 'Standard').replace(/"/g, '""')}"`,
+      `"${l.status || 'new'}"`,
+      `"${l.priority || 'normal'}"`,
       `"${(l.requirement || '').replace(/"/g, '""')}"`,
-      `"${new Date(l.created_at).toISOString()}"`,
+      `"${new Date(l.created_at || Date.now()).toISOString()}"`,
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const csvContent =
+      'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
@@ -103,14 +132,26 @@ export const LeadsCrm: React.FC = () => {
   };
 
   const filteredLeads = leads.filter((l) => {
+    const nameStr = (l.name || '').toLowerCase();
+    const emailStr = (l.email || '').toLowerCase();
+    const phoneStr = (l.phone || '');
+    const reqStr = (l.requirement || '').toLowerCase();
+    const bizStr = (l.business_name || '').toLowerCase();
+    const searchLower = search.toLowerCase().trim();
+
     const matchesSearch =
-      l.name.toLowerCase().includes(search.toLowerCase()) ||
-      l.email.toLowerCase().includes(search.toLowerCase()) ||
-      (l.phone && l.phone.includes(search)) ||
-      l.requirement.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || l.status === statusFilter;
-    const matchesPriority = priorityFilter === 'all' || l.priority === priorityFilter;
-    const matchesService = serviceFilter === 'all' || l.service === serviceFilter;
+      !searchLower ||
+      nameStr.includes(searchLower) ||
+      emailStr.includes(searchLower) ||
+      phoneStr.includes(searchLower) ||
+      bizStr.includes(searchLower) ||
+      reqStr.includes(searchLower);
+
+    const matchesStatus = statusFilter === 'all' || (l.status || '').toLowerCase() === statusFilter.toLowerCase();
+    const matchesPriority =
+      priorityFilter === 'all' || (l.priority || '').toLowerCase() === priorityFilter.toLowerCase();
+    const matchesService = serviceFilter === 'all' || (l.service || '') === serviceFilter;
+
     return matchesSearch && matchesStatus && matchesPriority && matchesService;
   });
 
@@ -129,14 +170,56 @@ export const LeadsCrm: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={handleExportCsv}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-[#DDD5C7] text-[#121614] text-xs font-semibold hover:bg-[#FAF8F5] transition-colors shadow-xs self-start sm:self-auto cursor-pointer"
-        >
-          <Download className="w-4 h-4 text-[#2D4536]" />
-          <span>Export CSV</span>
-        </button>
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          <button
+            onClick={loadLeads}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-[#DDD5C7] text-[#121614] text-xs font-semibold hover:bg-[#FAF8F5] transition-colors shadow-xs cursor-pointer disabled:opacity-60"
+            title="Reload leads from database"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-[#2D4536] ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+
+          <button
+            onClick={handleExportCsv}
+            disabled={leads.length === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-[#DDD5C7] text-[#121614] text-xs font-semibold hover:bg-[#FAF8F5] transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+          >
+            <Download className="w-4 h-4 text-[#2D4536]" />
+            <span>Export CSV</span>
+          </button>
+        </div>
       </div>
+
+      {/* CRM Database Error Notification (Visible rather than silently showing empty list) */}
+      {fetchError && (
+        <div className="bg-red-50/90 border border-red-300 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-red-100 text-red-700 shrink-0">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-xs font-bold text-red-900 uppercase font-mono tracking-wider">
+                Database Synchronization Alert
+              </h3>
+              <p className="text-xs text-red-700 mt-1 leading-relaxed max-w-2xl">
+                {fetchError}
+              </p>
+              <p className="text-[11px] text-red-600 mt-1 font-mono">
+                Ensure your administrator user is authenticated and present in <code className="bg-red-100 px-1 rounded">public.admin_roles</code>.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={loadLeads}
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-red-700 text-white text-xs font-semibold hover:bg-red-800 transition-colors shadow-xs shrink-0 cursor-pointer self-start sm:self-auto"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Retry Query</span>
+          </button>
+        </div>
+      )}
 
       {/* Filter and Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-[#E5DFD5] shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
@@ -424,6 +507,14 @@ export const LeadsCrm: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Drawer Error Notice */}
+            {drawerError && (
+              <div className="p-3 my-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{drawerError}</span>
+              </div>
+            )}
 
             {/* Save Button */}
             <div className="pt-4 border-t border-[#E8E1D5]">

@@ -84,7 +84,7 @@ export const ForgotPasswordPage: React.FC = () => {
             </button>
           </div>
           <p className="text-[11px] text-[#A2B3A7] leading-relaxed">
-            Recovery is restricted to verified studio administrators (<strong className="text-white">{AUTHORIZED_RECOVERY_EMAIL}</strong>). Delivery operates via email only; SMS is disabled for security.
+            Recovery emails are dispatched via Supabase Auth to registered studio administrator accounts. Redirects to <code className="text-white bg-[#1B2B22] px-1 rounded font-mono">https://yugark.in/reset-password</code> upon email link confirmation.
           </p>
         </div>
 

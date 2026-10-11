@@ -51,7 +51,7 @@ export default function App() {
   const location = useLocation();
   const [legalModal, setLegalModal] = useState<{ title: string; content: string } | null>(null);
 
-  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isAdminRoute = location.pathname.startsWith('/admin') || location.pathname === '/reset-password';
 
   const handleOpenTerms = () => {
     setLegalModal({
@@ -96,6 +96,7 @@ export default function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
 
           {/* Secure Admin Portal (Step 3) */}
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/admin/reset-password" element={<ResetPasswordPage />} />

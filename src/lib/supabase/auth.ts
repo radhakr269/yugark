@@ -222,18 +222,10 @@ export interface ResetRequestResult {
  * Initiates the password recovery flow via Supabase Auth email delivery.
  * Security enforcement:
  * - Rate limited to 1 request per 60 seconds per client
- * - Always yields a neutral response without exposing account existence
  * - Email-only recovery, no SMS
- * - Points redirect to /admin/reset-password
+ * - Points redirect strictly to https://yugark.in/reset-password (matching Supabase Redirect URLs config)
  */
 export async function requestPasswordReset(email: string): Promise<ResetRequestResult> {
-  const now = Date.now();
-  if (now - lastResetAttemptTime < RESET_RATE_LIMIT_MS) {
-    const waitSeconds = Math.ceil((RESET_RATE_LIMIT_MS - (now - lastResetAttemptTime)) / 1000);
-    throw new Error(`Rate limit exceeded. Please wait ${waitSeconds} seconds before requesting another recovery email.`);
-  }
-  lastResetAttemptTime = now;
-
   const cleanEmail = email.trim().toLowerCase();
 
   // Basic email syntax check
@@ -241,22 +233,34 @@ export async function requestPasswordReset(email: string): Promise<ResetRequestR
     throw new Error('Please enter a valid email address.');
   }
 
+  const now = Date.now();
+  if (now - lastResetAttemptTime < RESET_RATE_LIMIT_MS) {
+    const waitSeconds = Math.ceil((RESET_RATE_LIMIT_MS - (now - lastResetAttemptTime)) / 1000);
+    throw new Error(`Rate limit exceeded. Please wait ${waitSeconds} seconds before requesting another recovery email.`);
+  }
+
   // If Supabase is configured, trigger genuine resetPasswordForEmail
   if (isSupabaseConfigured) {
-    try {
-      const redirectUrl = typeof window !== 'undefined'
-        ? `${window.location.origin}/admin/reset-password`
-        : 'https://yugark.in/admin/reset-password';
+    // Exact redirect URL configured in Supabase Authentication -> URL Configuration -> Redirect URLs:
+    // https://yugark.in/reset-password
+    const redirectUrl =
+      typeof window !== 'undefined' && !window.location.origin.includes('yugark.in')
+        ? `${window.location.origin}/reset-password`
+        : 'https://yugark.in/reset-password';
 
-      await supabase.auth.resetPasswordForEmail(cleanEmail, {
-        redirectTo: redirectUrl,
-      });
-    } catch {
-      // Intentionally catch and ignore specific backend error to prevent account enumeration attacks
+    const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+      redirectTo: redirectUrl,
+    });
+
+    if (error) {
+      console.error('[Yugark Auth] resetPasswordForEmail error from Supabase:', error);
+      throw new Error(error.message || 'Unable to dispatch recovery email. Please check Supabase Authentication settings.');
     }
   }
 
-  // Return consistent neutral message to prevent account discovery
+  lastResetAttemptTime = now;
+
+  // Return consistent message indicating dispatch
   return {
     success: true,
     message: 'If an authorized administrator account exists for this email address, a secure password recovery link has been dispatched to your inbox.',
@@ -265,7 +269,7 @@ export async function requestPasswordReset(email: string): Promise<ResetRequestR
 
 /**
  * Validates whether the active session is a genuine authenticated recovery session.
- * Rejects expired or missing tokens.
+ * Correctly detects URL hash tokens, PKCE codes, and Supabase auth errors.
  */
 export async function verifyRecoverySession(): Promise<{ isValid: boolean; email?: string; error?: string }> {
   if (!isSupabaseConfigured) {
@@ -274,23 +278,61 @@ export async function verifyRecoverySession(): Promise<{ isValid: boolean; email
   }
 
   try {
+    // 1. Check for explicit error parameters dispatched by Supabase in the URL hash or query string
+    if (typeof window !== 'undefined') {
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const searchParams = new URLSearchParams(window.location.search);
+      const urlError =
+        hashParams.get('error_description') ||
+        searchParams.get('error_description') ||
+        hashParams.get('error') ||
+        searchParams.get('error');
+
+      if (urlError) {
+        return {
+          isValid: false,
+          error: decodeURIComponent(urlError.replace(/\+/g, ' ')),
+        };
+      }
+
+      // 2. If PKCE authorization code is present in query parameters, exchange it
+      const code = searchParams.get('code');
+      if (code) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError) {
+          console.error('[Yugark Auth] exchangeCodeForSession failed:', exchangeError);
+          return {
+            isValid: false,
+            error: exchangeError.message || 'Unable to exchange recovery code for an active session.',
+          };
+        }
+      }
+    }
+
+    // 3. Inspect active session and user
+    const { data: { session } } = await supabase.auth.getSession();
     const { data: { user }, error } = await supabase.auth.getUser();
 
-    if (error || !user) {
+    if (error || !user || !session) {
       return {
         isValid: false,
-        error: 'No active or valid recovery session found. The password reset link may have expired or already been used.',
+        error: 'No active recovery session found. The password reset link may have expired or already been used.',
       };
     }
 
-    // Verify user role has administrator permissions before permitting password change
+    // 4. Verify user role in public.admin_roles
     const { data: roleData, error: roleError } = await supabase
       .from('admin_roles')
       .select('role')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (roleError || !roleData) {
+    if (roleError) {
+      console.warn('[Yugark Auth] admin_roles check warning during recovery:', roleError);
+    }
+
+    // If roleData exists, ensure they are an administrator
+    if (roleData && !['super_admin', 'admin', 'editor'].includes(roleData.role)) {
       return {
         isValid: false,
         error: 'Access denied. The recovery user is not an authorized studio administrator.',
@@ -299,6 +341,7 @@ export async function verifyRecoverySession(): Promise<{ isValid: boolean; email
 
     return { isValid: true, email: user.email };
   } catch (err: any) {
+    console.error('[Yugark Auth] verifyRecoverySession exception:', err);
     return {
       isValid: false,
       error: err.message || 'Unable to verify recovery link security token.',

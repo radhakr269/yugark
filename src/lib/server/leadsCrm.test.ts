@@ -1,5 +1,10 @@
 import { mapDatabaseLead } from '../cms';
-import { validateAdminSession } from '../supabase/auth';
+import {
+  validateAdminSession,
+  requestPasswordReset,
+  updateAdminPassword,
+  verifyRecoverySession,
+} from '../supabase/auth';
 
 console.log('--- STARTING LEADS CRM MAPPING & AUTHENTICATION AUDIT TESTS ---');
 
@@ -115,6 +120,63 @@ async function runCrmTests() {
   assert(authResult.isAuthenticated === false, 'Unauthenticated user correctly blocked by validateAdminSession');
   assert(authResult.isAdmin === false, 'Unauthenticated user has isAdmin = false');
   assert(typeof authResult.error === 'string', 'Helpful security error returned');
+
+  // TEST 7: requestPasswordReset rejects invalid email syntax
+  try {
+    await requestPasswordReset('invalid-email-string');
+    assert(false, 'Should throw error for invalid email syntax');
+  } catch (err: any) {
+    assert(err.message.includes('valid email'), 'Invalid email syntax rejected');
+  }
+
+  // TEST 8: updateAdminPassword enforces security password criteria
+  try {
+    await updateAdminPassword('short');
+    assert(false, 'Should reject password under 8 characters');
+  } catch (err: any) {
+    assert(err.message.includes('8 characters'), 'Short password rejected');
+  }
+
+  try {
+    await updateAdminPassword('alllowercase123!');
+    assert(false, 'Should reject password without uppercase');
+  } catch (err: any) {
+    assert(err.message.includes('uppercase'), 'Password missing uppercase rejected');
+  }
+
+  try {
+    await updateAdminPassword('ALLUPPERCASE123!');
+    assert(false, 'Should reject password without lowercase');
+  } catch (err: any) {
+    assert(err.message.includes('lowercase'), 'Password missing lowercase rejected');
+  }
+
+  try {
+    await updateAdminPassword('NoNumbersHere!@#');
+    assert(false, 'Should reject password without numbers');
+  } catch (err: any) {
+    assert(err.message.includes('digit'), 'Password missing digit rejected');
+  }
+
+  try {
+    await updateAdminPassword('NoSpecialChar1234');
+    assert(false, 'Should reject password without special characters');
+  } catch (err: any) {
+    assert(err.message.includes('special character'), 'Password missing special char rejected');
+  }
+
+  // Valid password passes validation without error in sandbox mode
+  try {
+    await updateAdminPassword('ValidPass123!@#');
+    assert(true, 'Strong compliant password successfully accepted');
+  } catch (err: any) {
+    assert(false, `Compliant password failed unexpectedly: ${err.message}`);
+  }
+
+  // TEST 9: verifyRecoverySession returns recovery state
+  const recovResult = await verifyRecoverySession();
+  assert(typeof recovResult === 'object', 'verifyRecoverySession returns recovery result object');
+  assert(typeof recovResult.isValid === 'boolean', 'verifyRecoverySession returns boolean isValid');
 
   console.log(`\n🎉 LEADS CRM TESTS COMPLETE: ${passedTests} PASSED, ${failedTests} FAILED`);
   if (failedTests > 0) {

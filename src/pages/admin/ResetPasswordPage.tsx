@@ -13,6 +13,7 @@ import {
   KeyRound,
 } from 'lucide-react';
 import { verifyRecoverySession, updateAdminPassword } from '../../lib/supabase/auth';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase/client';
 import { SEOHead } from '../../components/SEOHead';
 
 export const ResetPasswordPage: React.FC = () => {
@@ -32,19 +33,94 @@ export const ResetPasswordPage: React.FC = () => {
   const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function checkSession() {
       setIsVerifying(true);
-      const res = await verifyRecoverySession();
+      setSessionError(null);
+
+      // 1. Inspect URL parameters for error codes or descriptions sent by Supabase
+      if (typeof window !== 'undefined') {
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        const searchParams = new URLSearchParams(window.location.search);
+        const urlError =
+          hashParams.get('error_description') ||
+          searchParams.get('error_description') ||
+          hashParams.get('error') ||
+          searchParams.get('error');
+
+        if (urlError) {
+          if (isMounted) {
+            setIsSessionValid(false);
+            setSessionError(decodeURIComponent(urlError.replace(/\+/g, ' ')));
+            setIsVerifying(false);
+          }
+          return;
+        }
+
+        // 2. PKCE code exchange if present in query parameters
+        const code = searchParams.get('code');
+        if (code && isSupabaseConfigured) {
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) {
+            console.error('[Yugark Auth] exchangeCodeForSession failed:', exchangeError);
+            if (isMounted) {
+              setIsSessionValid(false);
+              setSessionError(exchangeError.message || 'Recovery token is invalid or expired.');
+              setIsVerifying(false);
+            }
+            return;
+          }
+        }
+      }
+
+      // 3. Initial session verification with short delay retry if URL has tokens
+      let res = await verifyRecoverySession();
+      if (
+        !res.isValid &&
+        typeof window !== 'undefined' &&
+        (window.location.hash.includes('access_token') || window.location.hash.includes('type=recovery'))
+      ) {
+        // Wait briefly for Supabase JS client to parse the URL hash
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        res = await verifyRecoverySession();
+      }
+
+      if (!isMounted) return;
+
       if (res.isValid) {
         setIsSessionValid(true);
         setUserEmail(res.email);
+        setSessionError(null);
       } else {
         setIsSessionValid(false);
-        setSessionError(res.error || 'Invalid or expired recovery session.');
+        setSessionError(res.error || 'This recovery link is either expired, already consumed, or invalid.');
       }
       setIsVerifying(false);
     }
+
     checkSession();
+
+    // 4. Subscribe to Supabase auth events (handles PASSWORD_RECOVERY and SIGNED_IN)
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
+        const res = await verifyRecoverySession();
+        if (isMounted) {
+          if (res.isValid) {
+            setIsSessionValid(true);
+            setUserEmail(res.email);
+            setSessionError(null);
+          }
+          setIsVerifying(false);
+        }
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      authListener?.subscription?.unsubscribe();
+    };
   }, []);
 
   // Password requirements calculation

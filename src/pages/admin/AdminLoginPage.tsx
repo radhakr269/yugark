@@ -38,7 +38,14 @@ export const AdminLoginPage: React.FC = () => {
       await signInAdmin(email.trim(), password);
       navigate(destination, { replace: true });
     } catch (err: any) {
-      setErrorMsg(err.message || 'Invalid administrator credentials or unassigned role.');
+      const msg = err?.message || 'Invalid administrator credentials or unassigned role.';
+      if (msg.toLowerCase().includes('failed to fetch')) {
+        setErrorMsg(
+          'Network connection error: Unable to connect to Supabase (Failed to fetch). Please check your internet connection, ensure browser shields / ad-blockers are disabled for this site, or verify the Supabase service is accessible.'
+        );
+      } else {
+        setErrorMsg(msg);
+      }
     } finally {
       setIsLoading(false);
     }

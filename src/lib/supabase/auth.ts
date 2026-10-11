@@ -81,9 +81,28 @@ export async function validateAdminSession(): Promise<AdminValidationResult> {
       .from('admin_roles')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (roleError || !roleData) {
+    if (roleError) {
+      if (roleError.code === 'PGRST205') {
+        return {
+          isAuthenticated: true,
+          isAdmin: false,
+          user,
+          role: null,
+          error: 'Database setup required: Table public.admin_roles does not exist in the Supabase schema cache.',
+        };
+      }
+      return {
+        isAuthenticated: true,
+        isAdmin: false,
+        user,
+        role: null,
+        error: roleError.message || 'Unable to verify administrator role in database.',
+      };
+    }
+
+    if (!roleData) {
       return {
         isAuthenticated: true,
         isAdmin: false,
@@ -112,12 +131,16 @@ export async function validateAdminSession(): Promise<AdminValidationResult> {
     };
   } catch (err: any) {
     console.error('[Yugark Auth] Admin validation exception:', err);
+    const msg = err?.message || '';
+    const isNetwork = msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('network');
     return {
       isAuthenticated: false,
       isAdmin: false,
       user: null,
       role: null,
-      error: err?.message || 'Security check failed. Please re-authenticate.',
+      error: isNetwork
+        ? 'Network error: Unable to contact Supabase authentication server. Please check internet connectivity or ad-blockers.'
+        : msg || 'Security check failed. Please re-authenticate.',
     };
   }
 }
@@ -152,28 +175,82 @@ export async function signInAdmin(email: string, password: string) {
     }
   }
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  const cleanEmail = email.trim();
 
-  if (error) {
-    throw error;
+  // 1. Authenticate with Supabase Auth (Primary Login Request)
+  let authData: any = null;
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: cleanEmail,
+      password,
+    });
+
+    if (error) {
+      const msg = error.message || '';
+      if (msg.toLowerCase().includes('failed to fetch')) {
+        throw new Error(
+          'Network connection error: Unable to connect to Supabase authentication server (Failed to fetch). Please check your internet connection or disable ad-blockers / browser privacy shields for this site.'
+        );
+      }
+      throw error;
+    }
+    authData = data;
+  } catch (err: any) {
+    const msg = err?.message || '';
+    if (msg.toLowerCase().includes('failed to fetch')) {
+      throw new Error(
+        'Network connection error: Unable to connect to Supabase authentication server (Failed to fetch). Please check your internet connection or disable ad-blockers / browser privacy shields for this site.'
+      );
+    }
+    throw err;
   }
 
-  // Verify that the authenticated user possesses an administrative role in admin_roles
-  const { data: roleData, error: roleError } = await supabase
-    .from('admin_roles')
-    .select('*')
-    .eq('user_id', data.user.id)
-    .single();
+  if (!authData?.user) {
+    throw new Error('Authentication succeeded but user identity could not be verified.');
+  }
 
+  // 2. Query public.admin_roles for user_id to verify administrator authorization
+  let roleData: any = null;
+  let roleError: any = null;
+  try {
+    const res = await supabase
+      .from('admin_roles')
+      .select('*')
+      .eq('user_id', authData.user.id)
+      .maybeSingle();
+    roleData = res.data;
+    roleError = res.error;
+  } catch (err: any) {
+    roleError = err;
+  }
+
+  // If role check failed or user does not possess admin role
   if (roleError || !roleData || !['super_admin', 'admin', 'editor'].includes(roleData.role)) {
-    await supabase.auth.signOut();
+    // Safely sign out the session to prevent unprivileged session persistence.
+    // Wrap with catch to ensure any network glitch during sign-out never masks the authorization error.
+    try {
+      await supabase.auth.signOut();
+    } catch (signOutErr) {
+      console.warn('[Yugark Auth] Non-fatal sign out error during role rejection:', signOutErr);
+    }
+
+    if (roleError) {
+      if (roleError.code === 'PGRST205') {
+        throw new Error(
+          'Database setup required: Table public.admin_roles does not exist in the Supabase schema cache. Please apply the admin_roles database migration.'
+        );
+      }
+      if (roleError.message && roleError.message.toLowerCase().includes('failed to fetch')) {
+        throw new Error(
+          'Network connection error while verifying administrator role. Please check connectivity and retry.'
+        );
+      }
+    }
+
     throw new Error('Access denied. This account does not possess authorized administrator privileges in public.admin_roles.');
   }
 
-  return { session: data.session, user: data.user, role: roleData as AdminRoleRecord };
+  return { session: authData.session, user: authData.user, role: roleData as AdminRoleRecord };
 }
 
 export async function signOutAdmin() {

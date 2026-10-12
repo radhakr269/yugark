@@ -10,6 +10,7 @@ import {
   Smartphone,
   Monitor,
   Tablet,
+  AlertCircle,
 } from 'lucide-react';
 import { adminCmsApi } from '../../../lib/cms';
 import { uploadCmsMedia } from '../../../lib/supabase/storage';
@@ -53,6 +54,7 @@ export const HeroManager: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -67,7 +69,7 @@ export const HeroManager: React.FC = () => {
         if (config?.ctaPrimaryText) setCtaPrimaryText(config.ctaPrimaryText);
         if (config?.ctaSecondaryText) setCtaSecondaryText(config.ctaSecondaryText);
         if (config?.ctaDemoText) setCtaDemoText(config.ctaDemoText);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to load hero configuration:', err);
       }
     }
@@ -90,15 +92,16 @@ export const HeroManager: React.FC = () => {
     if (!file) return;
 
     setUploadingImage(true);
+    setErrorMessage(null);
     try {
       const res = await uploadCmsMedia(file, 'hero-images');
       setHeroImage(res.publicUrl);
     } catch (err: any) {
-      console.warn('Upload fallback to local URL preview:', err);
-      const tempUrl = URL.createObjectURL(file);
-      setHeroImage(tempUrl);
+      console.error('Upload failed:', err);
+      setErrorMessage(err?.message || 'Failed to upload hero image to Supabase Storage.');
     } finally {
       setUploadingImage(false);
+      e.target.value = '';
     }
   };
 
@@ -106,6 +109,7 @@ export const HeroManager: React.FC = () => {
     if (e) e.preventDefault();
     setSaving(true);
     setSuccess(false);
+    setErrorMessage(null);
 
     try {
       await adminCmsApi.updateHeroSettings({
@@ -117,8 +121,9 @@ export const HeroManager: React.FC = () => {
       });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save hero settings:', err);
+      setErrorMessage(err?.message || 'Database error: Failed to save hero settings to Supabase.');
     } finally {
       setSaving(false);
     }
@@ -157,6 +162,13 @@ export const HeroManager: React.FC = () => {
         <div className="p-3.5 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs flex items-center gap-2 shadow-xs">
           <Check className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>Hero configuration published and synchronized across desktop and mobile views!</span>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-300 text-rose-800 text-xs flex items-center gap-2 shadow-xs">
+          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+          <span className="font-medium">{errorMessage}</span>
         </div>
       )}
 

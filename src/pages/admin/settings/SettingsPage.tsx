@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, Check, ShieldCheck, AlertCircle, MessageSquare, Mail } from 'lucide-react';
-import { adminCmsApi, getWebsiteSettings } from '../../../lib/cms';
+import { Settings, Save, Check, ShieldCheck, AlertCircle, MessageSquare, Mail, Download, Database, RefreshCw, UploadCloud } from 'lucide-react';
+import { adminCmsApi, getWebsiteSettings, downloadCmsBackupFile } from '../../../lib/cms';
 
 export const SettingsPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -17,6 +17,9 @@ export const SettingsPage: React.FC = () => {
 
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<any | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -40,6 +43,7 @@ export const SettingsPage: React.FC = () => {
     e.preventDefault();
     setSaving(true);
     setSuccess(false);
+    setError(null);
 
     try {
       await adminCmsApi.updateSettings({
@@ -57,10 +61,41 @@ export const SettingsPage: React.FC = () => {
       });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setError(err?.message || 'Database error: Failed to save website settings to Supabase.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleExportBackup = () => {
+    downloadCmsBackupFile();
+  };
+
+  const handlePreviewSync = async () => {
+    setSyncing(true);
+    setError(null);
+    try {
+      const res = await adminCmsApi.syncLocalStorageToSupabase(true);
+      setSyncResult({ ...res, isDryRun: true });
+    } catch (err: any) {
+      setError(err?.message || 'Failed to analyze local storage data for migration.');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleApplySync = async () => {
+    setSyncing(true);
+    setError(null);
+    try {
+      const res = await adminCmsApi.syncLocalStorageToSupabase(false);
+      setSyncResult({ ...res, isDryRun: false });
+    } catch (err: any) {
+      setError(err?.message || 'Failed to migrate browser edits to Supabase database.');
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -93,6 +128,13 @@ export const SettingsPage: React.FC = () => {
         <div className="p-3.5 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs flex items-center gap-2">
           <Check className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>Studio settings updated and synchronized with public navigation and contact modules!</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-300 text-rose-800 text-xs flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+          <span className="font-medium">{error}</span>
         </div>
       )}
 
@@ -236,6 +278,87 @@ export const SettingsPage: React.FC = () => {
           />
         </div>
       </form>
+
+      {/* PHASE 1 & 4: CENTRALIZED CMS DATA PROTECTION, BACKUP & MIGRATION */}
+      <div className="bg-white p-6 rounded-2xl border border-[#E5DFD5] shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-[#F0EBE1] pb-3">
+          <div>
+            <span className="text-[10px] font-mono tracking-widest uppercase text-[#738277] flex items-center gap-1.5">
+              <Database className="w-3.5 h-3.5 text-[#2D4536]" />
+              Data Integrity &amp; Migration
+            </span>
+            <h2 className="font-serif-title text-base font-semibold text-[#121614] mt-0.5">
+              Browser Data Protection &amp; Centralized Supabase Migration
+            </h2>
+          </div>
+        </div>
+
+        <p className="text-xs text-[#5C6A60] leading-relaxed">
+          Preserve all drafts, hero headlines, demo configurations, services, and pricing stored in browser localStorage.
+          Export a verified JSON backup before migrating, or sync local records into the production Supabase database.
+        </p>
+
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <button
+            type="button"
+            onClick={handleExportBackup}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF8F5] border border-[#DDD5C7] text-xs font-semibold text-[#121614] hover:bg-[#EBE5DA] transition-colors cursor-pointer"
+          >
+            <Download className="w-4 h-4 text-[#2D4536]" />
+            <span>Export CMS Backup (.json)</span>
+          </button>
+
+          <button
+            type="button"
+            disabled={syncing}
+            onClick={handlePreviewSync}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF8F5] border border-[#DDD5C7] text-xs font-semibold text-[#121614] hover:bg-[#EBE5DA] transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 text-[#2D4536] ${syncing ? 'animate-spin' : ''}`} />
+            <span>Analyze &amp; Preview Migration</span>
+          </button>
+
+          <button
+            type="button"
+            disabled={syncing}
+            onClick={handleApplySync}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1B2E24] text-white text-xs font-semibold hover:bg-[#264032] transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+          >
+            <UploadCloud className="w-4 h-4 text-[#4ADE80]" />
+            <span>{syncing ? 'Syncing...' : 'Sync Local Edits to Supabase'}</span>
+          </button>
+        </div>
+
+        {syncResult && (
+          <div className={`p-4 rounded-xl text-xs space-y-2 border ${
+            syncResult.success ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-amber-50/70 border-amber-200 text-amber-900'
+          }`}>
+            <div className="font-semibold flex items-center gap-2">
+              <Check className="w-4 h-4 text-emerald-600" />
+              <span>
+                {syncResult.isDryRun ? 'Migration Analysis Complete (Dry Run)' : 'Migration Completed to Supabase'}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono pt-1">
+              <div className="p-2 rounded bg-white/70 border border-black/5">Settings: {syncResult.summary?.settings || 0}</div>
+              <div className="p-2 rounded bg-white/70 border border-black/5">Hero: {syncResult.summary?.hero || 0}</div>
+              <div className="p-2 rounded bg-white/70 border border-black/5">Pages: {syncResult.summary?.pages || 0}</div>
+              <div className="p-2 rounded bg-white/70 border border-black/5">Demos: {syncResult.summary?.demos || 0}</div>
+              <div className="p-2 rounded bg-white/70 border border-black/5">Services: {syncResult.summary?.services || 0}</div>
+              <div className="p-2 rounded bg-white/70 border border-black/5">Pricing: {syncResult.summary?.pricing || 0}</div>
+              <div className="p-2 rounded bg-white/70 border border-black/5">Projects: {syncResult.summary?.projects || 0}</div>
+            </div>
+            {syncResult.errors && syncResult.errors.length > 0 && (
+              <div className="text-[11px] text-rose-700 bg-rose-50 p-2.5 rounded border border-rose-200 space-y-1">
+                <span className="font-semibold">Notice:</span>
+                {syncResult.errors.map((e: string, idx: number) => (
+                  <p key={idx}>{e}</p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

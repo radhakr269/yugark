@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { X, ArrowRight, CheckCircle, Clock, Send } from 'lucide-react';
+import { X, ArrowRight, CheckCircle, Clock, Send, ExternalLink } from 'lucide-react';
 import { ProjectItem, DemoItem, BlogPostItem, ServiceItem } from '../types/content';
 import { WhatsAppIcon } from './WhatsAppIcon';
 import { siteConfig } from '../data/studioData';
@@ -191,23 +191,35 @@ export const DemoModal: React.FC<DemoModalProps> = ({ demo, onClose, onInquire }
         </div>
 
         {/* Footer */}
-        <div className="p-4 sm:p-6 border-t border-[#E8E2D7] bg-[#FAF7F2] flex items-center justify-between gap-3">
+        <div className="p-4 sm:p-6 border-t border-[#E8E2D7] bg-[#FAF7F2] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <button
             onClick={onClose}
-            className="text-xs font-semibold text-[#555C56] hover:text-black transition-colors min-h-[44px] px-3 flex items-center"
+            className="text-xs font-semibold text-[#555C56] hover:text-black transition-colors min-h-[44px] px-3 flex items-center justify-center sm:justify-start"
           >
             Close Preview
           </button>
-          <button
-            onClick={() => {
-              onClose();
-              onInquire();
-            }}
-            className="min-h-[44px] inline-flex items-center px-5 sm:px-6 py-2.5 rounded-full bg-[#1A2621] text-white text-xs font-semibold tracking-wider hover:bg-black transition-all"
-          >
-            <span>Request This Website Template</span>
-            <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-          </button>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-2">
+            <button
+              onClick={() => {
+                onClose();
+                onInquire();
+              }}
+              className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center px-4 py-2.5 rounded-full border border-[#D5CDC0] text-[#121614] text-xs font-medium hover:bg-[#EAE3D6] transition-colors"
+            >
+              <span>Inquire / Request</span>
+            </button>
+            
+            <a
+              href={demo.liveDemoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center px-5 sm:px-6 py-2.5 rounded-full bg-[#1A2621] text-white text-xs font-semibold tracking-wider hover:bg-black transition-all shadow-sm"
+            >
+              <span>View Live Website</span>
+              <ExternalLink className="w-3.5 h-3.5 ml-1.5" />
+            </a>
+          </div>
         </div>
       </div>
     </div>

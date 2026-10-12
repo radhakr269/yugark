@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Edit, Trash2, CheckCircle, Save, X, DollarSign } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, CheckCircle, Save, X, DollarSign, AlertCircle } from 'lucide-react';
 import { adminCmsApi } from '../../../lib/cms';
 import { PricingPackageRecord } from '../../../lib/supabase/types';
 
@@ -8,6 +8,7 @@ export const PricingManager: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPkg, setEditingPkg] = useState<PricingPackageRecord | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -58,6 +59,7 @@ export const PricingManager: React.FC = () => {
       is_featured: false,
       status: 'published',
     });
+    setFormError(null);
     setModalOpen(true);
   };
 
@@ -77,12 +79,14 @@ export const PricingManager: React.FC = () => {
       is_featured: pkg.is_featured,
       status: pkg.status as any,
     });
+    setFormError(null);
     setModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setFormError(null);
     const featureList = formData.features.split('\n').map((f) => f.trim()).filter(Boolean);
     const payload = {
       title: formData.title.trim(),
@@ -107,8 +111,9 @@ export const PricingManager: React.FC = () => {
       }
       await loadPricing();
       setModalOpen(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setFormError(err?.message || 'Database error: Failed to save pricing package.');
     } finally {
       setIsSubmitting(false);
     }
@@ -238,6 +243,13 @@ export const PricingManager: React.FC = () => {
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {formError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span className="font-medium">{formError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
               <div className="grid grid-cols-2 gap-3">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Edit, Trash2, ExternalLink, Upload, Save, X } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, ExternalLink, Upload, Save, X, AlertCircle } from 'lucide-react';
 import { adminCmsApi } from '../../../lib/cms';
 import { PortfolioProjectRecord } from '../../../lib/supabase/types';
 import { uploadCmsMedia } from '../../../lib/supabase/storage';
@@ -9,6 +9,7 @@ export const PortfolioManager: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<PortfolioProjectRecord | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -62,6 +63,7 @@ export const PortfolioManager: React.FC = () => {
       is_featured: true,
       status: 'published',
     });
+    setFormError(null);
     setModalOpen(true);
   };
 
@@ -82,6 +84,7 @@ export const PortfolioManager: React.FC = () => {
       is_featured: proj.is_featured,
       status: proj.status as any,
     });
+    setFormError(null);
     setModalOpen(true);
   };
 
@@ -89,19 +92,23 @@ export const PortfolioManager: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingImage(true);
+    setFormError(null);
     try {
       const res = await uploadCmsMedia(file, 'portfolio');
       setFormData((prev) => ({ ...prev, thumbnail_url: res.publicUrl }));
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setFormError(err?.message || 'Failed to upload portfolio image.');
     } finally {
       setUploadingImage(false);
+      e.target.value = '';
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setFormError(null);
     const payload = {
       title: formData.title.trim(),
       slug: formData.slug.trim() || formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
@@ -126,8 +133,9 @@ export const PortfolioManager: React.FC = () => {
       }
       await loadProjects();
       setModalOpen(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setFormError(err?.message || 'Database error: Failed to save portfolio project.');
     } finally {
       setIsSubmitting(false);
     }
@@ -267,6 +275,13 @@ export const PortfolioManager: React.FC = () => {
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {formError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span className="font-medium">{formError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
               <div className="grid grid-cols-2 gap-3">

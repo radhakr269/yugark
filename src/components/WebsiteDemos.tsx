@@ -74,37 +74,69 @@ export const WebsiteDemos: React.FC<WebsiteDemosProps> = ({
           showDots={true}
           controlsPosition="bottom"
         >
-          {demos.map((demo) => (
-            <div
-              key={demo.id}
-              onClick={() => onSelectDemo(demo)}
-              className="editorial-card group cursor-pointer flex flex-col justify-between h-full bg-[#FAF7F2] rounded-lg sm:rounded-xl p-2 sm:p-2.5 border border-[#ECE5D9] shadow-2xs hover:shadow-md transition-all"
-            >
-              <div>
-                <div className="relative overflow-hidden rounded-md sm:rounded-lg bg-[#EBE4D8] aspect-[16/10] mb-1.5 sm:mb-2.5 shadow-2xs">
-                  <img
-                    alt={demo.alt}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    src={demo.image}
-                    loading="lazy"
-                    decoding="async"
-                  />
-                  <div className="absolute inset-0 pointer-events-none rounded-md sm:rounded-lg ring-1 ring-inset ring-black/5" />
-                </div>
-                <div className="px-0.5">
-                  <div className="flex items-center justify-between gap-1">
-                    <h3 className="font-serif-title text-[11px] sm:text-sm lg:text-[15px] font-semibold text-[#121614] truncate leading-snug">
-                      {demo.title}
-                    </h3>
-                    <ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#121614] shrink-0 transition-transform group-hover:translate-x-0.5" />
+          {demos.map((demo) => {
+            const isPorwal = Boolean(
+              (demo.slug && demo.slug.toLowerCase().includes('porwal')) ||
+              (demo.title && demo.title.toLowerCase().includes('porwal')) ||
+              (demo.title && demo.title.toLowerCase().includes('gautam'))
+            );
+            const liveUrl = isPorwal ? 'https://dr-gautam-porwal.vercel.app/' : (demo.liveDemoUrl || '#');
+
+            return (
+              <div
+                key={demo.id}
+                className="editorial-card group flex flex-col justify-between h-full bg-[#FAF7F2] rounded-lg sm:rounded-xl p-2 sm:p-2.5 border border-[#ECE5D9] shadow-2xs hover:shadow-md transition-all"
+              >
+                <div>
+                  <a
+                    href={liveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block relative overflow-hidden rounded-md sm:rounded-lg bg-[#EBE4D8] aspect-[16/10] mb-1.5 sm:mb-2.5 shadow-2xs group/img"
+                    title={`View live website for ${demo.title}`}
+                  >
+                    <img
+                      alt={demo.alt}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
+                      src={demo.image}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <div className="absolute inset-0 pointer-events-none rounded-md sm:rounded-lg ring-1 ring-inset ring-black/5" />
+                  </a>
+                  <div className="px-0.5">
+                    <div className="flex items-center justify-between gap-1">
+                      <a
+                        href={liveUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-serif-title text-[11px] sm:text-sm lg:text-[15px] font-semibold text-[#121614] hover:text-[#2D4536] truncate leading-snug flex items-center gap-1 group/title"
+                      >
+                        <span className="truncate">{demo.title}</span>
+                        <ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#121614] shrink-0 transition-transform group-hover/title:translate-x-0.5" />
+                      </a>
+                    </div>
+                    <div className="flex items-center justify-between gap-1 mt-0.5">
+                      <p className="text-[9px] sm:text-[10px] text-[#717871] truncate">
+                        {demo.industry || demo.category}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onSelectDemo(demo);
+                        }}
+                        className="text-[9.5px] text-[#2D4536] hover:underline font-medium shrink-0 px-1.5 py-0.5 rounded bg-[#EFE9DF]/80 hover:bg-[#EFE9DF] cursor-pointer"
+                      >
+                        Preview
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-[9px] sm:text-[10px] text-[#717871] truncate mt-0.5">
-                    {demo.industry || demo.category}
-                  </p>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </CardCarousel>
       </div>
     </section>

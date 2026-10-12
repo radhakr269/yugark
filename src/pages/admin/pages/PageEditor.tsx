@@ -18,6 +18,7 @@ export const PageEditor: React.FC = () => {
 
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -31,12 +32,14 @@ export const PageEditor: React.FC = () => {
     e.preventDefault();
     setSaving(true);
     setSuccess(false);
+    setError(null);
     try {
       await adminCmsApi.updateHomepageContent(content);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setError(err?.message || 'Database error: Failed to update homepage content in Supabase.');
     } finally {
       setSaving(false);
     }
@@ -71,6 +74,13 @@ export const PageEditor: React.FC = () => {
         <div className="p-3.5 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs flex items-center gap-2">
           <Check className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>Homepage text updated and broadcast to all live components successfully!</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-300 text-rose-800 text-xs flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+          <span className="font-medium">{error}</span>
         </div>
       )}
 

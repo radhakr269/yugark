@@ -55,6 +55,66 @@ const STORAGE_KEYS = {
   HERO: 'yugark_cms_hero',
 };
 
+// ============================================================================
+// PHASE 1 DATA PROTECTION: BACKUP & EXPORT UTILITIES
+// ============================================================================
+
+export interface CmsExportPackage {
+  timestamp: string;
+  schemaVersion: string;
+  environment: string;
+  keys: string[];
+  data: Record<string, any>;
+}
+
+/**
+ * Creates an admin-only export backup of all browser-stored CMS content.
+ * Strictly preserves all local data without clearing or modifying localStorage.
+ */
+export function exportCmsBackup(): CmsExportPackage {
+  const result: Record<string, any> = {};
+  const exportedKeys: string[] = [];
+
+  if (typeof window !== 'undefined') {
+    Object.entries(STORAGE_KEYS).forEach(([name, key]) => {
+      try {
+        const item = localStorage.getItem(key);
+        if (item) {
+          result[name.toLowerCase()] = JSON.parse(item);
+          exportedKeys.push(key);
+        }
+      } catch (err) {
+        console.warn(`[CMS Backup] Could not parse key ${key}:`, err);
+      }
+    });
+  }
+
+  return {
+    timestamp: new Date().toISOString(),
+    schemaVersion: '2026.10-production-cms-v2',
+    environment: isSupabaseConfigured ? 'supabase-connected' : 'local-sandbox',
+    keys: exportedKeys,
+    data: result,
+  };
+}
+
+/**
+ * Triggers a browser file download of the full CMS JSON backup.
+ */
+export function downloadCmsBackupFile(): void {
+  if (typeof window === 'undefined') return;
+  const backup = exportCmsBackup();
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `yugark-cms-backup-${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+}
+
 function safeGetStorage<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
   try {
@@ -129,7 +189,7 @@ export async function getWebsiteSettings(): Promise<SiteConfig> {
       return safeGetStorage<SiteConfig>(STORAGE_KEYS.SETTINGS, initialSiteConfig);
     }
 
-    const settings = data as WebsiteSettingsRecord;
+    const settings = data as any;
     const rawNumber = settings.whatsapp_number;
     const isOldNumber = !rawNumber || rawNumber.includes('9125272460');
     const normalizedNumber = isOldNumber ? '+91 9125205132' : rawNumber;
@@ -142,11 +202,11 @@ export async function getWebsiteSettings(): Promise<SiteConfig> {
     return {
       studioName: settings.site_name || initialSiteConfig.studioName,
       tagline: settings.tagline || initialSiteConfig.tagline,
-      headlineLine1: initialSiteConfig.headlineLine1,
-      headlineLine2: initialSiteConfig.headlineLine2,
-      headlineLine3Accent: initialSiteConfig.headlineLine3Accent,
-      heroDescription: initialSiteConfig.heroDescription,
-      heroImage: initialSiteConfig.heroImage,
+      headlineLine1: settings.page_content?.headlineLine1 || initialSiteConfig.headlineLine1,
+      headlineLine2: settings.page_content?.headlineLine2 || initialSiteConfig.headlineLine2,
+      headlineLine3Accent: settings.page_content?.headlineLine3Accent || initialSiteConfig.headlineLine3Accent,
+      heroDescription: settings.page_content?.heroDescription || initialSiteConfig.heroDescription,
+      heroImage: settings.hero_config?.heroImage || initialSiteConfig.heroImage,
       contactEmail: settings.business_email || 'business@yugark.in',
       whatsappNumber: normalizedNumber,
       whatsappUrl: `https://wa.me/${cleanDigits || '919125205132'}`,
@@ -848,6 +908,10 @@ export const adminCmsApi = {
   },
 
   async createDemo(demo: Partial<WebsiteDemoRecord>): Promise<WebsiteDemoRecord> {
+    if (demo.thumbnail_url && typeof demo.thumbnail_url === 'string' && demo.thumbnail_url.startsWith('blob:')) {
+      throw new Error('Temporary browser blob URL cannot be persisted. Please upload the image file to Supabase Storage before saving.');
+    }
+
     const id = demo.id || `demo-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     const categoryName = demo.category_name || 'Healthcare & Medical';
     const matchedCategory = STANDARD_DEMO_CATEGORIES.find(
@@ -876,34 +940,35 @@ export const adminCmsApi = {
     };
 
     if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase
-          .from('website_demos')
-          .insert({
-            title: newDemoRecord.title,
-            slug: newDemoRecord.slug,
-            category_id: newDemoRecord.category_id,
-            short_description: newDemoRecord.short_description,
-            full_description: newDemoRecord.full_description,
-            thumbnail_url: newDemoRecord.thumbnail_url,
-            additional_images: newDemoRecord.additional_images,
-            demo_url: newDemoRecord.demo_url,
-            technology_tags: newDemoRecord.technology_tags,
-            is_featured: newDemoRecord.is_featured,
-            sort_order: newDemoRecord.sort_order,
-            status: newDemoRecord.status,
-          })
-          .select('*, demo_categories(name)')
-          .single();
-        if (error) throw error;
-        if (data) {
-          newDemoRecord.id = data.id;
-          if ((data as any).demo_categories?.name) {
-            newDemoRecord.category_name = (data as any).demo_categories.name;
-          }
-        }
-      } catch (err) {
-        console.warn('Supabase createDemo failed, saving to local persistent store:', err);
+      const { data, error } = await supabase
+        .from('website_demos')
+        .insert({
+          title: newDemoRecord.title,
+          slug: newDemoRecord.slug,
+          category_id: newDemoRecord.category_id,
+          short_description: newDemoRecord.short_description,
+          full_description: newDemoRecord.full_description,
+          thumbnail_url: newDemoRecord.thumbnail_url,
+          additional_images: newDemoRecord.additional_images,
+          demo_url: newDemoRecord.demo_url,
+          technology_tags: newDemoRecord.technology_tags,
+          is_featured: newDemoRecord.is_featured,
+          sort_order: newDemoRecord.sort_order,
+          status: newDemoRecord.status,
+        })
+        .select('*, demo_categories(name)')
+        .single();
+
+      if (error) {
+        console.error('Supabase createDemo database failure:', error);
+        throw new Error(error.message || 'Database error: Unable to create website demo in Supabase.');
+      }
+      if (!data) {
+        throw new Error('Database returned no confirmed record after creating demo.');
+      }
+      newDemoRecord.id = data.id;
+      if ((data as any).demo_categories?.name) {
+        newDemoRecord.category_name = (data as any).demo_categories.name;
       }
     }
 
@@ -933,6 +998,10 @@ export const adminCmsApi = {
   },
 
   async updateDemo(id: string, updates: Partial<WebsiteDemoRecord>): Promise<WebsiteDemoRecord> {
+    if (updates.thumbnail_url && typeof updates.thumbnail_url === 'string' && updates.thumbnail_url.startsWith('blob:')) {
+      throw new Error('Temporary browser blob URL cannot be persisted. Please upload the image file to Supabase Storage before saving.');
+    }
+
     let resolvedCategoryId = updates.category_id;
     if (!resolvedCategoryId && updates.category_name) {
       const match = STANDARD_DEMO_CATEGORIES.find(
@@ -943,35 +1012,35 @@ export const adminCmsApi = {
     }
 
     if (isSupabaseConfigured) {
-      try {
-        const payload: Record<string, any> = {
-          updated_at: new Date().toISOString(),
-        };
-        if (updates.title !== undefined) payload.title = updates.title;
-        if (updates.slug !== undefined) payload.slug = updates.slug;
-        if (resolvedCategoryId !== undefined) payload.category_id = resolvedCategoryId;
-        if (updates.short_description !== undefined) payload.short_description = updates.short_description;
-        if (updates.full_description !== undefined) payload.full_description = updates.full_description;
-        if (updates.thumbnail_url !== undefined) payload.thumbnail_url = updates.thumbnail_url;
-        if (updates.additional_images !== undefined) payload.additional_images = updates.additional_images;
-        if (updates.demo_url !== undefined) payload.demo_url = updates.demo_url;
-        if (updates.technology_tags !== undefined) payload.technology_tags = updates.technology_tags;
-        if (updates.is_featured !== undefined) payload.is_featured = updates.is_featured;
-        if (updates.sort_order !== undefined) payload.sort_order = updates.sort_order;
-        if (updates.status !== undefined) payload.status = updates.status;
+      const payload: Record<string, any> = {
+        updated_at: new Date().toISOString(),
+      };
+      if (updates.title !== undefined) payload.title = updates.title;
+      if (updates.slug !== undefined) payload.slug = updates.slug;
+      if (resolvedCategoryId !== undefined) payload.category_id = resolvedCategoryId;
+      if (updates.short_description !== undefined) payload.short_description = updates.short_description;
+      if (updates.full_description !== undefined) payload.full_description = updates.full_description;
+      if (updates.thumbnail_url !== undefined) payload.thumbnail_url = updates.thumbnail_url;
+      if (updates.additional_images !== undefined) payload.additional_images = updates.additional_images;
+      if (updates.demo_url !== undefined) payload.demo_url = updates.demo_url;
+      if (updates.technology_tags !== undefined) payload.technology_tags = updates.technology_tags;
+      if (updates.is_featured !== undefined) payload.is_featured = updates.is_featured;
+      if (updates.sort_order !== undefined) payload.sort_order = updates.sort_order;
+      if (updates.status !== undefined) payload.status = updates.status;
 
-        const { error } = await supabase
-          .from('website_demos')
-          .update(payload)
-          .eq('id', id)
-          .select('*, demo_categories(name)')
-          .maybeSingle();
+      const { data, error } = await supabase
+        .from('website_demos')
+        .update(payload)
+        .eq('id', id)
+        .select('*, demo_categories(name)')
+        .maybeSingle();
 
-        if (error) {
-          console.warn('Supabase updateDemo error:', error);
-        }
-      } catch (err) {
-        console.warn('Supabase updateDemo failed, syncing local persistent store:', err);
+      if (error) {
+        console.error('Supabase updateDemo database failure:', error);
+        throw new Error(error.message || 'Database error: Unable to update website demo in Supabase.');
+      }
+      if (!data) {
+        throw new Error(`Demo with ID "${id}" was not found in the Supabase database.`);
       }
     }
 
@@ -1005,11 +1074,10 @@ export const adminCmsApi = {
 
   async deleteDemo(id: string): Promise<boolean> {
     if (isSupabaseConfigured) {
-      try {
-        const { error } = await supabase.from('website_demos').delete().eq('id', id);
-        if (error) throw error;
-      } catch (err) {
-        console.warn('Supabase deleteDemo failed, removing locally:', err);
+      const { error } = await supabase.from('website_demos').delete().eq('id', id);
+      if (error) {
+        console.error('Supabase deleteDemo database failure:', error);
+        throw new Error(error.message || 'Database error: Unable to delete demo from Supabase.');
       }
     }
     const existing = safeGetStorage<DemoItem[]>(STORAGE_KEYS.DEMOS, initialDemos);
@@ -1028,10 +1096,14 @@ export const adminCmsApi = {
 
     if (isSupabaseConfigured) {
       for (let i = 0; i < orderedIds.length; i++) {
-        await supabase
+        const { error } = await supabase
           .from('website_demos')
           .update({ sort_order: i + 1 })
           .eq('id', orderedIds[i]);
+        if (error) {
+          console.error(`Supabase reorderDemos failed on ID ${orderedIds[i]}:`, error);
+          throw new Error(error.message || 'Database error: Failed to reorder demos.');
+        }
       }
     }
   },
@@ -1097,32 +1169,34 @@ export const adminCmsApi = {
     };
 
     if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase
-          .from('blog_posts')
-          .insert({
-            title: newRecord.title,
-            slug: newRecord.slug,
-            excerpt: newRecord.excerpt,
-            content: newRecord.content,
-            rich_paragraphs: newRecord.rich_paragraphs,
-            cover_image_url: newRecord.cover_image_url,
-            category_name: newRecord.category_name,
-            author_name: newRecord.author_name,
-            author_role: newRecord.author_role,
-            read_time: newRecord.read_time,
-            seo_title: newRecord.seo_title,
-            seo_description: newRecord.seo_description,
-            status: newRecord.status,
-            is_featured: newRecord.is_featured,
-          })
-          .select()
-          .single();
-        if (error) throw error;
-        if (data) return data as BlogPostRecord;
-      } catch (err) {
-        console.warn('Supabase createBlogPost error, storing locally:', err);
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .insert({
+          title: newRecord.title,
+          slug: newRecord.slug,
+          excerpt: newRecord.excerpt,
+          content: newRecord.content,
+          rich_paragraphs: newRecord.rich_paragraphs,
+          cover_image_url: newRecord.cover_image_url,
+          category_name: newRecord.category_name,
+          author_name: newRecord.author_name,
+          author_role: newRecord.author_role,
+          read_time: newRecord.read_time,
+          seo_title: newRecord.seo_title,
+          seo_description: newRecord.seo_description,
+          status: newRecord.status,
+          is_featured: newRecord.is_featured,
+        })
+        .select()
+        .single();
+      if (error) {
+        console.error('Supabase createBlogPost database failure:', error);
+        throw new Error(error.message || 'Database error: Unable to create blog post in Supabase.');
       }
+      if (!data) {
+        throw new Error('Database returned no confirmed record after creating blog post.');
+      }
+      return data as BlogPostRecord;
     }
 
     const existing = safeGetStorage<BlogPostItem[]>(STORAGE_KEYS.BLOGS, initialBlogPosts);
@@ -1147,18 +1221,20 @@ export const adminCmsApi = {
 
   async updateBlogPost(id: string, updates: Partial<BlogPostRecord>): Promise<BlogPostRecord> {
     if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase
-          .from('blog_posts')
-          .update({ ...updates, updated_at: new Date().toISOString() })
-          .eq('id', id)
-          .select()
-          .single();
-        if (error) throw error;
-        if (data) return data as BlogPostRecord;
-      } catch (err) {
-        console.warn('Supabase updateBlogPost error, storing locally:', err);
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) {
+        console.error('Supabase updateBlogPost database failure:', error);
+        throw new Error(error.message || 'Database error: Unable to update blog post in Supabase.');
       }
+      if (!data) {
+        throw new Error(`Blog post with ID "${id}" was not found in Supabase database.`);
+      }
+      return data as BlogPostRecord;
     }
 
     const existing = safeGetStorage<BlogPostItem[]>(STORAGE_KEYS.BLOGS, initialBlogPosts);
@@ -1187,11 +1263,10 @@ export const adminCmsApi = {
 
   async deleteBlogPost(id: string): Promise<boolean> {
     if (isSupabaseConfigured) {
-      try {
-        const { error } = await supabase.from('blog_posts').delete().eq('id', id);
-        if (error) throw error;
-      } catch (err) {
-        console.warn('Supabase deleteBlogPost error:', err);
+      const { error } = await supabase.from('blog_posts').delete().eq('id', id);
+      if (error) {
+        console.error('Supabase deleteBlogPost database failure:', error);
+        throw new Error(error.message || 'Database error: Unable to delete blog post from Supabase.');
       }
     }
     const existing = safeGetStorage<BlogPostItem[]>(STORAGE_KEYS.BLOGS, initialBlogPosts);
@@ -1263,11 +1338,13 @@ export const adminCmsApi = {
     };
 
     if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase.from('services').insert(newRecord).select().single();
-        if (!error && data) return data as ServiceRecord;
-      } catch (err) {
-        console.warn('Supabase createService error:', err);
+      const { data, error } = await supabase.from('services').insert(newRecord).select().single();
+      if (error) {
+        console.error('Supabase createService database failure:', error);
+        throw new Error(error.message || 'Database error: Unable to create service in Supabase.');
+      }
+      if (!data) {
+        throw new Error('Database returned no confirmed record after creating service.');
       }
     }
 
@@ -1292,16 +1369,18 @@ export const adminCmsApi = {
 
   async updateService(id: string, updates: Partial<ServiceRecord>): Promise<ServiceRecord> {
     if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase
-          .from('services')
-          .update({ ...updates, updated_at: new Date().toISOString() })
-          .eq('id', id)
-          .select()
-          .single();
-        if (!error && data) return data as ServiceRecord;
-      } catch (err) {
-        console.warn('Supabase updateService error:', err);
+      const { data, error } = await supabase
+        .from('services')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) {
+        console.error('Supabase updateService database failure:', error);
+        throw new Error(error.message || 'Database error: Unable to update service in Supabase.');
+      }
+      if (!data) {
+        throw new Error(`Service with ID "${id}" was not found in the Supabase database.`);
       }
     }
 
@@ -1329,10 +1408,10 @@ export const adminCmsApi = {
 
   async deleteService(id: string): Promise<boolean> {
     if (isSupabaseConfigured) {
-      try {
-        await supabase.from('services').delete().eq('id', id);
-      } catch (err) {
-        console.warn('Supabase deleteService error:', err);
+      const { error } = await supabase.from('services').delete().eq('id', id);
+      if (error) {
+        console.error('Supabase deleteService database failure:', error);
+        throw new Error(error.message || 'Database error: Unable to delete service from Supabase.');
       }
     }
     const existing = safeGetStorage<ServiceItem[]>(STORAGE_KEYS.SERVICES, initialServices);
@@ -1402,11 +1481,13 @@ export const adminCmsApi = {
     };
 
     if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase.from('pricing_packages').insert(newRecord).select().single();
-        if (!error && data) return data as PricingPackageRecord;
-      } catch (err) {
-        console.warn('Supabase createPricing error:', err);
+      const { data, error } = await supabase.from('pricing_packages').insert(newRecord).select().single();
+      if (error) {
+        console.error('Supabase createPricing database failure:', error);
+        throw new Error(error.message || 'Database error: Unable to create pricing package in Supabase.');
+      }
+      if (!data) {
+        throw new Error('Database returned no confirmed record after creating pricing package.');
       }
     }
 
@@ -1437,16 +1518,18 @@ export const adminCmsApi = {
 
   async updatePricing(id: string, updates: Partial<PricingPackageRecord>): Promise<PricingPackageRecord> {
     if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase
-          .from('pricing_packages')
-          .update({ ...updates, updated_at: new Date().toISOString() })
-          .eq('id', id)
-          .select()
-          .single();
-        if (!error && data) return data as PricingPackageRecord;
-      } catch (err) {
-        console.warn('Supabase updatePricing error:', err);
+      const { data, error } = await supabase
+        .from('pricing_packages')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) {
+        console.error('Supabase updatePricing database failure:', error);
+        throw new Error(error.message || 'Database error: Unable to update pricing package in Supabase.');
+      }
+      if (!data) {
+        throw new Error(`Pricing package with ID "${id}" was not found in Supabase database.`);
       }
     }
 
@@ -1481,10 +1564,10 @@ export const adminCmsApi = {
 
   async deletePricing(id: string): Promise<boolean> {
     if (isSupabaseConfigured) {
-      try {
-        await supabase.from('pricing_packages').delete().eq('id', id);
-      } catch (err) {
-        console.warn('Supabase deletePricing error:', err);
+      const { error } = await supabase.from('pricing_packages').delete().eq('id', id);
+      if (error) {
+        console.error('Supabase deletePricing database failure:', error);
+        throw new Error(error.message || 'Database error: Unable to delete pricing package from Supabase.');
       }
     }
     const existing = safeGetStorage<PricingPackage[]>(STORAGE_KEYS.PRICING, initialPricing);
@@ -1529,6 +1612,10 @@ export const adminCmsApi = {
   },
 
   async createProject(project: Partial<PortfolioProjectRecord>): Promise<PortfolioProjectRecord> {
+    if (project.thumbnail_url && typeof project.thumbnail_url === 'string' && project.thumbnail_url.startsWith('blob:')) {
+      throw new Error('Temporary browser blob URL cannot be persisted. Please upload the image file to Supabase Storage before saving.');
+    }
+
     const id = project.id || `proj-${Date.now()}`;
     const newRecord: PortfolioProjectRecord = {
       id,
@@ -1554,11 +1641,13 @@ export const adminCmsApi = {
     };
 
     if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase.from('portfolio_projects').insert(newRecord).select().single();
-        if (!error && data) return data as PortfolioProjectRecord;
-      } catch (err) {
-        console.warn('Supabase createProject error:', err);
+      const { data, error } = await supabase.from('portfolio_projects').insert(newRecord).select().single();
+      if (error) {
+        console.error('Supabase createProject database failure:', error);
+        throw new Error(error.message || 'Database error: Unable to create project in Supabase.');
+      }
+      if (!data) {
+        throw new Error('Database returned no confirmed record after creating project.');
       }
     }
 
@@ -1587,17 +1676,23 @@ export const adminCmsApi = {
   },
 
   async updateProject(id: string, updates: Partial<PortfolioProjectRecord>): Promise<PortfolioProjectRecord> {
+    if (updates.thumbnail_url && typeof updates.thumbnail_url === 'string' && updates.thumbnail_url.startsWith('blob:')) {
+      throw new Error('Temporary browser blob URL cannot be persisted. Please upload the image file to Supabase Storage before saving.');
+    }
+
     if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase
-          .from('portfolio_projects')
-          .update({ ...updates, updated_at: new Date().toISOString() })
-          .eq('id', id)
-          .select()
-          .single();
-        if (!error && data) return data as PortfolioProjectRecord;
-      } catch (err) {
-        console.warn('Supabase updateProject error:', err);
+      const { data, error } = await supabase
+        .from('portfolio_projects')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) {
+        console.error('Supabase updateProject database failure:', error);
+        throw new Error(error.message || 'Database error: Unable to update project in Supabase.');
+      }
+      if (!data) {
+        throw new Error(`Project with ID "${id}" was not found in Supabase database.`);
       }
     }
 
@@ -1624,10 +1719,10 @@ export const adminCmsApi = {
 
   async deleteProject(id: string): Promise<boolean> {
     if (isSupabaseConfigured) {
-      try {
-        await supabase.from('portfolio_projects').delete().eq('id', id);
-      } catch (err) {
-        console.warn('Supabase deleteProject error:', err);
+      const { error } = await supabase.from('portfolio_projects').delete().eq('id', id);
+      if (error) {
+        console.error('Supabase deleteProject database failure:', error);
+        throw new Error(error.message || 'Database error: Unable to delete project from Supabase.');
       }
     }
     const existing = safeGetStorage<ProjectItem[]>(STORAGE_KEYS.PROJECTS, initialProjects);
@@ -1879,6 +1974,20 @@ export const adminCmsApi = {
     brandStatementText: string;
     footerText: string;
   }> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from('website_settings')
+          .select('page_content')
+          .limit(1)
+          .maybeSingle();
+        if (!error && data?.page_content && typeof data.page_content === 'object' && Object.keys(data.page_content).length > 0) {
+          return data.page_content;
+        }
+      } catch (err) {
+        console.warn('Supabase getHomepageContent error:', err);
+      }
+    }
     const settings = await getWebsiteSettings();
     const defaults = {
       headlineLine1: settings.headlineLine1 || 'We Build.',
@@ -1893,6 +2002,21 @@ export const adminCmsApi = {
   },
 
   async updateHomepageContent(content: any): Promise<void> {
+    if (isSupabaseConfigured) {
+      const { data, error } = await supabase
+        .from('website_settings')
+        .update({ page_content: content, updated_at: new Date().toISOString() })
+        .eq('id', 'a0000000-0000-0000-0000-000000000001')
+        .select()
+        .single();
+      if (error) {
+        console.error('Supabase updateHomepageContent database failure:', error);
+        throw new Error(error.message || 'Database error: Unable to update page content in Supabase.');
+      }
+      if (!data) {
+        throw new Error('Database updated 0 rows. Please verify website_settings table exists.');
+      }
+    }
     safeSetStorage(STORAGE_KEYS.PAGE_CONTENT, content);
   },
 
@@ -1911,6 +2035,20 @@ export const adminCmsApi = {
     ctaSecondaryText: string;
     ctaDemoText: string;
   }> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from('website_settings')
+          .select('hero_config')
+          .limit(1)
+          .maybeSingle();
+        if (!error && data?.hero_config && typeof data.hero_config === 'object' && Array.isArray((data.hero_config as any).heroStates)) {
+          return data.hero_config;
+        }
+      } catch (err) {
+        console.warn('Supabase getHeroSettings error:', err);
+      }
+    }
     const defaultHero = {
       heroImage: '/assets/images/hero.jpg',
       heroStates: [
@@ -1941,6 +2079,25 @@ export const adminCmsApi = {
   },
 
   async updateHeroSettings(heroData: any): Promise<void> {
+    if (heroData?.heroImage && typeof heroData.heroImage === 'string' && heroData.heroImage.startsWith('blob:')) {
+      throw new Error('Temporary browser blob URL cannot be persisted. Please upload the hero image to Supabase Storage before saving.');
+    }
+
+    if (isSupabaseConfigured) {
+      const { data, error } = await supabase
+        .from('website_settings')
+        .update({ hero_config: heroData, updated_at: new Date().toISOString() })
+        .eq('id', 'a0000000-0000-0000-0000-000000000001')
+        .select()
+        .single();
+      if (error) {
+        console.error('Supabase updateHeroSettings database failure:', error);
+        throw new Error(error.message || 'Database error: Unable to update hero settings in Supabase.');
+      }
+      if (!data) {
+        throw new Error('Database updated 0 rows. Please verify website_settings table exists.');
+      }
+    }
     safeSetStorage(STORAGE_KEYS.HERO, heroData);
   },
 
@@ -1949,16 +2106,18 @@ export const adminCmsApi = {
   // --------------------------------------------------------------------------
   async updateSettings(settings: Partial<WebsiteSettingsRecord>): Promise<any> {
     if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase
-          .from('website_settings')
-          .update({ ...settings, updated_at: new Date().toISOString() })
-          .eq('id', 'a0000000-0000-0000-0000-000000000001')
-          .select()
-          .single();
-        if (!error && data) return data;
-      } catch (err) {
-        console.warn('Supabase updateSettings error:', err);
+      const { data, error } = await supabase
+        .from('website_settings')
+        .update({ ...settings, updated_at: new Date().toISOString() })
+        .eq('id', 'a0000000-0000-0000-0000-000000000001')
+        .select()
+        .single();
+      if (error) {
+        console.error('Supabase updateSettings database failure:', error);
+        throw new Error(error.message || 'Database error: Unable to update website settings in Supabase.');
+      }
+      if (!data) {
+        throw new Error('Database returned no confirmed record after updating website settings.');
       }
     }
 
@@ -1978,5 +2137,225 @@ export const adminCmsApi = {
     };
     safeSetStorage(STORAGE_KEYS.SETTINGS, updated);
     return updated;
+  },
+
+  // --------------------------------------------------------------------------
+  // BROWSER-TO-SUPABASE DATA MIGRATION UTILITY
+  // --------------------------------------------------------------------------
+  async syncLocalStorageToSupabase(dryRun: boolean = false): Promise<{
+    success: boolean;
+    summary: Record<string, number>;
+    errors: string[];
+  }> {
+    const summary: Record<string, number> = {
+      settings: 0,
+      hero: 0,
+      pages: 0,
+      demos: 0,
+      services: 0,
+      pricing: 0,
+      projects: 0,
+      blogs: 0,
+    };
+    const errors: string[] = [];
+
+    if (!isSupabaseConfigured) {
+      return {
+        success: false,
+        summary,
+        errors: ['Supabase connection credentials are not configured in environment.'],
+      };
+    }
+
+    try {
+      // 1. Settings & Hero & Pages
+      const localSettings = safeGetStorage<any>(STORAGE_KEYS.SETTINGS, null);
+      const localHero = safeGetStorage<any>(STORAGE_KEYS.HERO, null);
+      const localPages = safeGetStorage<any>(STORAGE_KEYS.PAGE_CONTENT, null);
+
+      if (localSettings || localHero || localPages) {
+        summary.settings = localSettings ? 1 : 0;
+        summary.hero = localHero ? 1 : 0;
+        summary.pages = localPages ? 1 : 0;
+
+        if (!dryRun) {
+          const payload: Record<string, any> = {
+            id: 'a0000000-0000-0000-0000-000000000001',
+            updated_at: new Date().toISOString(),
+          };
+          if (localSettings) {
+            payload.site_name = localSettings.studioName || 'Yugark Digital Studio';
+            payload.tagline = localSettings.tagline || 'We Build. We Create. We Grow Brands.';
+            payload.business_email = localSettings.contactEmail || 'business@yugark.in';
+            payload.whatsapp_number = localSettings.whatsappNumber || '+91 9125205132';
+            payload.social_links = localSettings.socials || {};
+          }
+          if (localHero && !localHero.heroImage?.startsWith('blob:')) {
+            payload.hero_config = localHero;
+          }
+          if (localPages) {
+            payload.page_content = localPages;
+          }
+
+          const { error } = await supabase
+            .from('website_settings')
+            .upsert(payload, { onConflict: 'id' });
+          if (error) errors.push(`website_settings sync failed: ${error.message}`);
+        }
+      }
+
+      // 2. Website Demos
+      const localDemos = safeGetStorage<DemoItem[]>(STORAGE_KEYS.DEMOS, []);
+      summary.demos = localDemos.length;
+      if (!dryRun && localDemos.length > 0) {
+        for (const demo of localDemos) {
+          if (demo.image?.startsWith('blob:')) continue;
+          const isPorwal = demo.slug?.includes('porwal') || demo.title?.includes('Porwal') || demo.title?.includes('Gautam');
+          const categoryId = isPorwal
+            ? 'b0000000-0000-0000-0000-000000000005'
+            : (STANDARD_DEMO_CATEGORIES.find((c) => c.name === demo.category)?.id || null);
+
+          const { error } = await supabase
+            .from('website_demos')
+            .upsert(
+              {
+                id: demo.id?.length === 36 ? demo.id : undefined,
+                title: demo.title,
+                slug: demo.slug,
+                category_id: categoryId,
+                short_description: demo.description || '',
+                full_description: demo.description || '',
+                thumbnail_url: isPorwal && (!demo.image || demo.image.includes('Business pro'))
+                  ? '/assets/images/dr-gautam-porwal.svg'
+                  : demo.image,
+                demo_url: isPorwal ? 'https://dr-gautam-porwal.vercel.app/' : (demo.liveDemoUrl || 'https://yugark.in'),
+                technology_tags: demo.techStack || ['React', 'TypeScript', 'Tailwind CSS'],
+                is_featured: demo.featured ?? true,
+                sort_order: demo.displayOrder || 1,
+                status: (demo.status as any) || 'published',
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'slug' }
+            );
+          if (error) errors.push(`demo sync (${demo.slug}) failed: ${error.message}`);
+        }
+      }
+
+      // 3. Services
+      const localServices = safeGetStorage<ServiceItem[]>(STORAGE_KEYS.SERVICES, []);
+      summary.services = localServices.length;
+      if (!dryRun && localServices.length > 0) {
+        for (let i = 0; i < localServices.length; i++) {
+          const s = localServices[i];
+          const { error } = await supabase
+            .from('services')
+            .upsert(
+              {
+                id: s.id?.length === 36 ? s.id : undefined,
+                title: s.title,
+                slug: s.slug,
+                short_description: s.description || s.tagline || '',
+                full_description: s.longDescription || s.description || '',
+                icon: s.iconType || 'code',
+                image_url: s.imageUrl || null,
+                price_display: s.priceDisplay || null,
+                regular_price: s.regularPrice || null,
+                launch_price: s.launchPrice || null,
+                billing_type: s.billingType || 'one-time',
+                delivery_time: s.deliveryTime || null,
+                badge: s.badge || null,
+                category: s.category || null,
+                features: s.features || [],
+                benefits: s.deliverables || [],
+                process: s.process || [],
+                faqs: s.faqs || [],
+                sort_order: i + 1,
+                is_featured: true,
+                status: 'published',
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'slug' }
+            );
+          if (error) errors.push(`service sync (${s.slug}) failed: ${error.message}`);
+        }
+      }
+
+      // 4. Pricing
+      const localPricing = safeGetStorage<PricingPackage[]>(STORAGE_KEYS.PRICING, []);
+      summary.pricing = localPricing.length;
+      if (!dryRun && localPricing.length > 0) {
+        for (let i = 0; i < localPricing.length; i++) {
+          const p = localPricing[i];
+          const { error } = await supabase
+            .from('pricing_packages')
+            .upsert(
+              {
+                id: p.id?.length === 36 ? p.id : undefined,
+                title: p.name,
+                slug: p.slug,
+                description: p.bestFor || p.tagline || '',
+                price: p.investment,
+                regular_price: p.regularPrice || null,
+                launch_price: p.launchPrice || null,
+                badge: p.badge || null,
+                currency: 'INR',
+                billing_type: p.billingType || p.type || 'one-time',
+                turnaround: p.turnaround || p.deliveryTime || '~7 Days',
+                features: p.features || [],
+                deliverables: p.deliverables || [],
+                cta_label: p.ctaText || `Choose ${p.name}`,
+                cta_url: `/contact?package=${encodeURIComponent(p.name)}`,
+                is_featured: Boolean(p.popular),
+                sort_order: i + 1,
+                status: 'published',
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'slug' }
+            );
+          if (error) errors.push(`pricing sync (${p.slug}) failed: ${error.message}`);
+        }
+      }
+
+      // 5. Portfolio Projects
+      const localProjects = safeGetStorage<ProjectItem[]>(STORAGE_KEYS.PROJECTS, []);
+      summary.projects = localProjects.length;
+      if (!dryRun && localProjects.length > 0) {
+        for (let i = 0; i < localProjects.length; i++) {
+          const p = localProjects[i];
+          if (p.image?.startsWith('blob:')) continue;
+          const { error } = await supabase
+            .from('portfolio_projects')
+            .upsert(
+              {
+                id: p.id?.length === 36 ? p.id : undefined,
+                title: p.title,
+                slug: p.slug,
+                category: p.category,
+                description: p.description,
+                thumbnail_url: p.image,
+                project_url: p.externalUrl || null,
+                project_type: p.isConcept ? 'Studio Concept' : 'Client Work',
+                is_verified_client_work: !p.isConcept,
+                is_featured: Boolean(p.featured),
+                year: p.year || '2025–2026',
+                deliverables: p.deliverables || [],
+                sort_order: i + 1,
+                status: 'published',
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'slug' }
+            );
+          if (error) errors.push(`project sync (${p.slug}) failed: ${error.message}`);
+        }
+      }
+    } catch (err: any) {
+      errors.push(`General sync exception: ${err?.message || String(err)}`);
+    }
+
+    return {
+      success: errors.length === 0,
+      summary,
+      errors,
+    };
   },
 };

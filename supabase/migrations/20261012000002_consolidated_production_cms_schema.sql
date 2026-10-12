@@ -2,20 +2,22 @@
 -- YUGARK DIGITAL STUDIO — CONSOLIDATED PRODUCTION CMS REPAIR MIGRATION
 -- File: 20261012000002_consolidated_production_cms_schema.sql
 -- Description:
---   1. Fully idempotent and non-destructive.
---   2. Preserves existing leads and admin_roles without modification.
+--   1. Fully idempotent, non-destructive, and PostgreSQL syntax validated.
+--   2. Strictly preserves existing leads, admin_roles, and public.is_admin().
 --   3. Provisions missing CMS tables: website_settings, services, demo_categories,
 --      website_demos, portfolio_projects, pricing_packages, blog_categories,
 --      blog_posts, and media_assets.
---   4. Adds jsonb columns hero_config and page_content to website_settings
---      for centralized database persistence of HeroManager & PageEditor.
---   5. Configures strict, non-recursive RLS policies: public read for published,
+--   4. Uses strictly valid RFC 4122 hexadecimal UUID literals ([0-9a-fA-F]).
+--   5. Fixes PostgreSQL single-quote string escaping (e.g. 'What''s Next').
+--   6. Enforces non-destructive initial seeding using ON CONFLICT DO NOTHING to
+--      prevent overwriting existing CMS edits, pricing, or portfolio data.
+--   7. Safely corrects Dr. Gautam Porwal demo record to Healthcare & Medical
+--      category and canonical live URL without overwriting custom uploaded thumbnails.
+--   8. Configures public-cms-media storage bucket with 50MB limit and video support
+--      while preserving existing storage policies.
+--   9. Establishes clean, non-recursive RLS policies: public read for published,
 --      admin-only writes using public.is_admin().
---   6. Configures public-cms-media storage bucket with 50 MB limit and video support.
---   7. Seeds initial baseline records with ON CONFLICT DO NOTHING / UPDATE to
---      prevent duplicate entries while ensuring all approved studio data is present.
---   8. Corrects Dr. Gautam Porwal demo canonical URL and category mapping.
---   9. Refreshes PostgREST schema cache.
+--  10. Refreshes PostgREST schema cache.
 -- ============================================================================
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
@@ -47,46 +49,62 @@ BEGIN
     END IF;
 END $$;
 
--- Storage object RLS policies
+-- Storage object RLS policies (preserves working production policies)
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'storage' AND table_name = 'objects') THEN
-        DROP POLICY IF EXISTS "Public can view media" ON storage.objects;
-        CREATE POLICY "Public can view media"
-            ON storage.objects FOR SELECT
-            TO anon, authenticated
-            USING (bucket_id = 'public-cms-media');
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_policies
+            WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = 'Public can view media'
+        ) THEN
+            CREATE POLICY "Public can view media"
+                ON storage.objects FOR SELECT
+                TO anon, authenticated
+                USING (bucket_id = 'public-cms-media');
+        END IF;
 
-        DROP POLICY IF EXISTS "Admins can upload media" ON storage.objects;
-        CREATE POLICY "Admins can upload media"
-            ON storage.objects FOR INSERT
-            TO authenticated
-            WITH CHECK (
-                bucket_id = 'public-cms-media'
-                AND (public.is_admin())
-            );
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_policies
+            WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = 'Admins can upload media'
+        ) THEN
+            CREATE POLICY "Admins can upload media"
+                ON storage.objects FOR INSERT
+                TO authenticated
+                WITH CHECK (
+                    bucket_id = 'public-cms-media'
+                    AND public.is_admin()
+                );
+        END IF;
 
-        DROP POLICY IF EXISTS "Admins can update media" ON storage.objects;
-        CREATE POLICY "Admins can update media"
-            ON storage.objects FOR UPDATE
-            TO authenticated
-            USING (
-                bucket_id = 'public-cms-media'
-                AND (public.is_admin())
-            )
-            WITH CHECK (
-                bucket_id = 'public-cms-media'
-                AND (public.is_admin())
-            );
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_policies
+            WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = 'Admins can update media'
+        ) THEN
+            CREATE POLICY "Admins can update media"
+                ON storage.objects FOR UPDATE
+                TO authenticated
+                USING (
+                    bucket_id = 'public-cms-media'
+                    AND public.is_admin()
+                )
+                WITH CHECK (
+                    bucket_id = 'public-cms-media'
+                    AND public.is_admin()
+                );
+        END IF;
 
-        DROP POLICY IF EXISTS "Admins can delete media" ON storage.objects;
-        CREATE POLICY "Admins can delete media"
-            ON storage.objects FOR DELETE
-            TO authenticated
-            USING (
-                bucket_id = 'public-cms-media'
-                AND (public.is_admin())
-            );
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_policies
+            WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = 'Admins can delete media'
+        ) THEN
+            CREATE POLICY "Admins can delete media"
+                ON storage.objects FOR DELETE
+                TO authenticated
+                USING (
+                    bucket_id = 'public-cms-media'
+                    AND public.is_admin()
+                );
+        END IF;
     END IF;
 END $$;
 
@@ -135,7 +153,7 @@ CREATE TABLE IF NOT EXISTS public.website_settings (
         "headlineLine2": "We Create.",
         "headlineLine3Accent": "We Grow Brands.",
         "heroDescription": "Websites, creative content and digital marketing solutions designed to help your brand look better, connect deeper and grow further.",
-        "brandStatementTitle": "A Digital Studio for What'\''s Next",
+        "brandStatementTitle": "A Digital Studio for What''s Next",
         "brandStatementText": "We help founders, brands, and modern businesses build unforgettable web experiences, tell compelling visual stories, and capture high-intent demand across digital channels.",
         "footerText": "Websites. Creative Content. Digital Marketing. We help modern brands build, create and grow in the digital world."
     }'::jsonb,
@@ -151,21 +169,29 @@ ALTER TABLE public.website_settings ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
-    DROP POLICY IF EXISTS "Public can view website settings" ON public.website_settings;
-    CREATE POLICY "Public can view website settings"
-        ON public.website_settings FOR SELECT
-        TO anon, authenticated
-        USING (true);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'website_settings' AND policyname = 'Public can view website settings'
+    ) THEN
+        CREATE POLICY "Public can view website settings"
+            ON public.website_settings FOR SELECT
+            TO anon, authenticated
+            USING (true);
+    END IF;
 
-    DROP POLICY IF EXISTS "Admins can update website settings" ON public.website_settings;
-    CREATE POLICY "Admins can update website settings"
-        ON public.website_settings FOR ALL
-        TO authenticated
-        USING (public.is_admin())
-        WITH CHECK (public.is_admin());
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'website_settings' AND policyname = 'Admins can update website settings'
+    ) THEN
+        CREATE POLICY "Admins can update website settings"
+            ON public.website_settings FOR ALL
+            TO authenticated
+            USING (public.is_admin())
+            WITH CHECK (public.is_admin());
+    END IF;
 END $$;
 
--- Seed singleton settings record
+-- Seed singleton settings record (Preserves existing data)
 INSERT INTO public.website_settings (
     id, site_name, tagline, business_email, whatsapp_number, whatsapp_message,
     social_links, footer_text
@@ -197,20 +223,29 @@ ALTER TABLE public.demo_categories ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
-    DROP POLICY IF EXISTS "Public can view demo categories" ON public.demo_categories;
-    CREATE POLICY "Public can view demo categories"
-        ON public.demo_categories FOR SELECT
-        TO anon, authenticated
-        USING (true);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'demo_categories' AND policyname = 'Public can view demo categories'
+    ) THEN
+        CREATE POLICY "Public can view demo categories"
+            ON public.demo_categories FOR SELECT
+            TO anon, authenticated
+            USING (true);
+    END IF;
 
-    DROP POLICY IF EXISTS "Admins can manage demo categories" ON public.demo_categories;
-    CREATE POLICY "Admins can manage demo categories"
-        ON public.demo_categories FOR ALL
-        TO authenticated
-        USING (public.is_admin())
-        WITH CHECK (public.is_admin());
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'demo_categories' AND policyname = 'Admins can manage demo categories'
+    ) THEN
+        CREATE POLICY "Admins can manage demo categories"
+            ON public.demo_categories FOR ALL
+            TO authenticated
+            USING (public.is_admin())
+            WITH CHECK (public.is_admin());
+    END IF;
 END $$;
 
+-- Seed canonical demo categories (Preserves existing records with DO NOTHING)
 INSERT INTO public.demo_categories (id, name, slug, sort_order)
 VALUES
     ('b0000000-0000-0000-0000-000000000001', 'Corporate & Business', 'corporate-business', 1),
@@ -218,9 +253,7 @@ VALUES
     ('b0000000-0000-0000-0000-000000000003', 'Restaurant & Cafe', 'restaurant-cafe', 3),
     ('b0000000-0000-0000-0000-000000000004', 'Fitness & Wellness', 'fitness-wellness', 4),
     ('b0000000-0000-0000-0000-000000000005', 'Healthcare & Medical', 'healthcare-medical', 5)
-ON CONFLICT (slug) DO UPDATE SET
-    name = EXCLUDED.name,
-    sort_order = EXCLUDED.sort_order;
+ON CONFLICT (slug) DO NOTHING;
 
 -- ----------------------------------------------------------------------------
 -- 4. TABLE: public.website_demos
@@ -252,21 +285,29 @@ ALTER TABLE public.website_demos ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
-    DROP POLICY IF EXISTS "Public can view website demos" ON public.website_demos;
-    CREATE POLICY "Public can view website demos"
-        ON public.website_demos FOR SELECT
-        TO anon, authenticated
-        USING (status = 'published' OR public.is_admin());
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'website_demos' AND policyname = 'Public can view website demos'
+    ) THEN
+        CREATE POLICY "Public can view website demos"
+            ON public.website_demos FOR SELECT
+            TO anon, authenticated
+            USING (status = 'published' OR public.is_admin());
+    END IF;
 
-    DROP POLICY IF EXISTS "Admins can manage website demos" ON public.website_demos;
-    CREATE POLICY "Admins can manage website demos"
-        ON public.website_demos FOR ALL
-        TO authenticated
-        USING (public.is_admin())
-        WITH CHECK (public.is_admin());
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'website_demos' AND policyname = 'Admins can manage website demos'
+    ) THEN
+        CREATE POLICY "Admins can manage website demos"
+            ON public.website_demos FOR ALL
+            TO authenticated
+            USING (public.is_admin())
+            WITH CHECK (public.is_admin());
+    END IF;
 END $$;
 
--- Seed approved demos
+-- Seed approved baseline demos (Preserves existing data with DO NOTHING)
 INSERT INTO public.website_demos (
     id, title, slug, category_id, short_description, full_description,
     thumbnail_url, demo_url, technology_tags, is_featured, sort_order, status
@@ -332,17 +373,23 @@ VALUES
     '["React", "Tailwind CSS", "TypeScript", "Vite"]'::jsonb,
     true, 5, 'published'
 )
-ON CONFLICT (slug) DO UPDATE SET
-    title = EXCLUDED.title,
-    category_id = EXCLUDED.category_id,
-    demo_url = EXCLUDED.demo_url,
-    short_description = EXCLUDED.short_description,
-    full_description = EXCLUDED.full_description,
-    thumbnail_url = CASE 
-        WHEN website_demos.thumbnail_url ILIKE '%Business pro%' THEN EXCLUDED.thumbnail_url
-        ELSE website_demos.thumbnail_url
-    END,
-    updated_at = now();
+ON CONFLICT (slug) DO NOTHING;
+
+-- Targeted non-destructive correction for Dr. Gautam Porwal:
+-- Corrects stale category (Hospitality -> Healthcare & Medical) and canonical live URL without overwriting newly uploaded screenshots.
+UPDATE public.website_demos
+SET category_id = 'b0000000-0000-0000-0000-000000000005',
+    demo_url = 'https://dr-gautam-porwal.vercel.app/',
+    updated_at = now()
+WHERE slug = 'dr-gautam-porwal'
+  AND (category_id IS NULL OR category_id != 'b0000000-0000-0000-0000-000000000005' OR demo_url != 'https://dr-gautam-porwal.vercel.app/');
+
+-- Replace stale Business pro.jpg thumbnail if still attached to Dr. Gautam Porwal
+UPDATE public.website_demos
+SET thumbnail_url = '/assets/images/dr-gautam-porwal.svg',
+    updated_at = now()
+WHERE slug = 'dr-gautam-porwal'
+  AND thumbnail_url ILIKE '%Business pro%';
 
 -- ----------------------------------------------------------------------------
 -- 5. TABLE: public.services
@@ -392,21 +439,29 @@ ALTER TABLE public.services ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
-    DROP POLICY IF EXISTS "Public can view published services" ON public.services;
-    CREATE POLICY "Public can view published services"
-        ON public.services FOR SELECT
-        TO anon, authenticated
-        USING (status = 'published' OR public.is_admin());
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'services' AND policyname = 'Public can view published services'
+    ) THEN
+        CREATE POLICY "Public can view published services"
+            ON public.services FOR SELECT
+            TO anon, authenticated
+            USING (status = 'published' OR public.is_admin());
+    END IF;
 
-    DROP POLICY IF EXISTS "Admins can manage services" ON public.services;
-    CREATE POLICY "Admins can manage services"
-        ON public.services FOR ALL
-        TO authenticated
-        USING (public.is_admin())
-        WITH CHECK (public.is_admin());
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'services' AND policyname = 'Admins can manage services'
+    ) THEN
+        CREATE POLICY "Admins can manage services"
+            ON public.services FOR ALL
+            TO authenticated
+            USING (public.is_admin())
+            WITH CHECK (public.is_admin());
+    END IF;
 END $$;
 
--- Seed approved core services
+-- Seed approved core services using valid hexadecimal UUIDs (Preserves existing data with DO NOTHING)
 INSERT INTO public.services (
     id, title, slug, short_description, full_description, icon, image_url,
     price_display, regular_price, launch_price, billing_type, delivery_time, badge, category,
@@ -414,7 +469,7 @@ INSERT INTO public.services (
 )
 VALUES
 (
-    's0000000-0000-0000-0000-000000000001',
+    'f0000000-0000-0000-0000-000000000001',
     'Custom Website Development',
     'website-development',
     'High-performance, bespoke websites engineered with clean typography and modern frontend stacks.',
@@ -427,7 +482,7 @@ VALUES
     1, 'published'
 ),
 (
-    's0000000-0000-0000-0000-000000000002',
+    'f0000000-0000-0000-0000-000000000002',
     'Social Media Management',
     'social-media-management',
     'Narrative-driven social grids, high-converting short-form videos, and community growth systems.',
@@ -440,7 +495,7 @@ VALUES
     2, 'published'
 ),
 (
-    's0000000-0000-0000-0000-000000000003',
+    'f0000000-0000-0000-0000-000000000003',
     'Paid Meta & Google Ads',
     'social-media-advertising',
     'Data-backed advertising campaigns engineered to capture qualified customer demand and maximize ROAS.',
@@ -453,7 +508,7 @@ VALUES
     3, 'published'
 ),
 (
-    's0000000-0000-0000-0000-000000000004',
+    'f0000000-0000-0000-0000-000000000004',
     'Brand Identity & Growth Strategy',
     'digital-growth-strategy',
     'Holistic visual identity, brand guidelines, and full-funnel digital positioning for ambitious businesses.',
@@ -465,16 +520,7 @@ VALUES
     '["Distinct visual authority in your industry", "Cohesive assets across all touchpoints", "Ready-to-use social & print templates"]'::jsonb,
     4, 'published'
 )
-ON CONFLICT (slug) DO UPDATE SET
-    title = EXCLUDED.title,
-    short_description = EXCLUDED.short_description,
-    full_description = EXCLUDED.full_description,
-    price_display = EXCLUDED.price_display,
-    regular_price = EXCLUDED.regular_price,
-    launch_price = EXCLUDED.launch_price,
-    features = EXCLUDED.features,
-    benefits = EXCLUDED.benefits,
-    updated_at = now();
+ON CONFLICT (slug) DO NOTHING;
 
 -- ----------------------------------------------------------------------------
 -- 6. TABLE: public.portfolio_projects
@@ -511,50 +557,58 @@ ALTER TABLE public.portfolio_projects ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
-    DROP POLICY IF EXISTS "Public can view published portfolio projects" ON public.portfolio_projects;
-    CREATE POLICY "Public can view published portfolio projects"
-        ON public.portfolio_projects FOR SELECT
-        TO anon, authenticated
-        USING (status = 'published' OR public.is_admin());
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'portfolio_projects' AND policyname = 'Public can view published portfolio projects'
+    ) THEN
+        CREATE POLICY "Public can view published portfolio projects"
+            ON public.portfolio_projects FOR SELECT
+            TO anon, authenticated
+            USING (status = 'published' OR public.is_admin());
+    END IF;
 
-    DROP POLICY IF EXISTS "Admins can manage portfolio projects" ON public.portfolio_projects;
-    CREATE POLICY "Admins can manage portfolio projects"
-        ON public.portfolio_projects FOR ALL
-        TO authenticated
-        USING (public.is_admin())
-        WITH CHECK (public.is_admin());
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'portfolio_projects' AND policyname = 'Admins can manage portfolio projects'
+    ) THEN
+        CREATE POLICY "Admins can manage portfolio projects"
+            ON public.portfolio_projects FOR ALL
+            TO authenticated
+            USING (public.is_admin())
+            WITH CHECK (public.is_admin());
+    END IF;
 END $$;
 
--- Seed approved portfolio projects
+-- Seed approved portfolio projects using valid hexadecimal UUIDs (Preserves existing data with DO NOTHING)
 INSERT INTO public.portfolio_projects (
     id, title, slug, category, description, thumbnail_url, project_type,
     is_verified_client_work, is_featured, year, deliverables, sort_order, status
 )
 VALUES
 (
-    'p0000000-0000-0000-0000-000000000001',
+    'f1000000-0000-0000-0000-000000000001',
     'Aurora Living',
     'aurora-living',
     'Architecture & Interior Design',
     'A minimalist luxury architectural portal showcasing residential developments with spatial visual balance.',
     '/assets/images/Aurora living.jpg',
-    'Verified Client', true, true, '2025–2026',
+    'Studio Concept', false, true, '2025–2026',
     '["Bespoke Web Platform", "Interactive Spatial Gallery", "Private Viewing Inquiries"]'::jsonb,
     1, 'published'
 ),
 (
-    'p0000000-0000-0000-0000-000000000002',
+    'f1000000-0000-0000-0000-000000000002',
     'Sole Beauty & Wellness',
     'sole-beauty',
     'Aesthetics & Dermatology',
     'Champagne-toned digital destination engineered for an upscale cosmetic dermatology and aesthetic medicine clinic.',
     '/assets/images/Sole beauty.jpg',
-    'Client Work', true, true, '2025–2026',
+    'Studio Concept', false, true, '2025–2026',
     '["Treatment Menu Architecture", "WhatsApp Booking Funnel", "Mobile First Design"]'::jsonb,
     2, 'published'
 ),
 (
-    'p0000000-0000-0000-0000-000000000003',
+    'f1000000-0000-0000-0000-000000000003',
     'Pulse Fitness Studio',
     'pulse-fitness',
     'Athletics & Performance',
@@ -564,11 +618,7 @@ VALUES
     '["Class Timetable Interface", "Coach Roster Profiles", "Membership Funnel"]'::jsonb,
     3, 'published'
 )
-ON CONFLICT (slug) DO UPDATE SET
-    title = EXCLUDED.title,
-    description = EXCLUDED.description,
-    thumbnail_url = EXCLUDED.thumbnail_url,
-    updated_at = now();
+ON CONFLICT (slug) DO NOTHING;
 
 -- ----------------------------------------------------------------------------
 -- 7. TABLE: public.pricing_packages
@@ -609,21 +659,29 @@ ALTER TABLE public.pricing_packages ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
-    DROP POLICY IF EXISTS "Public can view published pricing packages" ON public.pricing_packages;
-    CREATE POLICY "Public can view published pricing packages"
-        ON public.pricing_packages FOR SELECT
-        TO anon, authenticated
-        USING (status = 'published' OR public.is_admin());
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'pricing_packages' AND policyname = 'Public can view published pricing packages'
+    ) THEN
+        CREATE POLICY "Public can view published pricing packages"
+            ON public.pricing_packages FOR SELECT
+            TO anon, authenticated
+            USING (status = 'published' OR public.is_admin());
+    END IF;
 
-    DROP POLICY IF EXISTS "Admins can manage pricing packages" ON public.pricing_packages;
-    CREATE POLICY "Admins can manage pricing packages"
-        ON public.pricing_packages FOR ALL
-        TO authenticated
-        USING (public.is_admin())
-        WITH CHECK (public.is_admin());
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'pricing_packages' AND policyname = 'Admins can manage pricing packages'
+    ) THEN
+        CREATE POLICY "Admins can manage pricing packages"
+            ON public.pricing_packages FOR ALL
+            TO authenticated
+            USING (public.is_admin())
+            WITH CHECK (public.is_admin());
+    END IF;
 END $$;
 
--- Seed verified transparent pricing packages
+-- Seed verified transparent pricing packages (Preserves existing data with DO NOTHING)
 INSERT INTO public.pricing_packages (
     id, title, slug, description, price, regular_price, launch_price, badge,
     currency, billing_type, turnaround, features, deliverables, cta_label, is_featured, sort_order, status
@@ -673,14 +731,7 @@ VALUES
     '["Live ad dashboard access", "Weekly ROAS breakdown", "Lead verification alerts"]'::jsonb,
     'Choose Ads Retainer', false, 4, 'published'
 )
-ON CONFLICT (slug) DO UPDATE SET
-    title = EXCLUDED.title,
-    description = EXCLUDED.description,
-    price = EXCLUDED.price,
-    regular_price = EXCLUDED.regular_price,
-    launch_price = EXCLUDED.launch_price,
-    features = EXCLUDED.features,
-    updated_at = now();
+ON CONFLICT (slug) DO NOTHING;
 
 -- ----------------------------------------------------------------------------
 -- 8. TABLE: public.blog_categories & public.blog_posts
@@ -697,18 +748,26 @@ ALTER TABLE public.blog_categories ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
-    DROP POLICY IF EXISTS "Public can view blog categories" ON public.blog_categories;
-    CREATE POLICY "Public can view blog categories"
-        ON public.blog_categories FOR SELECT
-        TO anon, authenticated
-        USING (true);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'blog_categories' AND policyname = 'Public can view blog categories'
+    ) THEN
+        CREATE POLICY "Public can view blog categories"
+            ON public.blog_categories FOR SELECT
+            TO anon, authenticated
+            USING (true);
+    END IF;
 
-    DROP POLICY IF EXISTS "Admins can manage blog categories" ON public.blog_categories;
-    CREATE POLICY "Admins can manage blog categories"
-        ON public.blog_categories FOR ALL
-        TO authenticated
-        USING (public.is_admin())
-        WITH CHECK (public.is_admin());
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'blog_categories' AND policyname = 'Admins can manage blog categories'
+    ) THEN
+        CREATE POLICY "Admins can manage blog categories"
+            ON public.blog_categories FOR ALL
+            TO authenticated
+            USING (public.is_admin())
+            WITH CHECK (public.is_admin());
+    END IF;
 END $$;
 
 INSERT INTO public.blog_categories (id, name, slug)
@@ -749,21 +808,29 @@ ALTER TABLE public.blog_posts ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
-    DROP POLICY IF EXISTS "Public can view published blog posts" ON public.blog_posts;
-    CREATE POLICY "Public can view published blog posts"
-        ON public.blog_posts FOR SELECT
-        TO anon, authenticated
-        USING (
-            (status = 'published' AND published_at <= now())
-            OR public.is_admin()
-        );
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'blog_posts' AND policyname = 'Public can view published blog posts'
+    ) THEN
+        CREATE POLICY "Public can view published blog posts"
+            ON public.blog_posts FOR SELECT
+            TO anon, authenticated
+            USING (
+                (status = 'published' AND published_at <= now())
+                OR public.is_admin()
+            );
+    END IF;
 
-    DROP POLICY IF EXISTS "Admins can manage blog posts" ON public.blog_posts;
-    CREATE POLICY "Admins can manage blog posts"
-        ON public.blog_posts FOR ALL
-        TO authenticated
-        USING (public.is_admin())
-        WITH CHECK (public.is_admin());
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'blog_posts' AND policyname = 'Admins can manage blog posts'
+    ) THEN
+        CREATE POLICY "Admins can manage blog posts"
+            ON public.blog_posts FOR ALL
+            TO authenticated
+            USING (public.is_admin())
+            WITH CHECK (public.is_admin());
+    END IF;
 END $$;
 
 -- ----------------------------------------------------------------------------
@@ -783,18 +850,26 @@ ALTER TABLE public.media_assets ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
-    DROP POLICY IF EXISTS "Public can view media assets" ON public.media_assets;
-    CREATE POLICY "Public can view media assets"
-        ON public.media_assets FOR SELECT
-        TO anon, authenticated
-        USING (true);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'media_assets' AND policyname = 'Public can view media assets'
+    ) THEN
+        CREATE POLICY "Public can view media assets"
+            ON public.media_assets FOR SELECT
+            TO anon, authenticated
+            USING (true);
+    END IF;
 
-    DROP POLICY IF EXISTS "Admins can manage media assets" ON public.media_assets;
-    CREATE POLICY "Admins can manage media assets"
-        ON public.media_assets FOR ALL
-        TO authenticated
-        USING (public.is_admin())
-        WITH CHECK (public.is_admin());
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'media_assets' AND policyname = 'Admins can manage media assets'
+    ) THEN
+        CREATE POLICY "Admins can manage media assets"
+            ON public.media_assets FOR ALL
+            TO authenticated
+            USING (public.is_admin())
+            WITH CHECK (public.is_admin());
+    END IF;
 END $$;
 
 -- ----------------------------------------------------------------------------

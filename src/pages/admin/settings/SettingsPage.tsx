@@ -348,6 +348,17 @@ export const SettingsPage: React.FC = () => {
               <div className="p-2 rounded bg-white/70 border border-black/5">Pricing: {syncResult.summary?.pricing || 0}</div>
               <div className="p-2 rounded bg-white/70 border border-black/5">Projects: {syncResult.summary?.projects || 0}</div>
             </div>
+
+            {syncResult.conflicts && syncResult.conflicts.length > 0 && (
+              <div className="mt-2 text-[11px] bg-amber-100/70 p-3 rounded-lg border border-amber-300 space-y-1.5 text-amber-950 font-mono">
+                <span className="font-semibold block font-sans text-xs">Record-Level Conflicts &amp; Protection Status:</span>
+                {syncResult.conflicts.map((c: any, idx: number) => (
+                  <div key={idx} className="border-t border-amber-200/60 pt-1">
+                    <span className="font-bold">[{c.type}]</span> {c.key}: local &quot;{c.localTitle}&quot; vs remote &quot;{c.remoteTitle}&quot; — <span className="text-emerald-800 font-sans font-medium">{c.resolution}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             {syncResult.errors && syncResult.errors.length > 0 && (
               <div className="text-[11px] text-rose-700 bg-rose-50 p-2.5 rounded border border-rose-200 space-y-1">
                 <span className="font-semibold">Notice:</span>

@@ -2145,6 +2145,7 @@ export const adminCmsApi = {
   async syncLocalStorageToSupabase(dryRun: boolean = false): Promise<{
     success: boolean;
     summary: Record<string, number>;
+    conflicts: Array<{ type: string; key: string; localTitle?: string; remoteTitle?: string; resolution: string }>;
     errors: string[];
   }> {
     const summary: Record<string, number> = {
@@ -2157,12 +2158,14 @@ export const adminCmsApi = {
       projects: 0,
       blogs: 0,
     };
+    const conflicts: Array<{ type: string; key: string; localTitle?: string; remoteTitle?: string; resolution: string }> = [];
     const errors: string[] = [];
 
     if (!isSupabaseConfigured) {
       return {
         success: false,
         summary,
+        conflicts,
         errors: ['Supabase connection credentials are not configured in environment.'],
       };
     }
@@ -2178,7 +2181,23 @@ export const adminCmsApi = {
         summary.hero = localHero ? 1 : 0;
         summary.pages = localPages ? 1 : 0;
 
-        if (!dryRun) {
+        if (dryRun) {
+          const { data: remoteSettings } = await supabase
+            .from('website_settings')
+            .select('id, site_name, updated_at')
+            .limit(1)
+            .maybeSingle();
+
+          if (remoteSettings) {
+            conflicts.push({
+              type: 'website_settings',
+              key: 'singleton',
+              localTitle: localSettings?.studioName || 'Local Settings',
+              remoteTitle: remoteSettings.site_name || 'Production Settings',
+              resolution: 'Remote production record exists; sync requires explicit admin confirmation',
+            });
+          }
+        } else {
           const payload: Record<string, any> = {
             id: 'a0000000-0000-0000-0000-000000000001',
             updated_at: new Date().toISOString(),
@@ -2207,7 +2226,26 @@ export const adminCmsApi = {
       // 2. Website Demos
       const localDemos = safeGetStorage<DemoItem[]>(STORAGE_KEYS.DEMOS, []);
       summary.demos = localDemos.length;
-      if (!dryRun && localDemos.length > 0) {
+
+      if (dryRun && localDemos.length > 0) {
+        const { data: remoteDemos } = await supabase
+          .from('website_demos')
+          .select('slug, title, updated_at');
+        const remoteMap = new Map((remoteDemos || []).map((d) => [d.slug, d]));
+
+        for (const demo of localDemos) {
+          if (remoteMap.has(demo.slug)) {
+            const remote = remoteMap.get(demo.slug);
+            conflicts.push({
+              type: 'website_demos',
+              key: demo.slug,
+              localTitle: demo.title,
+              remoteTitle: remote?.title,
+              resolution: 'Existing production demo with matching slug will NOT be overwritten without admin selection',
+            });
+          }
+        }
+      } else if (!dryRun && localDemos.length > 0) {
         for (const demo of localDemos) {
           if (demo.image?.startsWith('blob:')) continue;
           const isPorwal = demo.slug?.includes('porwal') || demo.title?.includes('Porwal') || demo.title?.includes('Gautam');
@@ -2244,7 +2282,26 @@ export const adminCmsApi = {
       // 3. Services
       const localServices = safeGetStorage<ServiceItem[]>(STORAGE_KEYS.SERVICES, []);
       summary.services = localServices.length;
-      if (!dryRun && localServices.length > 0) {
+
+      if (dryRun && localServices.length > 0) {
+        const { data: remoteServices } = await supabase
+          .from('services')
+          .select('slug, title, updated_at');
+        const remoteMap = new Map((remoteServices || []).map((s) => [s.slug, s]));
+
+        for (const s of localServices) {
+          if (remoteMap.has(s.slug)) {
+            const remote = remoteMap.get(s.slug);
+            conflicts.push({
+              type: 'services',
+              key: s.slug,
+              localTitle: s.title,
+              remoteTitle: remote?.title,
+              resolution: 'Existing production service record found; preserved by default',
+            });
+          }
+        }
+      } else if (!dryRun && localServices.length > 0) {
         for (let i = 0; i < localServices.length; i++) {
           const s = localServices[i];
           const { error } = await supabase
@@ -2283,7 +2340,26 @@ export const adminCmsApi = {
       // 4. Pricing
       const localPricing = safeGetStorage<PricingPackage[]>(STORAGE_KEYS.PRICING, []);
       summary.pricing = localPricing.length;
-      if (!dryRun && localPricing.length > 0) {
+
+      if (dryRun && localPricing.length > 0) {
+        const { data: remotePricing } = await supabase
+          .from('pricing_packages')
+          .select('slug, title, updated_at');
+        const remoteMap = new Map((remotePricing || []).map((p) => [p.slug, p]));
+
+        for (const p of localPricing) {
+          if (remoteMap.has(p.slug)) {
+            const remote = remoteMap.get(p.slug);
+            conflicts.push({
+              type: 'pricing_packages',
+              key: p.slug,
+              localTitle: p.name,
+              remoteTitle: remote?.title,
+              resolution: 'Existing production pricing found; protected against overwrite',
+            });
+          }
+        }
+      } else if (!dryRun && localPricing.length > 0) {
         for (let i = 0; i < localPricing.length; i++) {
           const p = localPricing[i];
           const { error } = await supabase
@@ -2319,7 +2395,26 @@ export const adminCmsApi = {
       // 5. Portfolio Projects
       const localProjects = safeGetStorage<ProjectItem[]>(STORAGE_KEYS.PROJECTS, []);
       summary.projects = localProjects.length;
-      if (!dryRun && localProjects.length > 0) {
+
+      if (dryRun && localProjects.length > 0) {
+        const { data: remoteProjects } = await supabase
+          .from('portfolio_projects')
+          .select('slug, title, updated_at');
+        const remoteMap = new Map((remoteProjects || []).map((p) => [p.slug, p]));
+
+        for (const p of localProjects) {
+          if (remoteMap.has(p.slug)) {
+            const remote = remoteMap.get(p.slug);
+            conflicts.push({
+              type: 'portfolio_projects',
+              key: p.slug,
+              localTitle: p.title,
+              remoteTitle: remote?.title,
+              resolution: 'Existing portfolio project found in database; will remain preserved',
+            });
+          }
+        }
+      } else if (!dryRun && localProjects.length > 0) {
         for (let i = 0; i < localProjects.length; i++) {
           const p = localProjects[i];
           if (p.image?.startsWith('blob:')) continue;
@@ -2355,6 +2450,7 @@ export const adminCmsApi = {
     return {
       success: errors.length === 0,
       summary,
+      conflicts,
       errors,
     };
   },

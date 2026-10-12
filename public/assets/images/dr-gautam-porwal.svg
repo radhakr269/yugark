@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" width="1200" height="750">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FBF9F5"/>
+      <stop offset="100%" stop-color="#F2EDE2"/>
+    </linearGradient>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#14241B"/>
+      <stop offset="100%" stop-color="#1F3629"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2D4B39"/>
+      <stop offset="100%" stop-color="#1D3426"/>
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#FAF8F5"/>
+    </linearGradient>
+    <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#121614" flood-opacity="0.06"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="750" fill="url(#bgGrad)"/>
+  
+  <!-- Subtle Grid Substrate -->
+  <g stroke="#E8E2D5" stroke-width="1" opacity="0.4">
+    <line x1="80" y1="0" x2="80" y2="750"/>
+    <line x1="1120" y1="0" x2="1120" y2="750"/>
+    <line x1="0" y1="90" x2="1200" y2="90"/>
+    <line x1="0" y1="670" x2="1200" y2="670"/>
+  </g>
+
+  <!-- Top Navigation Bar -->
+  <rect x="0" y="0" width="1200" height="84" fill="#FFFFFF" opacity="0.95"/>
+  <line x1="0" y1="84" x2="1200" y2="84" stroke="#E5DECة" stroke-width="1"/>
+
+  <!-- Logo & Clinic Title -->
+  <g transform="translate(80, 26)">
+    <!-- Cross / Medical Emblem -->
+    <rect x="0" y="2" width="28" height="28" rx="6" fill="#1F3629"/>
+    <rect x="11.5" y="8" width="5" height="16" rx="2" fill="#FAF8F5"/>
+    <rect x="6" y="13.5" width="16" height="5" rx="2" fill="#FAF8F5"/>
+    <text x="38" y="18" font-family="Georgia, serif" font-size="16" font-weight="700" fill="#121614" letter-spacing="0.5">DR. GAUTAM PORWAL</text>
+    <text x="38" y="30" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="9" font-weight="600" fill="#6B786E" letter-spacing="1.2">HOMEOPATHIC CLINIC &amp; HEALTHCARE</text>
+  </g>
+
+  <!-- Navigation Links -->
+  <g transform="translate(620, 48)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="500" fill="#4B564E">
+    <text x="0" y="0">Specializations</text>
+    <text x="130" y="0">About Doctor</text>
+    <text x="250" y="0">Case Studies</text>
+    <text x="365" y="0">Patient Reviews</text>
+  </g>
+
+  <!-- Appointment CTA Button -->
+  <g transform="translate(1000, 24)">
+    <rect width="120" height="36" rx="18" fill="url(#headerGrad)"/>
+    <text x="60" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle" letter-spacing="0.3">Book Visit</text>
+  </g>
+
+  <!-- Hero Section -->
+  <g transform="translate(80, 130)">
+    <!-- Category Badge -->
+    <rect x="0" y="0" width="170" height="26" rx="13" fill="#EAE4D7" stroke="#DCD4C4" stroke-width="1"/>
+    <circle cx="12" cy="13" r="4" fill="#2D4B39"/>
+    <text x="24" y="17" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" font-weight="700" fill="#1F3629" letter-spacing="0.8">HEALTHCARE &amp; CLINIC</text>
+
+    <!-- Main Headline -->
+    <text x="0" y="70" font-family="Georgia, serif" font-size="44" font-weight="500" fill="#121614" letter-spacing="-0.5">
+      Holistic Healing &amp;
+    </text>
+    <text x="0" y="122" font-family="Georgia, serif" font-size="44" font-weight="400" font-style="italic" fill="#243E30" letter-spacing="-0.5">
+      Advanced Homeopathy.
+    </text>
+
+    <!-- Description -->
+    <text x="0" y="165" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="15" fill="#58635B" line-height="24">
+      Personalized holistic treatments tailored for skin disorders, paralysis, chronic allergies,
+    </text>
+    <text x="0" y="190" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="15" fill="#58635B">
+      and family wellness. Award-winning clinical practice rooted in empathy and scientific care.
+    </text>
+
+    <!-- Action Buttons -->
+    <g transform="translate(0, 225)">
+      <rect width="180" height="46" rx="23" fill="url(#accentGrad)"/>
+      <text x="90" y="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="600" fill="#FFFFFF" text-anchor="middle">Schedule Consultation</text>
+
+      <rect x="195" y="0" width="165" height="46" rx="23" fill="#FFFFFF" stroke="#D3CABE" stroke-width="1.2"/>
+      <text x="277" y="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="600" fill="#1F3629" text-anchor="middle">WhatsApp Doctor</text>
+    </g>
+
+    <!-- Credentials Checklist -->
+    <g transform="translate(0, 305)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="500" fill="#47544A">
+      <circle cx="6" cy="6" r="6" fill="#D7E4DC"/>
+      <path d="M3.5 6 L5 7.5 L8.5 4" stroke="#1F3629" stroke-width="1.5" fill="none"/>
+      <text x="18" y="10">BHMS (Jodhpur University)</text>
+
+      <circle cx="210" cy="6" r="6" fill="#D7E4DC"/>
+      <path d="M207.5 6 L209 7.5 L212.5 4" stroke="#1F3629" stroke-width="1.5" fill="none"/>
+      <text x="222" y="10">Best Doctor Awardee</text>
+
+      <circle cx="395" cy="6" r="6" fill="#D7E4DC"/>
+      <path d="M392.5 6 L394 7.5 L397.5 4" stroke="#1F3629" stroke-width="1.5" fill="none"/>
+      <text x="407" y="10">15+ Years Clinical Practice</text>
+    </g>
+  </g>
+
+  <!-- Right Visual / Feature Presentation Card -->
+  <g transform="translate(680, 130)">
+    <!-- Main Feature Card -->
+    <rect width="440" height="360" rx="24" fill="url(#cardGrad)" stroke="#E2DACD" stroke-width="1.5" filter="url(#cardShadow)"/>
+    
+    <!-- Inner Card Header -->
+    <rect x="20" y="20" width="400" height="150" rx="16" fill="#1C3024"/>
+    <g transform="translate(45, 45)">
+      <text x="0" y="16" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" font-weight="700" fill="#A5C2B1" letter-spacing="1.2">CLINICAL EXCELLENCE</text>
+      <text x="0" y="44" font-family="Georgia, serif" font-size="22" font-weight="500" fill="#FFFFFF">Specialized Consultations</text>
+      <text x="0" y="68" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#D1DDD5">Gentle, root-cause homeopathic medicines with zero side effects.</text>
+      
+      <!-- Doctor Status Badge -->
+      <rect x="0" y="85" width="130" height="24" rx="12" fill="#2A4535"/>
+      <circle cx="12" cy="97" r="4" fill="#52C480"/>
+      <text x="24" y="101" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" font-weight="600" fill="#FFFFFF">Doctor Available</text>
+    </g>
+
+    <!-- Three Services Grid Inside Card -->
+    <g transform="translate(25, 190)">
+      <!-- Specialty 1 -->
+      <rect x="0" y="0" width="122" height="145" rx="12" fill="#F8F6F1" stroke="#EADBCC" stroke-width="1"/>
+      <rect x="12" y="14" width="28" height="28" rx="6" fill="#E8ECE9"/>
+      <text x="18" y="32" font-size="14">🌿</text>
+      <text x="12" y="62" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="700" fill="#121614">Skin &amp; Hair</text>
+      <text x="12" y="78" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="9.5" fill="#69756C">Acne, eczema, psoriasis therapies</text>
+      <text x="12" y="125" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" font-weight="600" fill="#254332">Explore →</text>
+
+      <!-- Specialty 2 -->
+      <rect x="134" y="0" width="122" height="145" rx="12" fill="#F8F6F1" stroke="#EADBCC" stroke-width="1"/>
+      <rect x="146" y="14" width="28" height="28" rx="6" fill="#E8ECE9"/>
+      <text x="152" y="32" font-size="14">⚕️</text>
+      <text x="146" y="62" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="700" fill="#121614">Chronic Care</text>
+      <text x="146" y="78" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="9.5" fill="#69756C">Paralysis, allergies &amp; asthma relief</text>
+      <text x="146" y="125" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" font-weight="600" fill="#254332">Explore →</text>
+
+      <!-- Specialty 3 -->
+      <rect x="268" y="0" width="122" height="145" rx="12" fill="#F8F6F1" stroke="#EADBCC" stroke-width="1"/>
+      <rect x="280" y="14" width="28" height="28" rx="6" fill="#E8ECE9"/>
+      <text x="286" y="32" font-size="14">👶</text>
+      <text x="280" y="62" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="700" fill="#121614">Child Health</text>
+      <text x="280" y="78" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="9.5" fill="#69756C">Pediatric immunity &amp; growth care</text>
+      <text x="280" y="125" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" font-weight="600" fill="#254332">Explore →</text>
+    </g>
+  </g>
+
+  <!-- Bottom Proof Bar -->
+  <g transform="translate(80, 520)">
+    <rect width="1040" height="100" rx="16" fill="#FFFFFF" stroke="#E5DDD0" stroke-width="1.2" filter="url(#cardShadow)"/>
+    
+    <g transform="translate(50, 32)">
+      <text x="0" y="24" font-family="Georgia, serif" font-size="28" font-weight="700" fill="#16291E">15,000+</text>
+      <text x="0" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="500" fill="#68756C">Patient Consultations</text>
+    </g>
+    <line x1="260" y1="20" x2="260" y2="80" stroke="#EFE9DE" stroke-width="1.5"/>
+
+    <g transform="translate(310, 32)">
+      <text x="0" y="24" font-family="Georgia, serif" font-size="28" font-weight="700" fill="#16291E">98.4%</text>
+      <text x="0" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="500" fill="#68756C">Positive Recovery Rate</text>
+    </g>
+    <line x1="520" y1="20" x2="520" y2="80" stroke="#EFE9DE" stroke-width="1.5"/>
+
+    <g transform="translate(570, 32)">
+      <text x="0" y="24" font-family="Georgia, serif" font-size="28" font-weight="700" fill="#16291E">2013</text>
+      <text x="0" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="500" fill="#68756C">Best Doctor University Award</text>
+    </g>
+    <line x1="780" y1="20" x2="780" y2="80" stroke="#EFE9DE" stroke-width="1.5"/>
+
+    <g transform="translate(830, 32)">
+      <text x="0" y="24" font-family="Georgia, serif" font-size="28" font-weight="700" fill="#16291E">100% Pure</text>
+      <text x="0" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="500" fill="#68756C">German Homeopathic Dilutions</text>
+    </g>
+  </g>
+
+  <!-- Studio Watermark / Footer Strip -->
+  <g transform="translate(80, 645)">
+    <text x="0" y="16" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="600" fill="#758277" letter-spacing="1">YUGARK DIGITAL STUDIO • TURNKEY HEALTHCARE DEMO</text>
+    <text x="1040" y="16" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="500" fill="#849186" text-anchor="end">Live Preview: drgautamporwal.demo.yugark.in</text>
+  </g>
+</svg>

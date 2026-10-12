@@ -88,11 +88,11 @@ export const DemoManager: React.FC = () => {
     setFormData({
       title: '',
       slug: '',
-      category_name: 'Corporate & Business',
+      category_name: 'Healthcare & Medical',
       short_description: '',
       full_description: '',
-      thumbnail_url: '/assets/images/Business pro.jpg',
-      demo_url: 'https://yugark.in',
+      thumbnail_url: '',
+      demo_url: '',
       technology_tags: 'React, TypeScript, Tailwind CSS',
       is_featured: true,
       sort_order: demos.length + 1,
@@ -106,13 +106,35 @@ export const DemoManager: React.FC = () => {
   // Open modal for editing
   const handleOpenEditModal = (demo: WebsiteDemoRecord) => {
     setEditingDemo(demo);
+
+    const isPorwal =
+      demo.title?.toLowerCase().includes('porwal') ||
+      demo.slug?.toLowerCase().includes('porwal') ||
+      demo.title?.toLowerCase().includes('gautam');
+
+    let correctedCategory = demo.category_name;
+    if (
+      isPorwal &&
+      (!correctedCategory ||
+        correctedCategory === 'Restaurant & Cafe' ||
+        correctedCategory === 'Hospitality & Dining' ||
+        correctedCategory === 'Turnkey Solution')
+    ) {
+      correctedCategory = 'Healthcare & Medical';
+    }
+
+    let correctedThumbnail = demo.thumbnail_url;
+    if (isPorwal && (!correctedThumbnail || correctedThumbnail.includes('Business pro'))) {
+      correctedThumbnail = '/assets/images/dr-gautam-porwal.svg';
+    }
+
     setFormData({
       title: demo.title,
       slug: demo.slug,
-      category_name: demo.category_name || 'Turnkey Solution',
+      category_name: correctedCategory || 'Turnkey Solution',
       short_description: demo.short_description,
       full_description: demo.full_description || demo.short_description,
-      thumbnail_url: demo.thumbnail_url,
+      thumbnail_url: correctedThumbnail,
       demo_url: demo.demo_url,
       technology_tags: Array.isArray(demo.technology_tags)
         ? demo.technology_tags.join(', ')
@@ -150,11 +172,14 @@ export const DemoManager: React.FC = () => {
 
     try {
       const result = await uploadCmsMedia(file, 'demos');
-      setFormData((prev) => ({ ...prev, thumbnail_url: result.publicUrl }));
+      if (result?.publicUrl) {
+        setFormData((prev) => ({ ...prev, thumbnail_url: result.publicUrl }));
+      }
     } catch (err: any) {
       setFormError(err.message || 'Failed to upload preview image.');
     } finally {
       setUploadingImage(false);
+      e.target.value = '';
     }
   };
 
@@ -284,7 +309,14 @@ export const DemoManager: React.FC = () => {
   };
 
   // Filtered Demos
-  const categories = ['all', 'Corporate & Business', 'Beauty & Lifestyle', 'Restaurant & Cafe', 'Fitness & Wellness'];
+  const categories = [
+    'all',
+    'Healthcare & Medical',
+    'Corporate & Business',
+    'Beauty & Lifestyle',
+    'Restaurant & Cafe',
+    'Fitness & Wellness',
+  ];
 
   const filteredDemos = demos.filter((d) => {
     const matchesSearch =
@@ -636,6 +668,7 @@ export const DemoManager: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, category_name: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#DDD5C7] text-xs text-[#121614] focus:outline-none focus:ring-2 focus:ring-[#2D4536]"
                   >
+                    <option value="Healthcare & Medical">Healthcare & Medical</option>
                     <option value="Corporate & Business">Corporate & Architecture</option>
                     <option value="Beauty & Lifestyle">Beauty & Lifestyle</option>
                     <option value="Restaurant & Cafe">Hospitality & Dining</option>

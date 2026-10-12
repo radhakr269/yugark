@@ -246,6 +246,59 @@ export async function getDiscountRules(): Promise<any[]> {
   return safeGetStorage<any[]>(STORAGE_KEYS.DISCOUNT_RULES, defaultDiscountRules);
 }
 
+export const STANDARD_DEMO_CATEGORIES = [
+  { id: 'b0000000-0000-0000-0000-000000000005', name: 'Healthcare & Medical', slug: 'healthcare-medical', sort_order: 1 },
+  { id: 'b0000000-0000-0000-0000-000000000001', name: 'Corporate & Business', slug: 'corporate-business', sort_order: 2 },
+  { id: 'b0000000-0000-0000-0000-000000000002', name: 'Beauty & Lifestyle', slug: 'beauty-lifestyle', sort_order: 3 },
+  { id: 'b0000000-0000-0000-0000-000000000003', name: 'Restaurant & Cafe', slug: 'restaurant-cafe', sort_order: 4 },
+  { id: 'b0000000-0000-0000-0000-000000000004', name: 'Fitness & Wellness', slug: 'fitness-wellness', sort_order: 5 },
+];
+
+function resolveDemoImage(rec: { slug?: string; title?: string; thumbnail_url?: string }): string {
+  const isPorwal =
+    (rec.slug && rec.slug.toLowerCase().includes('porwal')) ||
+    (rec.title && rec.title.toLowerCase().includes('porwal')) ||
+    (rec.title && rec.title.toLowerCase().includes('gautam'));
+
+  if (isPorwal) {
+    if (!rec.thumbnail_url || rec.thumbnail_url.includes('Business pro')) {
+      return '/assets/images/dr-gautam-porwal.svg';
+    }
+    return rec.thumbnail_url;
+  }
+
+  if (rec.thumbnail_url && rec.thumbnail_url.trim()) {
+    return rec.thumbnail_url;
+  }
+
+  // Slug-specific approved static assets
+  switch (rec.slug) {
+    case 'business-pro':
+      return '/assets/images/Business pro.jpg';
+    case 'glow-studio':
+      return '/assets/images/glow Studio.jpg';
+    case 'dinecraft':
+      return '/assets/images/dinecraft.jpg';
+    case 'fitlife':
+      return '/assets/images/Fit Life.jpg';
+    default:
+      return '/assets/images/dr-gautam-porwal.svg';
+  }
+}
+
+function resolveDemoCategory(rec: { slug?: string; title?: string; category_name?: string; demo_categories?: { name?: string } }): string {
+  const isPorwal =
+    (rec.slug && rec.slug.toLowerCase().includes('porwal')) ||
+    (rec.title && rec.title.toLowerCase().includes('porwal')) ||
+    (rec.title && rec.title.toLowerCase().includes('gautam'));
+
+  if (isPorwal) {
+    return 'Healthcare & Medical';
+  }
+
+  return rec.demo_categories?.name || rec.category_name || 'Turnkey Solution';
+}
+
 // ============================================================================
 // 3. WEBSITE DEMOS (HIGH-PRIORITY MODULE)
 // ============================================================================
@@ -270,29 +323,34 @@ export async function getPublishedDemos(): Promise<DemoItem[]> {
       return local.filter((d) => d.status === 'published').sort((a, b) => a.displayOrder - b.displayOrder);
     }
 
-    return (data as any[]).map((rec, index) => ({
-      id: rec.id,
-      slug: rec.slug,
-      title: rec.title,
-      category: rec.demo_categories?.name || rec.category_name || 'Turnkey Solution',
-      industry: rec.demo_categories?.name || rec.category_name || 'Turnkey Solution',
-      image: rec.thumbnail_url || '/assets/images/Business pro.jpg',
-      alt: `${rec.title} - Website Demo`,
-      liveDemoUrl: rec.demo_url,
-      description: rec.short_description,
-      features: (rec.additional_images && rec.additional_images.length > 0)
-        ? rec.additional_images
-        : [
-            'Responsive Architecture with Fast Load Times',
-            'Direct WhatsApp Lead Routing',
-            'Tailored Layout & Typographic Tokens',
-            'Turnkey Setup in 5 to 7 Business Days',
-          ],
-      techStack: rec.technology_tags || ['React', 'TypeScript', 'Tailwind CSS'],
-      featured: Boolean(rec.is_featured),
-      displayOrder: rec.sort_order ?? (index + 1),
-      status: rec.status,
-    }));
+    return (data as any[]).map((rec, index) => {
+      const category = resolveDemoCategory(rec);
+      const image = resolveDemoImage(rec);
+
+      return {
+        id: rec.id,
+        slug: rec.slug,
+        title: rec.title,
+        category,
+        industry: category,
+        image,
+        alt: `${rec.title} - Website Demo`,
+        liveDemoUrl: rec.demo_url,
+        description: rec.short_description,
+        features: (rec.additional_images && rec.additional_images.length > 0)
+          ? rec.additional_images
+          : [
+              'Responsive Architecture with Fast Load Times',
+              'Direct WhatsApp Lead Routing',
+              'Tailored Layout & Typographic Tokens',
+              'Turnkey Setup in 5 to 7 Business Days',
+            ],
+        techStack: rec.technology_tags || ['React', 'TypeScript', 'Tailwind CSS'],
+        featured: Boolean(rec.is_featured),
+        displayOrder: rec.sort_order ?? (index + 1),
+        status: rec.status,
+      };
+    });
   } catch (err) {
     console.warn('Fallback to local demos:', err);
     const local = safeGetStorage<DemoItem[]>(STORAGE_KEYS.DEMOS, initialDemos);
@@ -717,11 +775,55 @@ export const adminCmsApi = {
   // --------------------------------------------------------------------------
   async listDemos(): Promise<WebsiteDemoRecord[]> {
     if (isSupabaseConfigured) {
-      const { data, error } = await supabase
-        .from('website_demos')
-        .select('*, demo_categories(name)')
-        .order('sort_order', { ascending: true });
-      if (!error && data && data.length > 0) return data as WebsiteDemoRecord[];
+      try {
+        const { data, error } = await supabase
+          .from('website_demos')
+          .select('*, demo_categories(name)')
+          .order('sort_order', { ascending: true });
+
+        if (!error && data && data.length > 0) {
+          return (data as any[]).map((rec) => {
+            const isPorwal =
+              (rec.slug && rec.slug.toLowerCase().includes('porwal')) ||
+              (rec.title && rec.title.toLowerCase().includes('porwal')) ||
+              (rec.title && rec.title.toLowerCase().includes('gautam'));
+
+            let catName = rec.demo_categories?.name || rec.category_name;
+            if (isPorwal && (!catName || catName === 'Restaurant & Cafe' || catName === 'Hospitality & Dining' || catName === 'Turnkey Solution')) {
+              catName = 'Healthcare & Medical';
+            } else if (!catName) {
+              catName = 'Turnkey Solution';
+            }
+
+            let thumb = rec.thumbnail_url;
+            if (isPorwal && (!thumb || thumb.includes('Business pro'))) {
+              thumb = '/assets/images/dr-gautam-porwal.svg';
+            }
+
+            return {
+              id: rec.id,
+              title: rec.title,
+              slug: rec.slug,
+              category_id: rec.category_id,
+              category_name: catName,
+              short_description: rec.short_description,
+              full_description: rec.full_description,
+              thumbnail_url: thumb,
+              additional_images: rec.additional_images || [],
+              demo_url: rec.demo_url,
+              technology_tags: rec.technology_tags || ['React', 'TypeScript', 'Tailwind CSS'],
+              is_featured: Boolean(rec.is_featured),
+              sort_order: rec.sort_order,
+              status: rec.status,
+              published_at: rec.published_at,
+              created_at: rec.created_at,
+              updated_at: rec.updated_at,
+            } as WebsiteDemoRecord;
+          });
+        }
+      } catch (err) {
+        console.warn('Supabase listDemos query error:', err);
+      }
     }
     // Local storage fallback
     const items = safeGetStorage<DemoItem[]>(STORAGE_KEYS.DEMOS, initialDemos);
@@ -747,15 +849,22 @@ export const adminCmsApi = {
 
   async createDemo(demo: Partial<WebsiteDemoRecord>): Promise<WebsiteDemoRecord> {
     const id = demo.id || `demo-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const categoryName = demo.category_name || 'Healthcare & Medical';
+    const matchedCategory = STANDARD_DEMO_CATEGORIES.find(
+      (c) => c.name.toLowerCase() === categoryName.toLowerCase() ||
+             c.slug.toLowerCase() === categoryName.toLowerCase()
+    );
+    const categoryId = demo.category_id || matchedCategory?.id || null;
+
     const newDemoRecord: WebsiteDemoRecord = {
       id,
       title: demo.title || 'Untitled Demo',
       slug: demo.slug || `demo-${Date.now()}`,
-      category_name: demo.category_name || 'Turnkey Solution',
-      category_id: demo.category_id || null,
+      category_name: categoryName,
+      category_id: categoryId,
       short_description: demo.short_description || '',
       full_description: demo.full_description || demo.short_description || '',
-      thumbnail_url: demo.thumbnail_url || '/assets/images/Business pro.jpg',
+      thumbnail_url: demo.thumbnail_url || '',
       additional_images: demo.additional_images || [],
       demo_url: demo.demo_url || 'https://yugark.in',
       technology_tags: demo.technology_tags || ['React', 'TypeScript', 'Tailwind CSS'],
@@ -784,10 +893,15 @@ export const adminCmsApi = {
             sort_order: newDemoRecord.sort_order,
             status: newDemoRecord.status,
           })
-          .select()
+          .select('*, demo_categories(name)')
           .single();
         if (error) throw error;
-        if (data) return data as WebsiteDemoRecord;
+        if (data) {
+          newDemoRecord.id = data.id;
+          if ((data as any).demo_categories?.name) {
+            newDemoRecord.category_name = (data as any).demo_categories.name;
+          }
+        }
       } catch (err) {
         console.warn('Supabase createDemo failed, saving to local persistent store:', err);
       }
@@ -799,9 +913,9 @@ export const adminCmsApi = {
       id: newDemoRecord.id,
       slug: newDemoRecord.slug,
       title: newDemoRecord.title,
-      category: newDemoRecord.category_name || 'Turnkey Solution',
-      industry: newDemoRecord.category_name || 'Turnkey Solution',
-      image: newDemoRecord.thumbnail_url,
+      category: newDemoRecord.category_name || 'Healthcare & Medical',
+      industry: newDemoRecord.category_name || 'Healthcare & Medical',
+      image: newDemoRecord.thumbnail_url || '/assets/images/dr-gautam-porwal.svg',
       alt: `${newDemoRecord.title} - Website Demo`,
       liveDemoUrl: newDemoRecord.demo_url,
       description: newDemoRecord.short_description,
@@ -811,21 +925,51 @@ export const adminCmsApi = {
       displayOrder: newDemoRecord.sort_order,
       status: newDemoRecord.status as any,
     };
-    safeSetStorage(STORAGE_KEYS.DEMOS, [newDemoItem, ...existing]);
+    safeSetStorage(STORAGE_KEYS.DEMOS, [newDemoItem, ...existing.filter((d) => d.id !== newDemoRecord.id && d.slug !== newDemoRecord.slug)]);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('yugark-cms-updated', { detail: { key: STORAGE_KEYS.DEMOS } }));
+    }
     return newDemoRecord;
   },
 
   async updateDemo(id: string, updates: Partial<WebsiteDemoRecord>): Promise<WebsiteDemoRecord> {
+    let resolvedCategoryId = updates.category_id;
+    if (!resolvedCategoryId && updates.category_name) {
+      const match = STANDARD_DEMO_CATEGORIES.find(
+        (c) => c.name.toLowerCase() === updates.category_name?.toLowerCase() ||
+               c.slug.toLowerCase() === updates.category_name?.toLowerCase()
+      );
+      if (match) resolvedCategoryId = match.id;
+    }
+
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase
+        const payload: Record<string, any> = {
+          updated_at: new Date().toISOString(),
+        };
+        if (updates.title !== undefined) payload.title = updates.title;
+        if (updates.slug !== undefined) payload.slug = updates.slug;
+        if (resolvedCategoryId !== undefined) payload.category_id = resolvedCategoryId;
+        if (updates.short_description !== undefined) payload.short_description = updates.short_description;
+        if (updates.full_description !== undefined) payload.full_description = updates.full_description;
+        if (updates.thumbnail_url !== undefined) payload.thumbnail_url = updates.thumbnail_url;
+        if (updates.additional_images !== undefined) payload.additional_images = updates.additional_images;
+        if (updates.demo_url !== undefined) payload.demo_url = updates.demo_url;
+        if (updates.technology_tags !== undefined) payload.technology_tags = updates.technology_tags;
+        if (updates.is_featured !== undefined) payload.is_featured = updates.is_featured;
+        if (updates.sort_order !== undefined) payload.sort_order = updates.sort_order;
+        if (updates.status !== undefined) payload.status = updates.status;
+
+        const { error } = await supabase
           .from('website_demos')
-          .update({ ...updates, updated_at: new Date().toISOString() })
+          .update(payload)
           .eq('id', id)
-          .select()
-          .single();
-        if (error) throw error;
-        if (data) return data as WebsiteDemoRecord;
+          .select('*, demo_categories(name)')
+          .maybeSingle();
+
+        if (error) {
+          console.warn('Supabase updateDemo error:', error);
+        }
       } catch (err) {
         console.warn('Supabase updateDemo failed, syncing local persistent store:', err);
       }
@@ -834,7 +978,7 @@ export const adminCmsApi = {
     // Update in local store
     const existing = safeGetStorage<DemoItem[]>(STORAGE_KEYS.DEMOS, initialDemos);
     const updated = existing.map((d) => {
-      if (d.id === id) {
+      if (d.id === id || (updates.slug && d.slug === updates.slug)) {
         return {
           ...d,
           title: updates.title ?? d.title,
@@ -853,6 +997,9 @@ export const adminCmsApi = {
       return d;
     });
     safeSetStorage(STORAGE_KEYS.DEMOS, updated);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('yugark-cms-updated', { detail: { key: STORAGE_KEYS.DEMOS } }));
+    }
     return { id, ...updates } as WebsiteDemoRecord;
   },
 

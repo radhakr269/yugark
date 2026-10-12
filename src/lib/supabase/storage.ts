@@ -1,5 +1,22 @@
 import { supabase, isSupabaseConfigured } from './client';
 
+const env: Record<string, string | undefined> =
+  typeof import.meta !== 'undefined' && import.meta.env
+    ? (import.meta.env as any)
+    : typeof process !== 'undefined' && process.env
+    ? process.env
+    : {};
+
+/**
+ * Centralized Supabase Storage bucket name for CMS media
+ * Defaults to 'public-cms-media' as configured in Supabase Storage setup
+ */
+export const CMS_STORAGE_BUCKET = (
+  env.VITE_SUPABASE_STORAGE_BUCKET ||
+  env.SUPABASE_STORAGE_BUCKET ||
+  'public-cms-media'
+).trim().replace(/^["']|["']$/g, '');
+
 export const ALLOWED_IMAGE_MIME_TYPES = [
   'image/jpeg',
   'image/jpg',
@@ -36,49 +53,31 @@ export interface UploadMediaResult {
 }
 
 /**
+ * Check if the configured public storage bucket exists in Supabase
+ */
+export async function verifyStorageBucketExists(): Promise<{ exists: boolean; error?: string }> {
+  if (!isSupabaseConfigured) return { exists: false, error: 'Supabase is not configured' };
+  try {
+    const { data, error } = await supabase.storage.getBucket(CMS_STORAGE_BUCKET);
+    if (error) {
+      return { exists: false, error: error.message };
+    }
+    return { exists: Boolean(data) };
+  } catch (err: any) {
+    return { exists: false, error: err?.message || 'Storage check failed' };
+  }
+}
+
+/**
  * Upload an admin asset to the Supabase Storage bucket
  */
 export async function uploadCmsMedia(
   file: File,
   folder: string = 'demos'
 ): Promise<UploadMediaResult> {
-  if (!isSupabaseConfigured) {
-    // Validate MIME type
-    if (!ALLOWED_IMAGE_MIME_TYPES.includes(file.type)) {
-      throw new Error(`Unsupported file type: ${file.type}. Allowed: JPG, PNG, WebP.`);
-    }
-    if (file.size > MAX_IMAGE_FILE_SIZE) {
-      throw new Error(`File size exceeds maximum limit of 10MB.`);
-    }
-
-    // Convert to Data URL for client-side persistence in sandbox
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => reject(new Error('Failed to read image file'));
-      reader.readAsDataURL(file);
-    });
-
-    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-    const cleanBaseName = file.name
-      .replace(/\.[^/.]+$/, '')
-      .replace(/[^a-zA-Z0-9-_]/g, '_')
-      .substring(0, 40);
-    const uniqueId = Math.random().toString(36).substring(2, 10);
-    const storagePath = `${folder}/${Date.now()}-${uniqueId}-${cleanBaseName}.${fileExt}`;
-
-    return {
-      publicUrl: dataUrl,
-      storagePath,
-      fileName: file.name,
-      fileSize: file.size,
-      mimeType: file.type,
-    };
-  }
-
   // Validate MIME type
   if (!ALLOWED_IMAGE_MIME_TYPES.includes(file.type)) {
-    throw new Error(`Unsupported file type: ${file.type}. Allowed: JPG, PNG, WebP.`);
+    throw new Error(`Unsupported file type: ${file.type}. Allowed formats: JPG, PNG, WebP.`);
   }
 
   // Validate File Size
@@ -95,19 +94,51 @@ export async function uploadCmsMedia(
   const uniqueId = Math.random().toString(36).substring(2, 10);
   const storagePath = `${folder}/${Date.now()}-${uniqueId}-${cleanBaseName}.${fileExt}`;
 
+  if (!isSupabaseConfigured) {
+    // Convert to Data URL for client-side persistence in sandbox
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error('Failed to read image file'));
+      reader.readAsDataURL(file);
+    });
+
+    return {
+      publicUrl: dataUrl,
+      storagePath,
+      fileName: file.name,
+      fileSize: file.size,
+      mimeType: file.type,
+    };
+  }
+
   const { data, error } = await supabase.storage
-    .from('public-cms-media')
+    .from(CMS_STORAGE_BUCKET)
     .upload(storagePath, file, {
       cacheControl: '3600',
       upsert: false,
     });
 
   if (error) {
+    const errorMsg = (error.message || '').toLowerCase();
+    const statusCode = (error as any)?.statusCode || (error as any)?.status;
+    const errorCode = (error as any)?.code || (error as any)?.error;
+
+    if (
+      errorMsg.includes('bucket not found') ||
+      statusCode === 404 ||
+      statusCode === '404' ||
+      errorCode === 'NoSuchBucket'
+    ) {
+      throw new Error(
+        `Supabase Storage bucket "${CMS_STORAGE_BUCKET}" not found in your Supabase project. Please execute the storage SQL migration to create the bucket or create "${CMS_STORAGE_BUCKET}" as a Public bucket in Supabase Storage.`
+      );
+    }
     throw error;
   }
 
   const { data: publicUrlData } = supabase.storage
-    .from('public-cms-media')
+    .from(CMS_STORAGE_BUCKET)
     .getPublicUrl(data.path);
 
   return {

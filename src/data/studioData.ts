@@ -604,6 +604,28 @@ export const websiteDemosData: DemoItem[] = [
     displayOrder: 4,
     status: 'published',
   },
+  {
+    id: 'dr-gautam-porwal',
+    slug: 'dr-gautam-porwal',
+    title: 'Dr. Gautam Porwal',
+    category: 'Healthcare & Medical',
+    industry: 'Healthcare & Medical',
+    image: '/assets/images/dr-gautam-porwal.svg',
+    alt: 'Dr. Gautam Porwal - Homeopathic Clinic & Healthcare',
+    liveDemoUrl: 'https://drgautamporwal.demo.yugark.in',
+    description:
+      'Specialized clinical & homeopathic healthcare portal with patient appointment scheduling, treatment specializations, and direct consultation routing.',
+    features: [
+      'Online Consultation & Patient Appointment Booking',
+      'Specialized Clinical Care for Skin, Paralysis & Allergies',
+      'Direct WhatsApp Inquiries & Case History Submission',
+      'Verified Patient Reviews & Clinical Credentials',
+    ],
+    techStack: ['React', 'Tailwind CSS', 'TypeScript'],
+    featured: true,
+    displayOrder: 5,
+    status: 'published',
+  },
 ];
 
 export const pricingPackagesData: PricingPackage[] = [

@@ -41,6 +41,7 @@ export const DemosPage: React.FC = () => {
 
   const industries = [
     { id: 'all', label: 'All Industries' },
+    { id: 'Healthcare & Medical', label: 'Healthcare & Medical' },
     { id: 'Corporate & Business', label: 'Corporate & Architecture' },
     { id: 'Beauty & Lifestyle', label: 'Beauty & Wellness' },
     { id: 'Restaurant & Cafe', label: 'Hospitality & Dining' },
@@ -55,7 +56,7 @@ export const DemosPage: React.FC = () => {
   const filteredDemos =
     activeIndustry === 'all'
       ? publishedDemos
-      : publishedDemos.filter((d) => d.industry === activeIndustry);
+      : publishedDemos.filter((d) => d.industry === activeIndustry || d.category === activeIndustry);
 
   const handleLaunchDemo = (demo: DemoItem) => {
     setPreviewModalDemo(demo);

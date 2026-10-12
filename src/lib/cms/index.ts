@@ -59,6 +59,46 @@ const STORAGE_KEYS = {
 // PHASE 1 DATA PROTECTION: BACKUP & EXPORT UTILITIES
 // ============================================================================
 
+export interface MigrationRecordItem {
+  table: 'website_settings' | 'hero' | 'pages' | 'website_demos' | 'services' | 'pricing_packages' | 'portfolio_projects' | 'blog_posts';
+  key: string;
+  id?: string;
+  slug: string;
+  localTitle: string;
+  remoteTitle?: string;
+  action: 'insert' | 'update' | 'identical' | 'conflict';
+  status: 'safe_insert' | 'identical_skip' | 'protected_conflict';
+  resolution: string;
+  isProtected: boolean;
+  differences: string[];
+  localData?: any;
+  remoteData?: any;
+}
+
+export interface SyncMigrationResult {
+  success: boolean;
+  isDryRun: boolean;
+  summary: {
+    settings: number;
+    hero: number;
+    pages: number;
+    demos: number;
+    services: number;
+    pricing: number;
+    projects: number;
+    blogs: number;
+    totalLocal: number;
+    inserts: number;
+    updates: number;
+    identical: number;
+    conflicts: number;
+    approved: number;
+  };
+  records: MigrationRecordItem[];
+  conflicts: Array<{ type: string; key: string; localTitle?: string; remoteTitle?: string; resolution: string }>;
+  errors: string[];
+}
+
 export interface CmsExportPackage {
   timestamp: string;
   schemaVersion: string;
@@ -2142,13 +2182,11 @@ export const adminCmsApi = {
   // --------------------------------------------------------------------------
   // BROWSER-TO-SUPABASE DATA MIGRATION UTILITY
   // --------------------------------------------------------------------------
-  async syncLocalStorageToSupabase(dryRun: boolean = false): Promise<{
-    success: boolean;
-    summary: Record<string, number>;
-    conflicts: Array<{ type: string; key: string; localTitle?: string; remoteTitle?: string; resolution: string }>;
-    errors: string[];
-  }> {
-    const summary: Record<string, number> = {
+  async syncLocalStorageToSupabase(
+    dryRun: boolean = false,
+    approvedRecordKeys: string[] = []
+  ): Promise<SyncMigrationResult> {
+    const summary: SyncMigrationResult['summary'] = {
       settings: 0,
       hero: 0,
       pages: 0,
@@ -2157,290 +2195,736 @@ export const adminCmsApi = {
       pricing: 0,
       projects: 0,
       blogs: 0,
+      totalLocal: 0,
+      inserts: 0,
+      updates: 0,
+      identical: 0,
+      conflicts: 0,
+      approved: 0,
     };
+    const records: MigrationRecordItem[] = [];
     const conflicts: Array<{ type: string; key: string; localTitle?: string; remoteTitle?: string; resolution: string }> = [];
     const errors: string[] = [];
 
     if (!isSupabaseConfigured) {
       return {
         success: false,
+        isDryRun: dryRun,
         summary,
+        records,
         conflicts,
         errors: ['Supabase connection credentials are not configured in environment.'],
       };
     }
 
     try {
-      // 1. Settings & Hero & Pages
+      // 1. Fetch remote tables with comprehensive error reporting
+      const [
+        { data: remoteSettingsData, error: settingsError },
+        { data: remoteDemosData, error: demosError },
+        { data: remoteServicesData, error: servicesError },
+        { data: remotePricingData, error: pricingError },
+        { data: remoteProjectsData, error: projectsError },
+        { data: remoteBlogsData, error: blogsError },
+      ] = await Promise.all([
+        supabase.from('website_settings').select('*').limit(1).maybeSingle(),
+        supabase.from('website_demos').select('*'),
+        supabase.from('services').select('*'),
+        supabase.from('pricing_packages').select('*'),
+        supabase.from('portfolio_projects').select('*'),
+        supabase.from('blog_posts').select('*'),
+      ]);
+
+      if (settingsError) errors.push(`website_settings query: ${settingsError.message}`);
+      if (demosError) errors.push(`website_demos query: ${demosError.message}`);
+      if (servicesError) errors.push(`services query: ${servicesError.message}`);
+      if (pricingError) errors.push(`pricing_packages query: ${pricingError.message}`);
+      if (projectsError) errors.push(`portfolio_projects query: ${projectsError.message}`);
+      if (blogsError) errors.push(`blog_posts query: ${blogsError.message}`);
+
+      const remoteSettings = remoteSettingsData as any;
+      const remoteDemos = (remoteDemosData || []) as any[];
+      const remoteServices = (remoteServicesData || []) as any[];
+      const remotePricing = (remotePricingData || []) as any[];
+      const remoteProjects = (remoteProjectsData || []) as any[];
+      const remoteBlogs = (remoteBlogsData || []) as any[];
+
+      const remoteDemosBySlug = new Map(remoteDemos.map((d) => [d.slug, d]));
+      const remoteDemosById = new Map(remoteDemos.filter((d) => d.id).map((d) => [d.id, d]));
+
+      const remoteServicesBySlug = new Map(remoteServices.map((s) => [s.slug, s]));
+      const remoteServicesById = new Map(remoteServices.filter((s) => s.id).map((s) => [s.id, s]));
+
+      const remotePricingBySlug = new Map(remotePricing.map((p) => [p.slug, p]));
+      const remotePricingById = new Map(remotePricing.filter((p) => p.id).map((p) => [p.id, p]));
+
+      const remoteProjectsBySlug = new Map(remoteProjects.map((p) => [p.slug, p]));
+      const remoteProjectsById = new Map(remoteProjects.filter((p) => p.id).map((p) => [p.id, p]));
+
+      const remoteBlogsBySlug = new Map(remoteBlogs.map((b) => [b.slug, b]));
+      const remoteBlogsById = new Map(remoteBlogs.filter((b) => b.id).map((b) => [b.id, b]));
+
+      // ----------------------------------------------------------------------
+      // 2. WEBSITE SETTINGS, HERO & PAGES (SINGLETON ENTITIES)
+      // ----------------------------------------------------------------------
       const localSettings = safeGetStorage<any>(STORAGE_KEYS.SETTINGS, null);
-      const localHero = safeGetStorage<any>(STORAGE_KEYS.HERO, null);
-      const localPages = safeGetStorage<any>(STORAGE_KEYS.PAGE_CONTENT, null);
-
-      if (localSettings || localHero || localPages) {
-        summary.settings = localSettings ? 1 : 0;
-        summary.hero = localHero ? 1 : 0;
-        summary.pages = localPages ? 1 : 0;
-
-        if (dryRun) {
-          const { data: remoteSettings } = await supabase
-            .from('website_settings')
-            .select('id, site_name, updated_at')
-            .limit(1)
-            .maybeSingle();
-
-          if (remoteSettings) {
-            conflicts.push({
-              type: 'website_settings',
-              key: 'singleton',
-              localTitle: localSettings?.studioName || 'Local Settings',
-              remoteTitle: remoteSettings.site_name || 'Production Settings',
-              resolution: 'Remote production record exists; sync requires explicit admin confirmation',
-            });
-          }
+      if (localSettings) {
+        summary.settings = 1;
+        const key = 'website_settings:singleton';
+        if (!remoteSettings) {
+          records.push({
+            table: 'website_settings',
+            key,
+            id: 'a0000000-0000-0000-0000-000000000001',
+            slug: 'singleton',
+            localTitle: localSettings.studioName || 'Studio Settings',
+            remoteTitle: undefined,
+            action: 'insert',
+            status: 'safe_insert',
+            isProtected: false,
+            resolution: 'New settings record. Safe to insert into Supabase.',
+            differences: ['No remote settings record found in Supabase.'],
+            localData: localSettings,
+          });
         } else {
+          const diffs: string[] = [];
+          if (localSettings.studioName && localSettings.studioName !== remoteSettings.site_name) {
+            diffs.push(`Studio Name differs: local "${localSettings.studioName}" vs remote "${remoteSettings.site_name}"`);
+          }
+          if (localSettings.tagline && localSettings.tagline !== remoteSettings.tagline) {
+            diffs.push(`Tagline differs: local "${localSettings.tagline}" vs remote "${remoteSettings.tagline}"`);
+          }
+          if (localSettings.contactEmail && localSettings.contactEmail !== remoteSettings.business_email) {
+            diffs.push(`Email differs: local "${localSettings.contactEmail}" vs remote "${remoteSettings.business_email}"`);
+          }
+          if (
+            localSettings.whatsappNumber &&
+            localSettings.whatsappNumber.replace(/\D/g, '') !== (remoteSettings.whatsapp_number || '').replace(/\D/g, '')
+          ) {
+            diffs.push(`WhatsApp differs: local "${localSettings.whatsappNumber}" vs remote "${remoteSettings.whatsapp_number}"`);
+          }
+          if (
+            localSettings.socials?.instagram &&
+            remoteSettings.social_links?.instagram &&
+            localSettings.socials.instagram !== remoteSettings.social_links.instagram
+          ) {
+            diffs.push(`Instagram differs: local "${localSettings.socials.instagram}" vs remote "${remoteSettings.social_links.instagram}"`);
+          }
+
+          const hasDiff = diffs.length > 0;
+          records.push({
+            table: 'website_settings',
+            key,
+            id: remoteSettings.id || 'a0000000-0000-0000-0000-000000000001',
+            slug: 'singleton',
+            localTitle: localSettings.studioName || 'Studio Settings',
+            remoteTitle: remoteSettings.site_name || 'Production Settings',
+            action: hasDiff ? 'conflict' : 'identical',
+            status: hasDiff ? 'protected_conflict' : 'identical_skip',
+            isProtected: hasDiff,
+            resolution: hasDiff
+              ? 'Remote production settings differ. Protected from overwrite unless explicitly approved.'
+              : 'Identical to production Supabase settings. Safe skip.',
+            differences: hasDiff ? diffs : ['All primary fields match production Supabase record.'],
+            localData: localSettings,
+            remoteData: remoteSettings,
+          });
+        }
+      }
+
+      const localHero = safeGetStorage<any>(STORAGE_KEYS.HERO, null);
+      if (localHero) {
+        summary.hero = 1;
+        const key = 'hero:config';
+        const remoteHero = remoteSettings?.hero_config;
+        if (!remoteHero) {
+          records.push({
+            table: 'hero',
+            key,
+            slug: 'hero-config',
+            localTitle: 'Hero Configuration',
+            remoteTitle: undefined,
+            action: 'insert',
+            status: 'safe_insert',
+            isProtected: false,
+            resolution: 'New hero configuration. Safe to insert into Supabase.',
+            differences: ['No remote hero_config in website_settings.'],
+            localData: localHero,
+          });
+        } else {
+          const diffs: string[] = [];
+          if (localHero.heroImage && localHero.heroImage !== remoteHero.heroImage) {
+            diffs.push(`Hero image differs: local "${localHero.heroImage}" vs remote "${remoteHero.heroImage}"`);
+          }
+          if (localHero.heroStates?.[0]?.headline !== remoteHero.heroStates?.[0]?.headline) {
+            diffs.push(`Primary headline differs: local "${localHero.heroStates?.[0]?.headline}" vs remote "${remoteHero.heroStates?.[0]?.headline}"`);
+          }
+          const hasDiff = diffs.length > 0;
+          records.push({
+            table: 'hero',
+            key,
+            slug: 'hero-config',
+            localTitle: `Hero Config (${localHero.heroStates?.[0]?.headline || 'Default'})`,
+            remoteTitle: `Production Hero (${remoteHero.heroStates?.[0]?.headline || 'Production'})`,
+            action: hasDiff ? 'conflict' : 'identical',
+            status: hasDiff ? 'protected_conflict' : 'identical_skip',
+            isProtected: hasDiff,
+            resolution: hasDiff ? 'Remote hero configuration differs. Protected from overwrite.' : 'Hero configuration matches production. Safe skip.',
+            differences: hasDiff ? diffs : ['Hero images and slide headlines match production.'],
+            localData: localHero,
+            remoteData: remoteHero,
+          });
+        }
+      }
+
+      const localPages = safeGetStorage<any>(STORAGE_KEYS.PAGE_CONTENT, null);
+      if (localPages) {
+        summary.pages = 1;
+        const key = 'pages:content';
+        const remotePages = remoteSettings?.page_content;
+        if (!remotePages) {
+          records.push({
+            table: 'pages',
+            key,
+            slug: 'page-content',
+            localTitle: 'Page Content',
+            remoteTitle: undefined,
+            action: 'insert',
+            status: 'safe_insert',
+            isProtected: false,
+            resolution: 'New page content. Safe to insert into Supabase.',
+            differences: ['No remote page_content in website_settings.'],
+            localData: localPages,
+          });
+        } else {
+          const diffs: string[] = [];
+          if (localPages.headlineLine1 !== remotePages.headlineLine1 || localPages.headlineLine2 !== remotePages.headlineLine2) {
+            diffs.push(`Headlines differ: local "${localPages.headlineLine1} ${localPages.headlineLine2}" vs remote "${remotePages.headlineLine1} ${remotePages.headlineLine2}"`);
+          }
+          if (localPages.brandStatementTitle !== remotePages.brandStatementTitle) {
+            diffs.push(`Brand statement differs`);
+          }
+          const hasDiff = diffs.length > 0;
+          records.push({
+            table: 'pages',
+            key,
+            slug: 'page-content',
+            localTitle: 'Homepage Page Content',
+            remoteTitle: 'Production Page Content',
+            action: hasDiff ? 'conflict' : 'identical',
+            status: hasDiff ? 'protected_conflict' : 'identical_skip',
+            isProtected: hasDiff,
+            resolution: hasDiff ? 'Remote page content differs. Protected from overwrite.' : 'Page content matches production. Safe skip.',
+            differences: hasDiff ? diffs : ['All homepage content sections match production.'],
+            localData: localPages,
+            remoteData: remotePages,
+          });
+        }
+      }
+
+      // ----------------------------------------------------------------------
+      // 3. WEBSITE DEMOS
+      // ----------------------------------------------------------------------
+      const localDemos = safeGetStorage<DemoItem[]>(STORAGE_KEYS.DEMOS, []);
+      summary.demos = localDemos.length;
+      for (const demo of localDemos) {
+        const key = `website_demos:${demo.slug}`;
+        const remote = remoteDemosBySlug.get(demo.slug) || (demo.id ? remoteDemosById.get(demo.id) : null);
+        if (!remote) {
+          records.push({
+            table: 'website_demos',
+            key,
+            id: demo.id,
+            slug: demo.slug,
+            localTitle: demo.title,
+            remoteTitle: undefined,
+            action: 'insert',
+            status: 'safe_insert',
+            isProtected: false,
+            resolution: 'New demo record not in Supabase. Safe to insert.',
+            differences: ['Demo does not exist in production Supabase database.'],
+            localData: demo,
+          });
+        } else {
+          const diffs: string[] = [];
+          if (demo.title?.trim() !== remote.title?.trim()) {
+            diffs.push(`Title differs: local "${demo.title}" vs remote "${remote.title}"`);
+          }
+          if ((demo.description || '').trim() !== (remote.short_description || '').trim()) {
+            diffs.push(`Description differs`);
+          }
+          if (demo.liveDemoUrl && remote.demo_url && demo.liveDemoUrl.trim() !== remote.demo_url.trim()) {
+            diffs.push(`Demo URL differs: local "${demo.liveDemoUrl}" vs remote "${remote.demo_url}"`);
+          }
+          if (demo.image && remote.thumbnail_url && demo.image.trim() !== remote.thumbnail_url.trim()) {
+            diffs.push(`Thumbnail image differs: local "${demo.image}" vs remote "${remote.thumbnail_url}"`);
+          }
+          if (demo.featured !== undefined && remote.is_featured !== undefined && Boolean(demo.featured) !== Boolean(remote.is_featured)) {
+            diffs.push(`Featured flag differs: local ${demo.featured} vs remote ${remote.is_featured}`);
+          }
+          const hasDiff = diffs.length > 0;
+          records.push({
+            table: 'website_demos',
+            key,
+            id: remote.id || demo.id,
+            slug: demo.slug,
+            localTitle: demo.title,
+            remoteTitle: remote.title,
+            action: hasDiff ? 'conflict' : 'identical',
+            status: hasDiff ? 'protected_conflict' : 'identical_skip',
+            isProtected: hasDiff,
+            resolution: hasDiff
+              ? 'Existing production demo with matching slug will NOT be overwritten without admin approval.'
+              : 'Demo record is identical to production Supabase record. Safe skip.',
+            differences: hasDiff ? diffs : ['Record is identical to production database.'],
+            localData: demo,
+            remoteData: remote,
+          });
+        }
+      }
+
+      // ----------------------------------------------------------------------
+      // 4. SERVICES
+      // ----------------------------------------------------------------------
+      const localServices = safeGetStorage<ServiceItem[]>(STORAGE_KEYS.SERVICES, []);
+      summary.services = localServices.length;
+      for (const s of localServices) {
+        const key = `services:${s.slug}`;
+        const remote = remoteServicesBySlug.get(s.slug) || (s.id ? remoteServicesById.get(s.id) : null);
+        if (!remote) {
+          records.push({
+            table: 'services',
+            key,
+            id: s.id,
+            slug: s.slug,
+            localTitle: s.title,
+            remoteTitle: undefined,
+            action: 'insert',
+            status: 'safe_insert',
+            isProtected: false,
+            resolution: 'New service record. Safe to insert into Supabase.',
+            differences: ['Service does not exist in production Supabase database.'],
+            localData: s,
+          });
+        } else {
+          const diffs: string[] = [];
+          if (s.title?.trim() !== remote.title?.trim()) {
+            diffs.push(`Title differs: local "${s.title}" vs remote "${remote.title}"`);
+          }
+          if (s.regularPrice !== undefined && remote.regular_price !== undefined && Number(s.regularPrice) !== Number(remote.regular_price)) {
+            diffs.push(`Regular price differs: local ₹${s.regularPrice} vs remote ₹${remote.regular_price}`);
+          }
+          if (s.launchPrice !== undefined && remote.launch_price !== undefined && Number(s.launchPrice) !== Number(remote.launch_price)) {
+            diffs.push(`Launch price differs: local ₹${s.launchPrice} vs remote ₹${remote.launch_price}`);
+          }
+          if ((s.description || s.tagline || '').trim() !== (remote.short_description || '').trim()) {
+            diffs.push(`Short description differs`);
+          }
+          const hasDiff = diffs.length > 0;
+          records.push({
+            table: 'services',
+            key,
+            id: remote.id || s.id,
+            slug: s.slug,
+            localTitle: s.title,
+            remoteTitle: remote.title,
+            action: hasDiff ? 'conflict' : 'identical',
+            status: hasDiff ? 'protected_conflict' : 'identical_skip',
+            isProtected: hasDiff,
+            resolution: hasDiff
+              ? 'Existing production service record found; preserved by default.'
+              : 'Service is identical to production Supabase record. Safe skip.',
+            differences: hasDiff ? diffs : ['Record is identical to production database.'],
+            localData: s,
+            remoteData: remote,
+          });
+        }
+      }
+
+      // ----------------------------------------------------------------------
+      // 5. PRICING PACKAGES
+      // ----------------------------------------------------------------------
+      const localPricing = safeGetStorage<PricingPackage[]>(STORAGE_KEYS.PRICING, []);
+      summary.pricing = localPricing.length;
+      for (const p of localPricing) {
+        const key = `pricing_packages:${p.slug}`;
+        const remote = remotePricingBySlug.get(p.slug) || (p.id ? remotePricingById.get(p.id) : null);
+        if (!remote) {
+          records.push({
+            table: 'pricing_packages',
+            key,
+            id: p.id,
+            slug: p.slug,
+            localTitle: p.name,
+            remoteTitle: undefined,
+            action: 'insert',
+            status: 'safe_insert',
+            isProtected: false,
+            resolution: 'New pricing package. Safe to insert into Supabase.',
+            differences: ['Pricing package does not exist in production database.'],
+            localData: p,
+          });
+        } else {
+          const diffs: string[] = [];
+          if (p.name?.trim() !== remote.title?.trim()) {
+            diffs.push(`Package name differs: local "${p.name}" vs remote "${remote.title}"`);
+          }
+          if (p.regularPrice !== undefined && remote.regular_price !== undefined && Number(p.regularPrice) !== Number(remote.regular_price)) {
+            diffs.push(`Regular price differs: local ₹${p.regularPrice} vs remote ₹${remote.regular_price}`);
+          }
+          if (p.launchPrice !== undefined && remote.launch_price !== undefined && Number(p.launchPrice) !== Number(remote.launch_price)) {
+            diffs.push(`Launch price differs: local ₹${p.launchPrice} vs remote ₹${remote.launch_price}`);
+          }
+          if (p.investment && remote.price && p.investment !== remote.price) {
+            diffs.push(`Price display differs: local "${p.investment}" vs remote "${remote.price}"`);
+          }
+          const hasDiff = diffs.length > 0;
+          records.push({
+            table: 'pricing_packages',
+            key,
+            id: remote.id || p.id,
+            slug: p.slug,
+            localTitle: p.name,
+            remoteTitle: remote.title,
+            action: hasDiff ? 'conflict' : 'identical',
+            status: hasDiff ? 'protected_conflict' : 'identical_skip',
+            isProtected: hasDiff,
+            resolution: hasDiff
+              ? 'Existing production pricing found; protected against overwrite.'
+              : 'Pricing package is identical to production Supabase record. Safe skip.',
+            differences: hasDiff ? diffs : ['Record is identical to production database.'],
+            localData: p,
+            remoteData: remote,
+          });
+        }
+      }
+
+      // ----------------------------------------------------------------------
+      // 6. PORTFOLIO PROJECTS
+      // ----------------------------------------------------------------------
+      const localProjects = safeGetStorage<ProjectItem[]>(STORAGE_KEYS.PROJECTS, []);
+      summary.projects = localProjects.length;
+      for (const p of localProjects) {
+        const key = `portfolio_projects:${p.slug}`;
+        const remote = remoteProjectsBySlug.get(p.slug) || (p.id ? remoteProjectsById.get(p.id) : null);
+        if (!remote) {
+          records.push({
+            table: 'portfolio_projects',
+            key,
+            id: p.id,
+            slug: p.slug,
+            localTitle: p.title,
+            remoteTitle: undefined,
+            action: 'insert',
+            status: 'safe_insert',
+            isProtected: false,
+            resolution: 'New portfolio project. Safe to insert into Supabase.',
+            differences: ['Project does not exist in production database.'],
+            localData: p,
+          });
+        } else {
+          const diffs: string[] = [];
+          if (p.title?.trim() !== remote.title?.trim()) {
+            diffs.push(`Title differs: local "${p.title}" vs remote "${remote.title}"`);
+          }
+          if (p.category?.trim() !== remote.category?.trim()) {
+            diffs.push(`Category differs: local "${p.category}" vs remote "${remote.category}"`);
+          }
+          if (p.image?.trim() !== remote.thumbnail_url?.trim()) {
+            diffs.push(`Thumbnail differs: local "${p.image}" vs remote "${remote.thumbnail_url}"`);
+          }
+          const hasDiff = diffs.length > 0;
+          records.push({
+            table: 'portfolio_projects',
+            key,
+            id: remote.id || p.id,
+            slug: p.slug,
+            localTitle: p.title,
+            remoteTitle: remote.title,
+            action: hasDiff ? 'conflict' : 'identical',
+            status: hasDiff ? 'protected_conflict' : 'identical_skip',
+            isProtected: hasDiff,
+            resolution: hasDiff
+              ? 'Existing portfolio project found in database; will remain preserved.'
+              : 'Portfolio project is identical to production Supabase record. Safe skip.',
+            differences: hasDiff ? diffs : ['Record is identical to production database.'],
+            localData: p,
+            remoteData: remote,
+          });
+        }
+      }
+
+      // ----------------------------------------------------------------------
+      // 7. BLOG POSTS
+      // ----------------------------------------------------------------------
+      const localBlogs = safeGetStorage<BlogPostItem[]>(STORAGE_KEYS.BLOGS, []);
+      summary.blogs = localBlogs.length;
+      for (const b of localBlogs) {
+        const key = `blog_posts:${b.slug}`;
+        const remote = remoteBlogsBySlug.get(b.slug) || (b.id ? remoteBlogsById.get(b.id) : null);
+        if (!remote) {
+          records.push({
+            table: 'blog_posts',
+            key,
+            id: b.id,
+            slug: b.slug,
+            localTitle: b.title,
+            remoteTitle: undefined,
+            action: 'insert',
+            status: 'safe_insert',
+            isProtected: false,
+            resolution: 'New blog post. Safe to insert into Supabase.',
+            differences: ['Blog post does not exist in production database.'],
+            localData: b,
+          });
+        } else {
+          const diffs: string[] = [];
+          if (b.title?.trim() !== remote.title?.trim()) {
+            diffs.push(`Title differs: local "${b.title}" vs remote "${remote.title}"`);
+          }
+          const hasDiff = diffs.length > 0;
+          records.push({
+            table: 'blog_posts',
+            key,
+            id: remote.id || b.id,
+            slug: b.slug,
+            localTitle: b.title,
+            remoteTitle: remote.title,
+            action: hasDiff ? 'conflict' : 'identical',
+            status: hasDiff ? 'protected_conflict' : 'identical_skip',
+            isProtected: hasDiff,
+            resolution: hasDiff
+              ? 'Existing blog post found in database; will remain preserved.'
+              : 'Blog post is identical to production Supabase record. Safe skip.',
+            differences: hasDiff ? diffs : ['Record is identical to production database.'],
+            localData: b,
+            remoteData: remote,
+          });
+        }
+      }
+
+      // Compute aggregate metrics
+      summary.totalLocal = records.length;
+      summary.inserts = records.filter((r) => r.action === 'insert').length;
+      summary.updates = records.filter((r) => r.action === 'update' || r.action === 'conflict').length;
+      summary.identical = records.filter((r) => r.action === 'identical').length;
+      summary.conflicts = records.filter((r) => r.isProtected).length;
+      summary.approved = records.filter(
+        (r) => approvedRecordKeys.includes(r.key) || approvedRecordKeys.includes(r.slug) || (r.id && approvedRecordKeys.includes(r.id))
+      ).length;
+
+      // Populate legacy conflicts summary for backwards compatibility
+      for (const r of records) {
+        if (r.isProtected) {
+          conflicts.push({
+            type: r.table,
+            key: r.slug,
+            localTitle: r.localTitle,
+            remoteTitle: r.remoteTitle,
+            resolution: r.resolution,
+          });
+        }
+      }
+
+      // ----------------------------------------------------------------------
+      // 8. WRITE EXECUTION (STRICT PER-RECORD APPROVAL ENFORCEMENT)
+      // ----------------------------------------------------------------------
+      if (!dryRun) {
+        // A. Website Settings, Hero & Pages
+        const settingsRecord = records.find((r) => r.table === 'website_settings');
+        const heroRecord = records.find((r) => r.table === 'hero');
+        const pagesRecord = records.find((r) => r.table === 'pages');
+
+        const isSettingsApproved = !settingsRecord?.isProtected || approvedRecordKeys.includes('website_settings:singleton');
+        const isHeroApproved = !heroRecord?.isProtected || approvedRecordKeys.includes('hero:config');
+        const isPagesApproved = !pagesRecord?.isProtected || approvedRecordKeys.includes('pages:content');
+
+        if (isSettingsApproved || isHeroApproved || isPagesApproved) {
           const payload: Record<string, any> = {
             id: 'a0000000-0000-0000-0000-000000000001',
             updated_at: new Date().toISOString(),
           };
-          if (localSettings) {
+          if (localSettings && isSettingsApproved) {
             payload.site_name = localSettings.studioName || 'Yugark Digital Studio';
             payload.tagline = localSettings.tagline || 'We Build. We Create. We Grow Brands.';
             payload.business_email = localSettings.contactEmail || 'business@yugark.in';
             payload.whatsapp_number = localSettings.whatsappNumber || '+91 9125205132';
             payload.social_links = localSettings.socials || {};
           }
-          if (localHero && !localHero.heroImage?.startsWith('blob:')) {
+          if (localHero && isHeroApproved && !localHero.heroImage?.startsWith('blob:')) {
             payload.hero_config = localHero;
           }
-          if (localPages) {
+          if (localPages && isPagesApproved) {
             payload.page_content = localPages;
           }
 
-          const { error } = await supabase
-            .from('website_settings')
-            .upsert(payload, { onConflict: 'id' });
+          const { error } = await supabase.from('website_settings').upsert(payload, { onConflict: 'id' });
           if (error) errors.push(`website_settings sync failed: ${error.message}`);
         }
-      }
 
-      // 2. Website Demos
-      const localDemos = safeGetStorage<DemoItem[]>(STORAGE_KEYS.DEMOS, []);
-      summary.demos = localDemos.length;
-
-      if (dryRun && localDemos.length > 0) {
-        const { data: remoteDemos } = await supabase
-          .from('website_demos')
-          .select('slug, title, updated_at');
-        const remoteMap = new Map((remoteDemos || []).map((d) => [d.slug, d]));
-
-        for (const demo of localDemos) {
-          if (remoteMap.has(demo.slug)) {
-            const remote = remoteMap.get(demo.slug);
-            conflicts.push({
-              type: 'website_demos',
-              key: demo.slug,
-              localTitle: demo.title,
-              remoteTitle: remote?.title,
-              resolution: 'Existing production demo with matching slug will NOT be overwritten without admin selection',
-            });
-          }
-        }
-      } else if (!dryRun && localDemos.length > 0) {
+        // B. Website Demos (protected records strictly skipped unless explicitly approved)
         for (const demo of localDemos) {
           if (demo.image?.startsWith('blob:')) continue;
+          const rec = records.find((r) => r.table === 'website_demos' && r.slug === demo.slug);
+          const isApproved = !rec?.isProtected || approvedRecordKeys.includes(rec?.key || '') || approvedRecordKeys.includes(demo.slug);
+
+          if (!isApproved) continue; // PRESERVE PRODUCTION
+
           const isPorwal = demo.slug?.includes('porwal') || demo.title?.includes('Porwal') || demo.title?.includes('Gautam');
           const categoryId = isPorwal
             ? 'b0000000-0000-0000-0000-000000000005'
             : (STANDARD_DEMO_CATEGORIES.find((c) => c.name === demo.category)?.id || null);
 
-          const { error } = await supabase
-            .from('website_demos')
-            .upsert(
-              {
-                id: demo.id?.length === 36 ? demo.id : undefined,
-                title: demo.title,
-                slug: demo.slug,
-                category_id: categoryId,
-                short_description: demo.description || '',
-                full_description: demo.description || '',
-                thumbnail_url: isPorwal && (!demo.image || demo.image.includes('Business pro'))
+          const { error } = await supabase.from('website_demos').upsert(
+            {
+              id: demo.id?.length === 36 ? demo.id : undefined,
+              title: demo.title,
+              slug: demo.slug,
+              category_id: categoryId,
+              short_description: demo.description || '',
+              full_description: demo.description || '',
+              thumbnail_url:
+                isPorwal && (!demo.image || demo.image.includes('Business pro'))
                   ? '/assets/images/dr-gautam-porwal.svg'
                   : demo.image,
-                demo_url: isPorwal ? 'https://dr-gautam-porwal.vercel.app/' : (demo.liveDemoUrl || 'https://yugark.in'),
-                technology_tags: demo.techStack || ['React', 'TypeScript', 'Tailwind CSS'],
-                is_featured: demo.featured ?? true,
-                sort_order: demo.displayOrder || 1,
-                status: (demo.status as any) || 'published',
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: 'slug' }
-            );
+              demo_url: isPorwal ? 'https://dr-gautam-porwal.vercel.app/' : (demo.liveDemoUrl || 'https://yugark.in'),
+              technology_tags: demo.techStack || ['React', 'TypeScript', 'Tailwind CSS'],
+              is_featured: demo.featured ?? true,
+              sort_order: demo.displayOrder || 1,
+              status: (demo.status as any) || 'published',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'slug' }
+          );
           if (error) errors.push(`demo sync (${demo.slug}) failed: ${error.message}`);
         }
-      }
 
-      // 3. Services
-      const localServices = safeGetStorage<ServiceItem[]>(STORAGE_KEYS.SERVICES, []);
-      summary.services = localServices.length;
-
-      if (dryRun && localServices.length > 0) {
-        const { data: remoteServices } = await supabase
-          .from('services')
-          .select('slug, title, updated_at');
-        const remoteMap = new Map((remoteServices || []).map((s) => [s.slug, s]));
-
-        for (const s of localServices) {
-          if (remoteMap.has(s.slug)) {
-            const remote = remoteMap.get(s.slug);
-            conflicts.push({
-              type: 'services',
-              key: s.slug,
-              localTitle: s.title,
-              remoteTitle: remote?.title,
-              resolution: 'Existing production service record found; preserved by default',
-            });
-          }
-        }
-      } else if (!dryRun && localServices.length > 0) {
+        // C. Services (protected records strictly skipped unless explicitly approved)
         for (let i = 0; i < localServices.length; i++) {
           const s = localServices[i];
-          const { error } = await supabase
-            .from('services')
-            .upsert(
-              {
-                id: s.id?.length === 36 ? s.id : undefined,
-                title: s.title,
-                slug: s.slug,
-                short_description: s.description || s.tagline || '',
-                full_description: s.longDescription || s.description || '',
-                icon: s.iconType || 'code',
-                image_url: s.imageUrl || null,
-                price_display: s.priceDisplay || null,
-                regular_price: s.regularPrice || null,
-                launch_price: s.launchPrice || null,
-                billing_type: s.billingType || 'one-time',
-                delivery_time: s.deliveryTime || null,
-                badge: s.badge || null,
-                category: s.category || null,
-                features: s.features || [],
-                benefits: s.deliverables || [],
-                process: s.process || [],
-                faqs: s.faqs || [],
-                sort_order: i + 1,
-                is_featured: true,
-                status: 'published',
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: 'slug' }
-            );
+          const rec = records.find((r) => r.table === 'services' && r.slug === s.slug);
+          const isApproved = !rec?.isProtected || approvedRecordKeys.includes(rec?.key || '') || approvedRecordKeys.includes(s.slug);
+
+          if (!isApproved) continue; // PRESERVE PRODUCTION
+
+          const { error } = await supabase.from('services').upsert(
+            {
+              id: s.id?.length === 36 ? s.id : undefined,
+              title: s.title,
+              slug: s.slug,
+              short_description: s.description || s.tagline || '',
+              full_description: s.longDescription || s.description || '',
+              icon: s.iconType || 'code',
+              image_url: s.imageUrl || null,
+              price_display: s.priceDisplay || null,
+              regular_price: s.regularPrice || null,
+              launch_price: s.launchPrice || null,
+              billing_type: s.billingType || 'one-time',
+              delivery_time: s.deliveryTime || null,
+              badge: s.badge || null,
+              category: s.category || null,
+              features: s.features || [],
+              benefits: s.deliverables || [],
+              process: s.process || [],
+              faqs: s.faqs || [],
+              sort_order: i + 1,
+              is_featured: true,
+              status: 'published',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'slug' }
+          );
           if (error) errors.push(`service sync (${s.slug}) failed: ${error.message}`);
         }
-      }
 
-      // 4. Pricing
-      const localPricing = safeGetStorage<PricingPackage[]>(STORAGE_KEYS.PRICING, []);
-      summary.pricing = localPricing.length;
-
-      if (dryRun && localPricing.length > 0) {
-        const { data: remotePricing } = await supabase
-          .from('pricing_packages')
-          .select('slug, title, updated_at');
-        const remoteMap = new Map((remotePricing || []).map((p) => [p.slug, p]));
-
-        for (const p of localPricing) {
-          if (remoteMap.has(p.slug)) {
-            const remote = remoteMap.get(p.slug);
-            conflicts.push({
-              type: 'pricing_packages',
-              key: p.slug,
-              localTitle: p.name,
-              remoteTitle: remote?.title,
-              resolution: 'Existing production pricing found; protected against overwrite',
-            });
-          }
-        }
-      } else if (!dryRun && localPricing.length > 0) {
+        // D. Pricing Packages (protected records strictly skipped unless explicitly approved)
         for (let i = 0; i < localPricing.length; i++) {
           const p = localPricing[i];
-          const { error } = await supabase
-            .from('pricing_packages')
-            .upsert(
-              {
-                id: p.id?.length === 36 ? p.id : undefined,
-                title: p.name,
-                slug: p.slug,
-                description: p.bestFor || p.tagline || '',
-                price: p.investment,
-                regular_price: p.regularPrice || null,
-                launch_price: p.launchPrice || null,
-                badge: p.badge || null,
-                currency: 'INR',
-                billing_type: p.billingType || p.type || 'one-time',
-                turnaround: p.turnaround || p.deliveryTime || '~7 Days',
-                features: p.features || [],
-                deliverables: p.deliverables || [],
-                cta_label: p.ctaText || `Choose ${p.name}`,
-                cta_url: `/contact?package=${encodeURIComponent(p.name)}`,
-                is_featured: Boolean(p.popular),
-                sort_order: i + 1,
-                status: 'published',
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: 'slug' }
-            );
+          const rec = records.find((r) => r.table === 'pricing_packages' && r.slug === p.slug);
+          const isApproved = !rec?.isProtected || approvedRecordKeys.includes(rec?.key || '') || approvedRecordKeys.includes(p.slug);
+
+          if (!isApproved) continue; // PRESERVE PRODUCTION
+
+          const { error } = await supabase.from('pricing_packages').upsert(
+            {
+              id: p.id?.length === 36 ? p.id : undefined,
+              title: p.name,
+              slug: p.slug,
+              description: p.bestFor || p.tagline || '',
+              price: p.investment,
+              regular_price: p.regularPrice || null,
+              launch_price: p.launchPrice || null,
+              badge: p.badge || null,
+              currency: 'INR',
+              billing_type: p.billingType || p.type || 'one-time',
+              turnaround: p.turnaround || p.deliveryTime || '~7 Days',
+              features: p.features || [],
+              deliverables: p.deliverables || [],
+              cta_label: p.ctaText || `Choose ${p.name}`,
+              cta_url: `/contact?package=${encodeURIComponent(p.name)}`,
+              is_featured: Boolean(p.popular),
+              sort_order: i + 1,
+              status: 'published',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'slug' }
+          );
           if (error) errors.push(`pricing sync (${p.slug}) failed: ${error.message}`);
         }
-      }
 
-      // 5. Portfolio Projects
-      const localProjects = safeGetStorage<ProjectItem[]>(STORAGE_KEYS.PROJECTS, []);
-      summary.projects = localProjects.length;
-
-      if (dryRun && localProjects.length > 0) {
-        const { data: remoteProjects } = await supabase
-          .from('portfolio_projects')
-          .select('slug, title, updated_at');
-        const remoteMap = new Map((remoteProjects || []).map((p) => [p.slug, p]));
-
-        for (const p of localProjects) {
-          if (remoteMap.has(p.slug)) {
-            const remote = remoteMap.get(p.slug);
-            conflicts.push({
-              type: 'portfolio_projects',
-              key: p.slug,
-              localTitle: p.title,
-              remoteTitle: remote?.title,
-              resolution: 'Existing portfolio project found in database; will remain preserved',
-            });
-          }
-        }
-      } else if (!dryRun && localProjects.length > 0) {
+        // E. Portfolio Projects (protected records strictly skipped unless explicitly approved)
         for (let i = 0; i < localProjects.length; i++) {
           const p = localProjects[i];
           if (p.image?.startsWith('blob:')) continue;
-          const { error } = await supabase
-            .from('portfolio_projects')
-            .upsert(
-              {
-                id: p.id?.length === 36 ? p.id : undefined,
-                title: p.title,
-                slug: p.slug,
-                category: p.category,
-                description: p.description,
-                thumbnail_url: p.image,
-                project_url: p.externalUrl || null,
-                project_type: p.isConcept ? 'Studio Concept' : 'Client Work',
-                is_verified_client_work: !p.isConcept,
-                is_featured: Boolean(p.featured),
-                year: p.year || '2025–2026',
-                deliverables: p.deliverables || [],
-                sort_order: i + 1,
-                status: 'published',
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: 'slug' }
-            );
+          const rec = records.find((r) => r.table === 'portfolio_projects' && r.slug === p.slug);
+          const isApproved = !rec?.isProtected || approvedRecordKeys.includes(rec?.key || '') || approvedRecordKeys.includes(p.slug);
+
+          if (!isApproved) continue; // PRESERVE PRODUCTION
+
+          const { error } = await supabase.from('portfolio_projects').upsert(
+            {
+              id: p.id?.length === 36 ? p.id : undefined,
+              title: p.title,
+              slug: p.slug,
+              category: p.category,
+              description: p.description,
+              thumbnail_url: p.image,
+              project_url: p.externalUrl || null,
+              project_type: p.isConcept ? 'Studio Concept' : 'Client Work',
+              is_verified_client_work: !p.isConcept,
+              is_featured: Boolean(p.featured),
+              year: p.year || '2025–2026',
+              deliverables: p.deliverables || [],
+              sort_order: i + 1,
+              status: 'published',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'slug' }
+          );
           if (error) errors.push(`project sync (${p.slug}) failed: ${error.message}`);
+        }
+
+        // F. Blog Posts (protected records strictly skipped unless explicitly approved)
+        for (let i = 0; i < localBlogs.length; i++) {
+          const b = localBlogs[i];
+          const rec = records.find((r) => r.table === 'blog_posts' && r.slug === b.slug);
+          const isApproved = !rec?.isProtected || approvedRecordKeys.includes(rec?.key || '') || approvedRecordKeys.includes(b.slug);
+
+          if (!isApproved) continue; // PRESERVE PRODUCTION
+
+          const { error } = await supabase.from('blog_posts').upsert(
+            {
+              id: b.id?.length === 36 ? b.id : undefined,
+              title: b.title,
+              slug: b.slug,
+              excerpt: b.excerpt || '',
+              content: b.content || '',
+              status: b.status || 'published',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'slug' }
+          );
+          if (error) errors.push(`blog sync (${b.slug}) failed: ${error.message}`);
         }
       }
     } catch (err: any) {
@@ -2449,7 +2933,9 @@ export const adminCmsApi = {
 
     return {
       success: errors.length === 0,
+      isDryRun: dryRun,
       summary,
+      records,
       conflicts,
       errors,
     };

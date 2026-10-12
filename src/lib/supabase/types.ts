@@ -215,10 +215,15 @@ export interface BlogPostRecord {
 export interface LeadRecord {
   id: string;
   name: string;
+  full_name?: string | null;
   email: string;
   phone?: string | null;
+  whatsapp_number?: string | null;
   business_name?: string | null;
+  business_company?: string | null;
+  business_category?: string | null;
   requirement: string;
+  project_requirement?: string | null;
   service?: string | null;
   timeline?: string | null;
   page_source?: string;

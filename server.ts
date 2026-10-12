@@ -6,6 +6,8 @@ import {
   processLeadSubmission,
   recordPageView,
   getBackendHealth,
+  getAuthenticatedLeads,
+  updateAuthenticatedLead,
 } from './src/lib/server/leadService';
 
 dotenv.config();
@@ -48,8 +50,28 @@ app.post('/api/leads', async (req: Request, res: Response) => {
   return res.status(result.status).json(result.body);
 });
 
+/**
+ * Authenticated Administrator Leads Retrieval
+ */
+app.get('/api/leads', async (req: Request, res: Response) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.replace(/^Bearer\s+/i, '').trim() : '';
+  const result = await getAuthenticatedLeads(token);
+  return res.status(result.status).json(result.body);
+});
+
+/**
+ * Authenticated Administrator Lead Status/Priority Update
+ */
+app.patch('/api/leads', async (req: Request, res: Response) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.replace(/^Bearer\s+/i, '').trim() : '';
+  const result = await updateAuthenticatedLead(token, req.body);
+  return res.status(result.status).json(result.body);
+});
+
 app.all('/api/leads', (_req: Request, res: Response) => {
-  return res.status(405).json({ error: 'Method Not Allowed. Leads submission requires POST.' });
+  return res.status(405).json({ error: 'Method Not Allowed.' });
 });
 
 /**

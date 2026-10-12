@@ -261,6 +261,7 @@ export async function processLeadSubmission(
         email: lead.email,
         whatsapp_number: lead.phone,
         business_company: lead.business_name,
+        business_category: lead.business_name,
         project_requirement: lead.requirement,
         service: lead.service,
         status: lead.status,
@@ -395,4 +396,112 @@ export function getBackendHealth(runtimeName: string = 'Express Full-Stack') {
     supabaseConnected: isServerSupabaseConfigured,
     storageBucket: 'public-cms-media',
   };
+}
+
+// ============================================================================
+// AUTHENTICATED ADMIN LEADS ACCESS
+// ============================================================================
+
+export async function getAuthenticatedLeads(token: string) {
+  if (!token) {
+    return { status: 401, body: { error: 'Authorization header with Bearer token is required.' } };
+  }
+  if (!serverSupabase) {
+    return { status: 503, body: { error: 'Database service unavailable.' } };
+  }
+  try {
+    const { data: { user }, error: userError } = await serverSupabase.auth.getUser(token);
+    if (userError || !user) {
+      return { status: 401, body: { error: 'Invalid or expired authentication session.' } };
+    }
+
+    const isDesignatedAdmin = user.email && user.email.toLowerCase().trim() === 'business@yugark.in';
+    let hasAdminRole = false;
+
+    if (!isDesignatedAdmin) {
+      const { data: roleData } = await serverSupabase
+        .from('admin_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      hasAdminRole = Boolean(roleData && ['super_admin', 'admin', 'editor'].includes(roleData.role));
+    }
+
+    if (!isDesignatedAdmin && !hasAdminRole) {
+      return { status: 403, body: { error: 'Access denied. Account is not an authorized administrator.' } };
+    }
+
+    const { data, error } = await serverSupabase
+      .from('leads')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[Yugark Studio] Error fetching leads via server API:', error.message);
+      return { status: 500, body: { error: 'Failed to retrieve leads from database.' } };
+    }
+
+    return { status: 200, body: { success: true, leads: data || [] } };
+  } catch (err: any) {
+    console.error('[Yugark Studio] Exception fetching leads:', err?.message || err);
+    return { status: 500, body: { error: 'Internal server error retrieving leads.' } };
+  }
+}
+
+export async function updateAuthenticatedLead(token: string, body: any) {
+  if (!token) {
+    return { status: 401, body: { error: 'Authorization token required.' } };
+  }
+  if (!serverSupabase) {
+    return { status: 503, body: { error: 'Database service unavailable.' } };
+  }
+  try {
+    const { data: { user }, error: userError } = await serverSupabase.auth.getUser(token);
+    if (userError || !user) {
+      return { status: 401, body: { error: 'Invalid session token.' } };
+    }
+
+    const isDesignatedAdmin = user.email && user.email.toLowerCase().trim() === 'business@yugark.in';
+    let hasAdminRole = false;
+
+    if (!isDesignatedAdmin) {
+      const { data: roleData } = await serverSupabase
+        .from('admin_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      hasAdminRole = Boolean(roleData && ['super_admin', 'admin', 'editor'].includes(roleData.role));
+    }
+
+    if (!isDesignatedAdmin && !hasAdminRole) {
+      return { status: 403, body: { error: 'Access denied.' } };
+    }
+
+    const { id, status, priority, remarks } = body || {};
+    if (!id) {
+      return { status: 400, body: { error: 'Lead ID is required.' } };
+    }
+
+    const updatePayload: Record<string, any> = { updated_at: new Date().toISOString() };
+    if (status) updatePayload.status = status;
+    if (priority) updatePayload.priority = priority;
+    if (remarks !== undefined) updatePayload.remarks = remarks;
+
+    const { data, error } = await serverSupabase
+      .from('leads')
+      .update(updatePayload)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      return { status: 500, body: { error: error.message || 'Failed to update lead.' } };
+    }
+
+    return { status: 200, body: { success: true, lead: data } };
+  } catch (err: any) {
+    return { status: 500, body: { error: err?.message || 'Server error updating lead.' } };
+  }
 }

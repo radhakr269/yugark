@@ -3,11 +3,14 @@
 -- File: 20261011000002_create_admin_roles_table.sql
 -- Description:
 --   1. Creates public.admin_roles table with strict constraints & foreign keys
---   2. Enables Row Level Security (RLS) with restrictive non-escalation policies
---   3. Defines public.is_admin() SECURITY DEFINER helper function
---   4. Safely maps business@yugark.in (auth.uid()) as super_admin if user exists
---   5. Creates an automatic trigger to map business@yugark.in on future registration/updates
---   6. Reloads the PostgREST schema cache via NOTIFY pgrst
+--   2. Enables Row Level Security (RLS) on public.admin_roles
+--   3. Defines SECURITY DEFINER helper functions: public.is_admin() and public.is_super_admin()
+--      with strict search_path, preventing infinite RLS recursion & privilege escalation
+--   4. Creates restrictive non-recursive RLS policies on public.admin_roles
+--   5. Restricts function execution privileges (revokes from PUBLIC/anon)
+--   6. Safely maps business@yugark.in (auth.uid()) as super_admin if user exists
+--   7. Configures secure trigger on auth.users strictly scoped to business@yugark.in
+--   8. Reloads PostgREST schema cache via NOTIFY pgrst
 -- ============================================================================
 
 -- Ensure pgcrypto extension is active for UUID generation
@@ -30,8 +33,11 @@ CREATE INDEX IF NOT EXISTS idx_admin_roles_user_id ON public.admin_roles(user_id
 -- 3. ENABLE ROW LEVEL SECURITY
 ALTER TABLE public.admin_roles ENABLE ROW LEVEL SECURITY;
 
--- 4. CREATE OR REPLACE HELPER FUNCTION public.is_admin()
--- Used across CMS tables (leads, settings, etc.) to check authorization safely
+-- 4. SECURITY DEFINER HELPER FUNCTIONS
+-- Explicit search_path prevents search_path hijacking.
+-- SECURITY DEFINER bypasses RLS inside the function, eliminating infinite recursion.
+
+-- Helper A: Check if current authenticated caller has any admin role
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN
 LANGUAGE sql
@@ -47,8 +53,35 @@ AS $$
     );
 $$;
 
--- 5. ROW LEVEL SECURITY POLICIES FOR public.admin_roles
--- Drop existing policies if they exist to allow clean idempotent re-execution
+-- Helper B: Check if current authenticated caller has super_admin role
+-- Used specifically by admin_roles management policy to prevent RLS self-recursion
+CREATE OR REPLACE FUNCTION public.is_super_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public, pg_temp
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM public.admin_roles
+        WHERE user_id = auth.uid()
+          AND role = 'super_admin'
+    );
+$$;
+
+-- 5. FUNCTION EXECUTION PERMISSION HARDENING
+-- Revoke all permissions from PUBLIC and anon; grant execution only to authenticated users
+REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.is_admin() FROM anon;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
+
+REVOKE ALL ON FUNCTION public.is_super_admin() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.is_super_admin() FROM anon;
+GRANT EXECUTE ON FUNCTION public.is_super_admin() TO authenticated;
+
+-- 6. ROW LEVEL SECURITY POLICIES FOR public.admin_roles
+-- Cleanly drop existing policies for idempotent execution
 DROP POLICY IF EXISTS "Users can view their own admin role" ON public.admin_roles;
 DROP POLICY IF EXISTS "Admins can view all admin roles" ON public.admin_roles;
 DROP POLICY IF EXISTS "Super admins can manage admin roles" ON public.admin_roles;
@@ -66,32 +99,22 @@ CREATE POLICY "Admins can view all admin roles"
     USING (public.is_admin());
 
 -- Policy C: Only verified super_admin users can insert, update, or delete admin roles
--- Prevents ordinary users from self-elevating privileges
+-- Uses SECURITY DEFINER function public.is_super_admin() to avoid infinite RLS recursion
 CREATE POLICY "Super admins can manage admin roles"
     ON public.admin_roles FOR ALL
     TO authenticated
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.admin_roles
-            WHERE user_id = auth.uid() AND role = 'super_admin'
-        )
-    )
-    WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.admin_roles
-            WHERE user_id = auth.uid() AND role = 'super_admin'
-        )
-    );
+    USING (public.is_super_admin())
+    WITH CHECK (public.is_super_admin());
 
--- 6. SAFELY ASSIGN super_admin ROLE TO business@yugark.in IF USER EXISTS IN auth.users
+-- 7. SAFELY ASSIGN super_admin ROLE TO business@yugark.in IF USER EXISTS IN auth.users
 DO $$
 DECLARE
     v_admin_user_id UUID;
 BEGIN
-    -- Query auth.users for business@yugark.in
+    -- Query auth.users specifically for business@yugark.in
     SELECT id INTO v_admin_user_id
     FROM auth.users
-    WHERE LOWER(email) = 'business@yugark.in'
+    WHERE LOWER(TRIM(email)) = 'business@yugark.in'
     LIMIT 1;
 
     IF v_admin_user_id IS NOT NULL THEN
@@ -124,8 +147,8 @@ BEGIN
     END IF;
 END $$;
 
--- 7. AUTOMATIC REGISTRATION TRIGGER FOR business@yugark.in
--- Automatically assigns super_admin when business@yugark.in is created or updated in auth.users
+-- 8. AUTOMATIC REGISTRATION TRIGGER FOR business@yugark.in
+-- Automatically assigns super_admin strictly when business@yugark.in is created or updated in auth.users
 CREATE OR REPLACE FUNCTION public.handle_admin_user_registration()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -133,7 +156,8 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 BEGIN
-    IF LOWER(NEW.email) = 'business@yugark.in' THEN
+    -- Strictly check that the email is exactly business@yugark.in
+    IF LOWER(TRIM(COALESCE(NEW.email, ''))) = 'business@yugark.in' THEN
         INSERT INTO public.admin_roles (
             user_id,
             role,
@@ -159,12 +183,17 @@ BEGIN
 END;
 $$;
 
+-- Revoke execute from external API callers so it cannot be invoked via PostgREST RPC
+REVOKE ALL ON FUNCTION public.handle_admin_user_registration() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.handle_admin_user_registration() FROM anon;
+REVOKE ALL ON FUNCTION public.handle_admin_user_registration() FROM authenticated;
+
 DROP TRIGGER IF EXISTS trg_assign_admin_role_on_signup ON auth.users;
 CREATE TRIGGER trg_assign_admin_role_on_signup
     AFTER INSERT OR UPDATE OF email ON auth.users
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_admin_user_registration();
 
--- 8. REFRESH POSTGREST SCHEMA CACHE
+-- 9. REFRESH POSTGREST SCHEMA CACHE
 -- Forces Supabase PostgREST API to immediately register the new public.admin_roles table
 NOTIFY pgrst, 'reload schema';

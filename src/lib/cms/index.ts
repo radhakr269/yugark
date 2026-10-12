@@ -612,7 +612,7 @@ function recordLeadLocally(leadData: any) {
 // Bidirectionally maps and normalizes production Supabase records:
 // full_name <-> name
 // whatsapp_number <-> phone
-// business_company <-> business_name
+// business_company / business_category <-> business_name
 // project_requirement <-> requirement
 // ============================================================================
 export function mapDatabaseLead(row: any): LeadRecord {
@@ -620,11 +620,12 @@ export function mapDatabaseLead(row: any): LeadRecord {
     throw new Error('Invalid lead record data received.');
   }
 
-  // 1. Full name mapping
-  const name = String(row.name || row.full_name || 'Anonymous Client').trim();
+  // 1. Full name mapping (handles full_name, name)
+  const rawName = row.full_name || row.name || '';
+  const name = String(rawName || 'Anonymous Client').trim();
 
-  // 2. Phone / WhatsApp mapping
-  const rawPhone = row.phone || row.whatsapp_number || null;
+  // 2. Phone / WhatsApp mapping (handles whatsapp_number, phone)
+  const rawPhone = row.whatsapp_number || row.phone || null;
   const phone = rawPhone ? String(rawPhone).trim() : null;
 
   // 3. Email mapping with safe fallback for phone-only entries
@@ -633,16 +634,20 @@ export function mapDatabaseLead(row: any): LeadRecord {
     rawEmail ||
     (phone ? `${phone.replace(/\D/g, '') || 'client'}@whatsapp.client` : 'inquiry@yugark.in');
 
-  // 4. Business / Company name mapping
-  const rawBusiness = row.business_name || row.business_company || null;
+  // 4. Business / Company / Category mapping
+  // Handles business_company, business_category, business_name
+  const rawBusiness = row.business_name || row.business_company || row.business_category || null;
   const business_name = rawBusiness ? String(rawBusiness).trim() : null;
+  const business_company = row.business_company ? String(row.business_company).trim() : null;
+  const business_category = row.business_category ? String(row.business_category).trim() : null;
 
-  // 5. Project Requirement mapping
-  const rawRequirement = row.requirement || row.project_requirement || '';
+  // 5. Project Requirement mapping (handles project_requirement, requirement)
+  const rawRequirement = row.project_requirement || row.requirement || row.project_scope || '';
   const requirement = String(rawRequirement).trim() || 'No project description provided.';
 
-  // 6. Service discipline
-  const service = row.service ? String(row.service).trim() : 'General Inquiry';
+  // 6. Service discipline (handles service, falling back to business_category)
+  const rawService = row.service || row.business_category || 'General Inquiry';
+  const service = String(rawService).trim();
 
   // 7. Timeline
   const timeline = row.timeline ? String(row.timeline).trim() : 'Standard (2–4 weeks)';
@@ -677,16 +682,21 @@ export function mapDatabaseLead(row: any): LeadRecord {
   const remarks = row.remarks ? String(row.remarks).trim() : null;
 
   // 12. Timestamps
-  const created_at = row.created_at || new Date().toISOString();
+  const created_at = row.created_at || row.submitted_at || new Date().toISOString();
   const updated_at = row.updated_at || created_at;
 
   return {
     id: String(row.id || `lead-${Date.now()}`),
     name,
+    full_name: name,
     email,
     phone,
+    whatsapp_number: phone,
     business_name,
+    business_company,
+    business_category,
     requirement,
+    project_requirement: requirement,
     service,
     timeline,
     page_source,
@@ -1483,14 +1493,54 @@ export const adminCmsApi = {
   // --------------------------------------------------------------------------
   async listLeads(): Promise<LeadRecord[]> {
     if (isSupabaseConfigured) {
-      const { data, error } = await supabase
-        .from('leads')
-        .select('*')
-        .order('created_at', { ascending: false });
+      let data: any[] | null = null;
+      let directError: any = null;
 
-      if (error) {
-        console.error('[Yugark Studio] Supabase listLeads error:', error);
-        throw new Error(error.message || 'Unable to retrieve leads from the Supabase database. Please check authorization.');
+      // 1. Direct Supabase Query using authenticated admin user session
+      try {
+        const res = await supabase
+          .from('leads')
+          .select('*')
+          .order('created_at', { ascending: false });
+        data = res.data;
+        directError = res.error;
+      } catch (err: any) {
+        directError = err;
+      }
+
+      // If direct query succeeded and returned records, map and return them
+      if (data && data.length > 0) {
+        return data.map(mapDatabaseLead);
+      }
+
+      // 2. Authenticated Server API Fallback:
+      // If direct query returned 0 rows (e.g. Row Level Security policy missing for SELECT)
+      // or encountered a database error, query the secure /api/leads endpoint using admin JWT Bearer token
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+        if (token) {
+          const apiRes = await fetch('/api/leads', {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          if (apiRes.ok) {
+            const apiJson = await apiRes.json();
+            if (Array.isArray(apiJson.leads) && apiJson.leads.length > 0) {
+              return apiJson.leads.map(mapDatabaseLead);
+            }
+          }
+        }
+      } catch (apiErr) {
+        console.warn('[Yugark Studio] Authenticated API leads query fallback error:', apiErr);
+      }
+
+      if (directError && !data) {
+        console.error('[Yugark Studio] Supabase listLeads error:', directError);
+        throw new Error(directError.message || 'Unable to retrieve leads from the Supabase database. Please check authorization.');
       }
 
       if (data) {
@@ -1498,50 +1548,8 @@ export const adminCmsApi = {
       }
     }
 
-    const fallbackItems = safeGetStorage<any[]>(STORAGE_KEYS.LEADS, [
-      {
-        id: 'YUG-918234',
-        name: 'Aarav Mehta',
-        full_name: 'Aarav Mehta',
-        email: 'aarav@solestudio.com',
-        phone: '+91 98765 43210',
-        whatsapp_number: '+91 98765 43210',
-        business_name: 'Sole Beauty & Wellness',
-        business_company: 'Sole Beauty & Wellness',
-        requirement: 'We need a high-conversion modern eCommerce and portfolio website with direct WhatsApp customer routing and interactive treatment booking.',
-        project_requirement: 'We need a high-conversion modern eCommerce and portfolio website with direct WhatsApp customer routing and interactive treatment booking.',
-        service: 'Website Development',
-        timeline: 'Standard (2–4 weeks)',
-        page_source: 'website_contact',
-        status: 'new',
-        priority: 'high',
-        remarks: 'High intent prospect inquiring for luxury skincare studio launch in Mumbai.',
-        created_at: new Date(Date.now() - 3600000 * 4).toISOString(),
-        updated_at: new Date(Date.now() - 3600000 * 4).toISOString(),
-      },
-      {
-        id: 'YUG-771249',
-        name: 'Elena Rostova',
-        full_name: 'Elena Rostova',
-        email: 'elena@auroraliving.design',
-        phone: '+44 7700 900077',
-        whatsapp_number: '+44 7700 900077',
-        business_name: 'Aurora Living Interior Practice',
-        business_company: 'Aurora Living Interior Practice',
-        requirement: 'Looking for complete brand architecture, editorial typography layout, and turnkey portfolio demo setup.',
-        project_requirement: 'Looking for complete brand architecture, editorial typography layout, and turnkey portfolio demo setup.',
-        service: 'Branding & Identity',
-        timeline: 'Urgent (1–2 weeks)',
-        page_source: 'demos_showcase',
-        status: 'contacted',
-        priority: 'urgent',
-        remarks: 'Discussed initial scope on WhatsApp. Sending proposal by Friday.',
-        created_at: new Date(Date.now() - 3600000 * 26).toISOString(),
-        updated_at: new Date(Date.now() - 3600000 * 12).toISOString(),
-      },
-    ]);
-
-    return fallbackItems.map(mapDatabaseLead);
+    // Never return mock demo leads in production dashboard
+    return [];
   },
 
   async updateLeadStatus(id: string, status: LeadRecord['status'], remarks?: string): Promise<LeadRecord> {
@@ -1573,7 +1581,31 @@ export const adminCmsApi = {
         error = fallbackRes.error;
       }
 
+      // If direct update failed due to RLS, try authenticated server API
       if (error) {
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const token = sessionData?.session?.access_token;
+          if (token) {
+            const apiRes = await fetch('/api/leads', {
+              method: 'PATCH',
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ id, status, remarks }),
+            });
+            if (apiRes.ok) {
+              const apiJson = await apiRes.json();
+              if (apiJson.lead) {
+                return mapDatabaseLead(apiJson.lead);
+              }
+            }
+          }
+        } catch (apiErr) {
+          console.warn('[Yugark Studio] API updateLeadStatus fallback error:', apiErr);
+        }
+
         console.error('[Yugark Studio] Supabase updateLeadStatus error:', error);
         throw new Error(error.message || 'Failed to update lead status in Supabase database.');
       }
@@ -1607,7 +1639,28 @@ export const adminCmsApi = {
         error = fallbackRes.error;
       }
 
+      // If direct update failed due to RLS, try authenticated server API
       if (error) {
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const token = sessionData?.session?.access_token;
+          if (token) {
+            const apiRes = await fetch('/api/leads', {
+              method: 'PATCH',
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ id, priority }),
+            });
+            if (apiRes.ok) {
+              return;
+            }
+          }
+        } catch (apiErr) {
+          console.warn('[Yugark Studio] API updateLeadPriority fallback error:', apiErr);
+        }
+
         console.error('[Yugark Studio] Supabase updateLeadPriority error:', error);
         throw new Error(error.message || 'Failed to update lead priority in Supabase database.');
       }

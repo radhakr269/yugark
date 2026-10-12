@@ -50,7 +50,7 @@ const serverSupabase = isSupabaseConfigured
 export default async function handler(req: any, res: any) {
   // CORS & Security Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
@@ -60,6 +60,158 @@ export default async function handler(req: any, res: any) {
     return res.end();
   }
 
+  // 1. GET: Retrieve leads for authenticated administrators
+  if (req.method === 'GET') {
+    const authHeader = req.headers?.authorization || req.headers?.Authorization;
+    const token = authHeader ? String(authHeader).replace(/^Bearer\s+/i, '').trim() : '';
+    if (!token) {
+      res.statusCode = 401;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ error: 'Administrator authorization required.' }));
+    }
+
+    if (!serverSupabase) {
+      res.statusCode = 503;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ error: 'Database service unavailable.' }));
+    }
+
+    try {
+      const { data: { user }, error: userError } = await serverSupabase.auth.getUser(token);
+      if (userError || !user) {
+        res.statusCode = 401;
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(JSON.stringify({ error: 'Invalid or expired authentication session.' }));
+      }
+
+      const isDesignatedAdmin = user.email && user.email.toLowerCase().trim() === 'business@yugark.in';
+      let hasAdminRole = false;
+
+      if (!isDesignatedAdmin) {
+        const { data: roleData } = await serverSupabase
+          .from('admin_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        hasAdminRole = Boolean(roleData && ['super_admin', 'admin', 'editor'].includes(roleData.role));
+      }
+
+      if (!isDesignatedAdmin && !hasAdminRole) {
+        res.statusCode = 403;
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(JSON.stringify({ error: 'Access denied. Account lacks administrator privileges in public.admin_roles.' }));
+      }
+
+      const { data, error } = await serverSupabase
+        .from('leads')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('[Yugark Studio] Error querying leads via API handler:', error.message);
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(JSON.stringify({ error: 'Database query error retrieving leads.' }));
+      }
+
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      const responseData = { success: true, leads: data || [] };
+      return typeof res.json === 'function' ? res.json(responseData) : res.end(JSON.stringify(responseData));
+    } catch (err: any) {
+      console.error('[Yugark Studio] Exception in GET /api/leads:', err);
+      res.statusCode = 500;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ error: 'Server error retrieving leads.' }));
+    }
+  }
+
+  // 2. PATCH: Update lead status or priority for authenticated administrators
+  if (req.method === 'PATCH') {
+    const authHeader = req.headers?.authorization || req.headers?.Authorization;
+    const token = authHeader ? String(authHeader).replace(/^Bearer\s+/i, '').trim() : '';
+    if (!token) {
+      res.statusCode = 401;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ error: 'Administrator authorization required.' }));
+    }
+
+    if (!serverSupabase) {
+      res.statusCode = 503;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ error: 'Database service unavailable.' }));
+    }
+
+    try {
+      const { data: { user }, error: userError } = await serverSupabase.auth.getUser(token);
+      if (userError || !user) {
+        res.statusCode = 401;
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(JSON.stringify({ error: 'Invalid or expired session token.' }));
+      }
+
+      const isDesignatedAdmin = user.email && user.email.toLowerCase().trim() === 'business@yugark.in';
+      let hasAdminRole = false;
+
+      if (!isDesignatedAdmin) {
+        const { data: roleData } = await serverSupabase
+          .from('admin_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        hasAdminRole = Boolean(roleData && ['super_admin', 'admin', 'editor'].includes(roleData.role));
+      }
+
+      if (!isDesignatedAdmin && !hasAdminRole) {
+        res.statusCode = 403;
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(JSON.stringify({ error: 'Access denied.' }));
+      }
+
+      let patchBody = req.body;
+      if (typeof patchBody === 'string') {
+        try { patchBody = JSON.parse(patchBody); } catch {}
+      }
+
+      const { id, status, priority, remarks } = patchBody || {};
+      if (!id) {
+        res.statusCode = 400;
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(JSON.stringify({ error: 'Lead ID is required.' }));
+      }
+
+      const updatePayload: Record<string, any> = { updated_at: new Date().toISOString() };
+      if (status) updatePayload.status = status;
+      if (priority) updatePayload.priority = priority;
+      if (remarks !== undefined) updatePayload.remarks = remarks;
+
+      const { data, error } = await serverSupabase
+        .from('leads')
+        .update(updatePayload)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(JSON.stringify({ error: error.message || 'Failed to update lead.' }));
+      }
+
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      const responseData = { success: true, lead: data };
+      return typeof res.json === 'function' ? res.json(responseData) : res.end(JSON.stringify(responseData));
+    } catch (err: any) {
+      res.statusCode = 500;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ error: 'Server error updating lead.' }));
+    }
+  }
+
+  // 3. POST: Public website lead submission
   if (req.method !== 'POST') {
     res.statusCode = 405;
     res.setHeader('Content-Type', 'application/json');
@@ -180,6 +332,7 @@ export default async function handler(req: any, res: any) {
         email: sanitizedEmail,
         whatsapp_number: sanitizedPhone,
         business_company: sanitizedBusinessName,
+        business_category: sanitizedBusinessName,
         project_requirement: sanitizedRequirement,
         service: sanitizedService,
         status: 'new',

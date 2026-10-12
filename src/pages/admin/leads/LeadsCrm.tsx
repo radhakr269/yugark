@@ -132,11 +132,11 @@ export const LeadsCrm: React.FC = () => {
   };
 
   const filteredLeads = leads.filter((l) => {
-    const nameStr = (l.name || '').toLowerCase();
+    const nameStr = (l.name || l.full_name || '').toLowerCase();
     const emailStr = (l.email || '').toLowerCase();
-    const phoneStr = (l.phone || '');
-    const reqStr = (l.requirement || '').toLowerCase();
-    const bizStr = (l.business_name || '').toLowerCase();
+    const phoneStr = (l.phone || l.whatsapp_number || '');
+    const reqStr = (l.requirement || l.project_requirement || '').toLowerCase();
+    const bizStr = (l.business_name || l.business_company || l.business_category || '').toLowerCase();
     const searchLower = search.toLowerCase().trim();
 
     const matchesSearch =
@@ -150,7 +150,10 @@ export const LeadsCrm: React.FC = () => {
     const matchesStatus = statusFilter === 'all' || (l.status || '').toLowerCase() === statusFilter.toLowerCase();
     const matchesPriority =
       priorityFilter === 'all' || (l.priority || '').toLowerCase() === priorityFilter.toLowerCase();
-    const matchesService = serviceFilter === 'all' || (l.service || '') === serviceFilter;
+    const matchesService =
+      serviceFilter === 'all' ||
+      (l.service || '').toLowerCase() === serviceFilter.toLowerCase() ||
+      (l.business_category || '').toLowerCase() === serviceFilter.toLowerCase();
 
     return matchesSearch && matchesStatus && matchesPriority && matchesService;
   });
@@ -305,16 +308,16 @@ export const LeadsCrm: React.FC = () => {
                   >
                     <td className="py-3 px-4">
                       <div className="font-semibold text-xs text-[#121614] flex items-center gap-1.5">
-                        <span>{lead.name}</span>
-                        {lead.business_name && (
+                        <span>{lead.name || lead.full_name}</span>
+                        {(lead.business_name || lead.business_category || lead.business_company) && (
                           <span className="text-[10px] font-normal text-[#606D63] bg-[#EBE4D8] px-1.5 py-0.2 rounded">
-                            {lead.business_name}
+                            {lead.business_name || lead.business_category || lead.business_company}
                           </span>
                         )}
                       </div>
                       <div className="text-[11px] text-[#637267] font-mono">{lead.email}</div>
-                      {lead.phone && (
-                        <div className="text-[10px] text-[#86968B] font-mono">{lead.phone}</div>
+                      {(lead.phone || lead.whatsapp_number) && (
+                        <div className="text-[10px] text-[#86968B] font-mono">{lead.phone || lead.whatsapp_number}</div>
                       )}
                     </td>
 
@@ -388,11 +391,11 @@ export const LeadsCrm: React.FC = () => {
                     Inquiry Ref: {selectedLead.id}
                   </span>
                   <h3 className="font-serif-title text-xl font-medium text-[#121614]">
-                    {selectedLead.name}
+                    {selectedLead.name || selectedLead.full_name}
                   </h3>
-                  {selectedLead.business_name && (
+                  {(selectedLead.business_name || selectedLead.business_category || selectedLead.business_company) && (
                     <p className="text-xs text-[#2D4536] font-semibold mt-0.5">
-                      {selectedLead.business_name}
+                      {selectedLead.business_name || selectedLead.business_category || selectedLead.business_company}
                     </p>
                   )}
                 </div>
@@ -406,10 +409,10 @@ export const LeadsCrm: React.FC = () => {
 
               {/* Direct Actions: WhatsApp / Email */}
               <div className="flex items-center gap-2 py-4">
-                {selectedLead.phone && (
+                {(selectedLead.phone || selectedLead.whatsapp_number) && (
                   <a
-                    href={`https://wa.me/${selectedLead.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                      `Hello ${selectedLead.name}, this is Yugark Digital Studio following up on your project inquiry for ${selectedLead.service}.`
+                    href={`https://wa.me/${String(selectedLead.phone || selectedLead.whatsapp_number).replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                      `Hello ${selectedLead.name || selectedLead.full_name}, this is Yugark Digital Studio following up on your project inquiry for ${selectedLead.service || 'your project'}.`
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"

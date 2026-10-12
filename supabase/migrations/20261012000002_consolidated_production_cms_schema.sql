@@ -55,7 +55,12 @@ BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'storage' AND table_name = 'objects') THEN
         IF NOT EXISTS (
             SELECT 1 FROM pg_policies
-            WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = 'Public can view media'
+            WHERE schemaname = 'storage'
+              AND tablename = 'objects'
+              AND (
+                  policyname = 'Public can view media'
+                  OR (cmd = 'SELECT' AND qual ILIKE '%public-cms-media%')
+              )
         ) THEN
             CREATE POLICY "Public can view media"
                 ON storage.objects FOR SELECT
@@ -65,7 +70,12 @@ BEGIN
 
         IF NOT EXISTS (
             SELECT 1 FROM pg_policies
-            WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = 'Admins can upload media'
+            WHERE schemaname = 'storage'
+              AND tablename = 'objects'
+              AND (
+                  policyname = 'Admins can upload media'
+                  OR (cmd = 'INSERT' AND (qual ILIKE '%public-cms-media%' OR with_check ILIKE '%public-cms-media%'))
+              )
         ) THEN
             CREATE POLICY "Admins can upload media"
                 ON storage.objects FOR INSERT
@@ -78,7 +88,12 @@ BEGIN
 
         IF NOT EXISTS (
             SELECT 1 FROM pg_policies
-            WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = 'Admins can update media'
+            WHERE schemaname = 'storage'
+              AND tablename = 'objects'
+              AND (
+                  policyname = 'Admins can update media'
+                  OR (cmd = 'UPDATE' AND (qual ILIKE '%public-cms-media%' OR with_check ILIKE '%public-cms-media%'))
+              )
         ) THEN
             CREATE POLICY "Admins can update media"
                 ON storage.objects FOR UPDATE
@@ -95,7 +110,12 @@ BEGIN
 
         IF NOT EXISTS (
             SELECT 1 FROM pg_policies
-            WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = 'Admins can delete media'
+            WHERE schemaname = 'storage'
+              AND tablename = 'objects'
+              AND (
+                  policyname = 'Admins can delete media'
+                  OR (cmd = 'DELETE' AND qual ILIKE '%public-cms-media%')
+              )
         ) THEN
             CREATE POLICY "Admins can delete media"
                 ON storage.objects FOR DELETE
@@ -285,13 +305,33 @@ ALTER TABLE public.website_demos ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
-    IF NOT EXISTS (
+    -- Drop legacy mixed anon/admin select policy if exists
+    IF EXISTS (
         SELECT 1 FROM pg_policies
         WHERE schemaname = 'public' AND tablename = 'website_demos' AND policyname = 'Public can view website demos'
     ) THEN
-        CREATE POLICY "Public can view website demos"
+        DROP POLICY "Public can view website demos" ON public.website_demos;
+    END IF;
+
+    -- Anonymous visitors can read only published demos (no call to is_admin(), avoids permission errors if execute revoked from anon)
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'website_demos' AND policyname = 'Anon can view published website demos'
+    ) THEN
+        CREATE POLICY "Anon can view published website demos"
             ON public.website_demos FOR SELECT
-            TO anon, authenticated
+            TO anon
+            USING (status = 'published');
+    END IF;
+
+    -- Authenticated users can view published demos, plus drafts/archived if authorized admin
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'website_demos' AND policyname = 'Authenticated can view website demos'
+    ) THEN
+        CREATE POLICY "Authenticated can view website demos"
+            ON public.website_demos FOR SELECT
+            TO authenticated
             USING (status = 'published' OR public.is_admin());
     END IF;
 
@@ -307,7 +347,7 @@ BEGIN
     END IF;
 END $$;
 
--- Seed approved baseline demos (Preserves existing data with DO NOTHING)
+-- Seed approved baseline demos (Preserves existing data with DO NOTHING; dynamically resolves category_id by slug)
 INSERT INTO public.website_demos (
     id, title, slug, category_id, short_description, full_description,
     thumbnail_url, demo_url, technology_tags, is_featured, sort_order, status
@@ -317,7 +357,7 @@ VALUES
     'd0000000-0000-0000-0000-000000000001',
     'Business Pro',
     'business-pro',
-    'b0000000-0000-0000-0000-000000000001',
+    (SELECT id FROM public.demo_categories WHERE slug = 'corporate-business' LIMIT 1),
     'Designed for corporate architecture firms, enterprise consultancies, and commercial development studios with authoritative proof points.',
     'High-converting turnkey digital architecture tailored for corporate consultancies, architecture firms, and engineering practices.',
     '/assets/images/Business pro.jpg',
@@ -329,7 +369,7 @@ VALUES
     'd0000000-0000-0000-0000-000000000002',
     'Glow Studio',
     'glow-studio',
-    'b0000000-0000-0000-0000-000000000002',
+    (SELECT id FROM public.demo_categories WHERE slug = 'beauty-lifestyle' LIMIT 1),
     'Soft champagne tones and organic layout for boutique wellness salons, dermatological studios, and aesthetic lifestyle practitioners.',
     'Turnkey beauty, spa, and medical wellness portal with integrated ritual menus and friction-free direct appointment routing.',
     '/assets/images/glow Studio.jpg',
@@ -341,7 +381,7 @@ VALUES
     'd0000000-0000-0000-0000-000000000003',
     'DineCraft',
     'dinecraft',
-    'b0000000-0000-0000-0000-000000000003',
+    (SELECT id FROM public.demo_categories WHERE slug = 'restaurant-cafe' LIMIT 1),
     'Atmospheric dark dining experience showcasing artisanal culinary creations, seasonal degustation menus, and seamless table booking.',
     'Bespoke digital presence crafted for fine dining restaurants, artisanal cafes, and culinary venues seeking sensory online impact.',
     '/assets/images/dinecraft.jpg',
@@ -353,7 +393,7 @@ VALUES
     'd0000000-0000-0000-0000-000000000004',
     'FitLife',
     'fitlife',
-    'b0000000-0000-0000-0000-000000000004',
+    (SELECT id FROM public.demo_categories WHERE slug = 'fitness-wellness' LIMIT 1),
     'High-impact performance training portal designed for personal coaches, boutique gyms, and high-energy athletic wellness clubs.',
     'Performance-driven platform featuring weekly class schedules, coach credentials, and tiered fitness membership acquisitions.',
     '/assets/images/Fit Life.jpg',
@@ -365,7 +405,7 @@ VALUES
     'd0000000-0000-0000-0000-000000000005',
     'Dr. Gautam Porwal — Homoeopathic Clinic',
     'dr-gautam-porwal',
-    'b0000000-0000-0000-0000-000000000005',
+    (SELECT id FROM public.demo_categories WHERE slug = 'healthcare-medical' LIMIT 1),
     'Specialized clinical & homeopathic healthcare portal with patient appointment scheduling, treatment specializations, and direct consultation routing.',
     'Premium, responsive homoeopathic clinic website featuring elegant design, doctor profile, treatment information, patient reviews and appointment enquiry options.',
     '/assets/images/dr-gautam-porwal.svg',
@@ -376,13 +416,17 @@ VALUES
 ON CONFLICT (slug) DO NOTHING;
 
 -- Targeted non-destructive correction for Dr. Gautam Porwal:
--- Corrects stale category (Hospitality -> Healthcare & Medical) and canonical live URL without overwriting newly uploaded screenshots.
+-- Corrects stale category (Hospitality -> Healthcare & Medical) and canonical live URL dynamically without overwriting custom screenshots.
 UPDATE public.website_demos
-SET category_id = 'b0000000-0000-0000-0000-000000000005',
+SET category_id = (SELECT id FROM public.demo_categories WHERE slug = 'healthcare-medical' LIMIT 1),
     demo_url = 'https://dr-gautam-porwal.vercel.app/',
     updated_at = now()
 WHERE slug = 'dr-gautam-porwal'
-  AND (category_id IS NULL OR category_id != 'b0000000-0000-0000-0000-000000000005' OR demo_url != 'https://dr-gautam-porwal.vercel.app/');
+  AND (
+    category_id IS NULL
+    OR category_id != (SELECT id FROM public.demo_categories WHERE slug = 'healthcare-medical' LIMIT 1)
+    OR demo_url != 'https://dr-gautam-porwal.vercel.app/'
+  );
 
 -- Replace stale Business pro.jpg thumbnail if still attached to Dr. Gautam Porwal
 UPDATE public.website_demos
@@ -439,13 +483,32 @@ ALTER TABLE public.services ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
-    IF NOT EXISTS (
+    IF EXISTS (
         SELECT 1 FROM pg_policies
         WHERE schemaname = 'public' AND tablename = 'services' AND policyname = 'Public can view published services'
     ) THEN
-        CREATE POLICY "Public can view published services"
+        DROP POLICY "Public can view published services" ON public.services;
+    END IF;
+
+    -- Anonymous visitors can read only published services
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'services' AND policyname = 'Anon can view published services'
+    ) THEN
+        CREATE POLICY "Anon can view published services"
             ON public.services FOR SELECT
-            TO anon, authenticated
+            TO anon
+            USING (status = 'published');
+    END IF;
+
+    -- Authenticated users can view published services, plus drafts/archived if authorized admin
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'services' AND policyname = 'Authenticated can view services'
+    ) THEN
+        CREATE POLICY "Authenticated can view services"
+            ON public.services FOR SELECT
+            TO authenticated
             USING (status = 'published' OR public.is_admin());
     END IF;
 
@@ -557,13 +620,32 @@ ALTER TABLE public.portfolio_projects ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
-    IF NOT EXISTS (
+    IF EXISTS (
         SELECT 1 FROM pg_policies
         WHERE schemaname = 'public' AND tablename = 'portfolio_projects' AND policyname = 'Public can view published portfolio projects'
     ) THEN
-        CREATE POLICY "Public can view published portfolio projects"
+        DROP POLICY "Public can view published portfolio projects" ON public.portfolio_projects;
+    END IF;
+
+    -- Anonymous visitors can read only published portfolio projects
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'portfolio_projects' AND policyname = 'Anon can view published portfolio projects'
+    ) THEN
+        CREATE POLICY "Anon can view published portfolio projects"
             ON public.portfolio_projects FOR SELECT
-            TO anon, authenticated
+            TO anon
+            USING (status = 'published');
+    END IF;
+
+    -- Authenticated users can view published portfolio projects, plus drafts/archived if authorized admin
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'portfolio_projects' AND policyname = 'Authenticated can view portfolio projects'
+    ) THEN
+        CREATE POLICY "Authenticated can view portfolio projects"
+            ON public.portfolio_projects FOR SELECT
+            TO authenticated
             USING (status = 'published' OR public.is_admin());
     END IF;
 
@@ -659,13 +741,32 @@ ALTER TABLE public.pricing_packages ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
-    IF NOT EXISTS (
+    IF EXISTS (
         SELECT 1 FROM pg_policies
         WHERE schemaname = 'public' AND tablename = 'pricing_packages' AND policyname = 'Public can view published pricing packages'
     ) THEN
-        CREATE POLICY "Public can view published pricing packages"
+        DROP POLICY "Public can view published pricing packages" ON public.pricing_packages;
+    END IF;
+
+    -- Anonymous visitors can read only published pricing packages
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'pricing_packages' AND policyname = 'Anon can view published pricing packages'
+    ) THEN
+        CREATE POLICY "Anon can view published pricing packages"
             ON public.pricing_packages FOR SELECT
-            TO anon, authenticated
+            TO anon
+            USING (status = 'published');
+    END IF;
+
+    -- Authenticated users can view published pricing packages, plus drafts/archived if authorized admin
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'pricing_packages' AND policyname = 'Authenticated can view pricing packages'
+    ) THEN
+        CREATE POLICY "Authenticated can view pricing packages"
+            ON public.pricing_packages FOR SELECT
+            TO authenticated
             USING (status = 'published' OR public.is_admin());
     END IF;
 
@@ -808,13 +909,32 @@ ALTER TABLE public.blog_posts ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
-    IF NOT EXISTS (
+    IF EXISTS (
         SELECT 1 FROM pg_policies
         WHERE schemaname = 'public' AND tablename = 'blog_posts' AND policyname = 'Public can view published blog posts'
     ) THEN
-        CREATE POLICY "Public can view published blog posts"
+        DROP POLICY "Public can view published blog posts" ON public.blog_posts;
+    END IF;
+
+    -- Anonymous visitors can read only published blog posts whose published_at is not in future
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'blog_posts' AND policyname = 'Anon can view published blog posts'
+    ) THEN
+        CREATE POLICY "Anon can view published blog posts"
             ON public.blog_posts FOR SELECT
-            TO anon, authenticated
+            TO anon
+            USING (status = 'published' AND published_at <= now());
+    END IF;
+
+    -- Authenticated users can view published blog posts, plus drafts/scheduled/archived if authorized admin
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public' AND tablename = 'blog_posts' AND policyname = 'Authenticated can view blog posts'
+    ) THEN
+        CREATE POLICY "Authenticated can view blog posts"
+            ON public.blog_posts FOR SELECT
+            TO authenticated
             USING (
                 (status = 'published' AND published_at <= now())
                 OR public.is_admin()
